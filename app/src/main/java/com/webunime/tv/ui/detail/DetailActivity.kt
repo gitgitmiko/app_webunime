@@ -71,7 +71,7 @@ class DetailActivity : AppCompatActivity() {
         playButton.requestFocus()
     }
 
-    /** Emulator: Esc sering tidak jadi Back — tangkap Escape. */
+    /** Emulator Esc + remote TCL OK (ENTER/A). */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_UP &&
             (event.keyCode == KeyEvent.KEYCODE_ESCAPE || event.keyCode == KeyEvent.KEYCODE_BACK)
@@ -79,7 +79,26 @@ class DetailActivity : AppCompatActivity() {
             finish()
             return true
         }
-        return super.dispatchKeyEvent(event)
+        val normalized = when (event.keyCode) {
+            KeyEvent.KEYCODE_ENTER,
+            KeyEvent.KEYCODE_NUMPAD_ENTER,
+            KeyEvent.KEYCODE_BUTTON_A,
+            KeyEvent.KEYCODE_BUTTON_SELECT ->
+                KeyEvent(
+                    event.downTime,
+                    event.eventTime,
+                    event.action,
+                    KeyEvent.KEYCODE_DPAD_CENTER,
+                    event.repeatCount,
+                    event.metaState,
+                    event.deviceId,
+                    event.scanCode,
+                    event.flags,
+                    event.source
+                )
+            else -> event
+        }
+        return super.dispatchKeyEvent(normalized)
     }
 
     private fun bindEpisodes() {

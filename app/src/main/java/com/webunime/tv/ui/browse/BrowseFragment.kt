@@ -1,5 +1,6 @@
 package com.webunime.tv.ui.browse
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
@@ -10,6 +11,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
+import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.leanback.app.BackgroundManager
 import androidx.leanback.app.BrowseSupportFragment
@@ -20,6 +22,7 @@ import androidx.leanback.widget.ListRow
 import androidx.leanback.widget.ListRowPresenter
 import androidx.leanback.widget.OnItemViewClickedListener
 import androidx.leanback.widget.OnItemViewSelectedListener
+import androidx.leanback.widget.VerticalGridView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
@@ -27,7 +30,6 @@ import com.webunime.tv.R
 import com.webunime.tv.WebunimeApp
 import com.webunime.tv.data.CatalogItem
 import com.webunime.tv.ui.search.SearchActivity
-import android.content.Intent
 
 /**
  * Browse Netflix-style: background berubah mengikuti poster item yang sedang difokus.
@@ -55,9 +57,13 @@ class BrowseFragment : BrowseSupportFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        view.isFocusable = true
-        view.isFocusableInTouchMode = true
-        // Transparan agar BackgroundManager terlihat
+        // Jangan buat root focusable — di TV TCL itu “menelan” D-pad
+        // sehingga panah/OK tidak sampai ke kartu Leanback.
+        view.isFocusable = false
+        view.isFocusableInTouchMode = false
+        if (view is ViewGroup) {
+            view.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
+        }
         view.setBackgroundColor(Color.TRANSPARENT)
     }
 
@@ -65,7 +71,7 @@ class BrowseFragment : BrowseSupportFragment() {
         super.onActivityCreated(savedInstanceState)
         title = getString(R.string.browse_title)
         headersState = HEADERS_DISABLED
-        isHeadersTransitionOnBackEnabled = true
+        isHeadersTransitionOnBackEnabled = false
         brandColor = ContextCompat.getColor(requireContext(), R.color.wu_bg)
         searchAffordanceColor = ContextCompat.getColor(requireContext(), R.color.wu_accent)
 
@@ -109,6 +115,29 @@ class BrowseFragment : BrowseSupportFragment() {
         super.onDestroy()
     }
 
+    fun rowsGrid(): VerticalGridView? = rowsSupportFragment?.verticalGridView
+
+    /** Pastikan fokus di grid kartu (bukan title/search orb). */
+    fun restoreRowFocus() {
+        view?.post { focusRowsGrid() }
+        view?.postDelayed({ focusRowsGrid() }, 120)
+        view?.postDelayed({ focusRowsGrid() }, 400)
+    }
+
+    private fun focusRowsGrid() {
+        if (!isAdded) return
+        val grid = rowsGrid() ?: return
+        if ((adapter?.size() ?: 0) <= 0) return
+        if (selectedPosition < 0) {
+            selectedPosition = 0
+        }
+        grid.isFocusable = true
+        grid.isFocusableInTouchMode = true
+        if (!grid.hasFocus()) {
+            grid.requestFocus()
+        }
+    }
+
     private fun prepareBackgroundManager() {
         val act = requireActivity()
         val mgr = BackgroundManager.getInstance(act).also { backgroundManager = it }
@@ -131,7 +160,6 @@ class BrowseFragment : BrowseSupportFragment() {
 
     private fun loadBackground(url: String) {
         if (!isAdded) return
-        val ctx = context ?: return
         val metrics = resources.displayMetrics
         val w = metrics.widthPixels.coerceAtLeast(1280)
         val h = metrics.heightPixels.coerceAtLeast(720)
@@ -143,8 +171,7 @@ class BrowseFragment : BrowseSupportFragment() {
             .into(object : CustomTarget<Bitmap>(w, h) {
                 override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                     if (!isAdded || pendingThumb != url) return
-                    val dimmed = dimmedBackground(resource)
-                    backgroundManager?.drawable = dimmed
+                    backgroundManager?.drawable = dimmedBackground(resource)
                 }
 
                 override fun onLoadCleared(placeholder: Drawable?) {
@@ -157,7 +184,6 @@ class BrowseFragment : BrowseSupportFragment() {
             })
     }
 
-    /** Poster + overlay gelap agar baris katalog tetap terbaca. */
     private fun dimmedBackground(bitmap: Bitmap): Drawable {
         return LayerDrawable(
             arrayOf(
@@ -165,21 +191,6 @@ class BrowseFragment : BrowseSupportFragment() {
                 ColorDrawable(0xB3000000.toInt()),
             )
         )
-    }
-
-    fun restoreRowFocus() {
-        view?.post {
-            if (!isAdded) return@post
-            val grid = rowsSupportFragment?.verticalGridView
-            if (grid != null) {
-                grid.requestFocus()
-                if (grid.selectedPosition < 0 && (adapter?.size() ?: 0) > 0) {
-                    selectedPosition = 0
-                }
-            } else {
-                view?.requestFocus()
-            }
-        }
     }
 
     fun reloadRows() {
@@ -207,12 +218,7 @@ class BrowseFragment : BrowseSupportFragment() {
         if (rowsAdapter.size() > 0) {
             val target = previous.coerceIn(0, rowsAdapter.size() - 1)
             selectedPosition = target
-            view?.post {
-                if (!isAdded) return@post
-                selectedPosition = target
-                rowsSupportFragment?.verticalGridView?.requestFocus()
-                    ?: view?.requestFocus()
-            }
+            restoreRowFocus()
         }
     }
 

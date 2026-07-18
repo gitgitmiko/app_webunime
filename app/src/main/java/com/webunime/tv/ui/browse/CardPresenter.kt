@@ -18,6 +18,7 @@ class CardPresenter : Presenter() {
         val card = ImageCardView(parent.context).apply {
             isFocusable = true
             isFocusableInTouchMode = true
+            isClickable = true
             setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT)
             cardType = ImageCardView.CARD_TYPE_INFO_UNDER
             setBackgroundColor(ContextCompat.getColor(context, R.color.wu_bg))
