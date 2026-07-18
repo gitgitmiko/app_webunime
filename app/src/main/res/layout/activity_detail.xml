@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/detailScroll"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/wu_bg"
+    android:clipToPadding="false"
+    android:fillViewport="true"
+    android:scrollbars="none">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="32dp">
+
+        <!-- Backdrop blur-style strip -->
+        <ImageView
+            android:id="@+id/detailBackdrop"
+            android:layout_width="0dp"
+            android:layout_height="360dp"
+            android:contentDescription="@null"
+            android:scaleType="centerCrop"
+            android:alpha="0.35"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@drawable/bg_detail_scrim"
+            app:layout_constraintBottom_toBottomOf="@id/detailBackdrop"
+            app:layout_constraintEnd_toEndOf="@id/detailBackdrop"
+            app:layout_constraintStart_toStartOf="@id/detailBackdrop"
+            app:layout_constraintTop_toTopOf="@id/detailBackdrop" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="120dp"
+            android:background="@drawable/bg_detail_bottom_scrim"
+            app:layout_constraintBottom_toBottomOf="@id/detailBackdrop"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <ImageView
+            android:id="@+id/detailPoster"
+            android:layout_width="168dp"
+            android:layout_height="252dp"
+            android:layout_marginStart="36dp"
+            android:layout_marginTop="48dp"
+            android:background="@drawable/bg_card"
+            android:contentDescription="@string/app_name"
+            android:elevation="8dp"
+            android:scaleType="centerCrop"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/brand"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="28dp"
+            android:layout_marginEnd="36dp"
+            android:text="@string/app_name"
+            android:textColor="@color/wu_accent"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.12"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/detailPoster"
+            app:layout_constraintTop_toTopOf="@id/detailPoster" />
+
+        <TextView
+            android:id="@+id/detailTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="28dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="36dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textColor="@color/wu_text"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/detailPoster"
+            app:layout_constraintTop_toBottomOf="@id/brand" />
+
+        <TextView
+            android:id="@+id/detailMeta"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="28dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="36dp"
+            android:textColor="@color/wu_text_dim"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/detailPoster"
+            app:layout_constraintTop_toBottomOf="@id/detailTitle" />
+
+        <TextView
+            android:id="@+id/detailSynopsis"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="28dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="36dp"
+            android:ellipsize="end"
+            android:maxLines="4"
+            android:textColor="@color/wu_text_dim"
+            android:textSize="14sp"
+            android:lineSpacingExtra="2dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/detailPoster"
+            app:layout_constraintTop_toBottomOf="@id/detailMeta" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/playButton"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginStart="28dp"
+            android:layout_marginTop="18dp"
+            android:focusable="true"
+            android:minWidth="160dp"
+            android:nextFocusDown="@id/episodeContainer"
+            android:paddingStart="28dp"
+            android:paddingEnd="28dp"
+            android:text="@string/play"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/wu_accent"
+            app:cornerRadius="4dp"
+            app:layout_constraintStart_toEndOf="@id/detailPoster"
+            app:layout_constraintTop_toBottomOf="@id/detailSynopsis" />
+
+        <TextView
+            android:id="@+id/episodeLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="36dp"
+            android:layout_marginTop="28dp"
+            android:text="@string/episodes"
+            android:textColor="@color/wu_row_header"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/detailPoster" />
+
+        <HorizontalScrollView
+            android:id="@+id/episodeScroll"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:clipToPadding="false"
+            android:fadeScrollbars="true"
+            android:paddingStart="36dp"
+            android:paddingEnd="36dp"
+            android:scrollbars="none"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/episodeLabel">
+
+            <LinearLayout
+                android:id="@+id/episodeContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+        <TextView
+            android:id="@+id/serverLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="36dp"
+            android:layout_marginTop="20dp"
+            android:text="@string/servers"
+            android:textColor="@color/wu_row_header"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/episodeScroll" />
+
+        <HorizontalScrollView
+            android:id="@+id/serverScroll"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:clipToPadding="false"
+            android:fadeScrollbars="true"
+            android:paddingStart="36dp"
+            android:paddingEnd="36dp"
+            android:scrollbars="none"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/serverLabel">
+
+            <LinearLayout
+                android:id="@+id/serverContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

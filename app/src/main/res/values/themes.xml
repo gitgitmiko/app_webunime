@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.WebunimeTv" parent="Theme.Leanback">
+        <item name="android:windowBackground">@color/wu_bg</item>
+        <item name="android:colorPrimary">@color/wu_accent</item>
+        <item name="defaultBrandColor">@color/wu_bg</item>
+        <item name="defaultBrandColorDark">@color/wu_bg</item>
+        <item name="defaultSearchColor">@color/wu_accent</item>
+        <item name="defaultSearchIconColor">@color/wu_text</item>
+        <item name="defaultSearchBrightColor">@color/wu_accent</item>
+        <item name="browseTitleTextStyle">@style/Wu.BrowseTitle</item>
+        <item name="rowHeaderStyle">@style/Wu.RowHeader</item>
+    </style>
+
+    <style name="Wu.BrowseTitle" parent="TextAppearance.Leanback.Title">
+        <item name="android:textColor">@color/wu_accent</item>
+        <item name="android:textSize">28sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <style name="Wu.RowHeader" parent="Widget.Leanback.Row.Header">
+        <item name="android:textColor">@color/wu_row_header</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Theme.WebunimeTv.Detail" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="android:windowBackground">@color/wu_bg</item>
+        <item name="colorPrimary">@color/wu_accent</item>
+        <item name="colorPrimaryVariant">@color/wu_accent_dark</item>
+        <item name="colorOnPrimary">@color/wu_text</item>
+        <item name="colorSecondary">@color/wu_accent</item>
+        <item name="android:statusBarColor">@color/wu_bg</item>
+        <item name="materialButtonOutlinedStyle">@style/Wu.Button.Outlined</item>
+    </style>
+
+    <style name="Wu.Button.Outlined" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="strokeColor">@color/wu_surface</item>
+        <item name="android:textColor">@color/wu_text</item>
+        <item name="rippleColor">@color/wu_accent</item>
+    </style>
+
+    <style name="Theme.WebunimeTv.Player" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
+
+    <style name="Theme.WebunimeTv.Search" parent="Theme.Leanback">
+        <item name="android:windowBackground">@color/wu_bg</item>
+        <item name="defaultSearchColor">@color/wu_accent</item>
+        <item name="defaultSearchBrightColor">@color/wu_accent</item>
+        <item name="defaultBrandColor">@color/wu_bg</item>
+    </style>
+</resources>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WEBUNIME</string>
+    <string name="browse_title">WEBUNIME</string>
+    <string name="row_movies">Film</string>
+    <string name="row_series">Series</string>
+    <string name="row_horror">Horor</string>
+    <string name="row_anime_latest">Anime Terbaru</string>
+    <string name="row_anime">Anime</string>
+    <string name="row_anime_movies">Anime Movie</string>
+    <string name="row_search_results">Hasil pencarian</string>
+    <string name="play">▶  Putar</string>
+    <string name="episodes">Episode</string>
+    <string name="servers">Audio &amp; Server</string>
+    <string name="loading">Memuat katalog…</string>
+    <string name="updating">Memperbarui dari GitHub…</string>
+    <string name="error_no_players">Tidak ada server yang tersedia</string>
+    <string name="error_play">Gagal memutar video</string>
+    <string name="search_hint">Cari film, series, atau anime…</string>
+    <string name="search_empty">Ketik judul untuk mencari</string>
+    <string name="search_no_results">Tidak ada hasil untuk \"%1$s\"</string>
+</resources>

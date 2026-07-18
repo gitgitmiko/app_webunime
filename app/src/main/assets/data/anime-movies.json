@@ -1,0 +1,5477 @@
+[
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Tensei shitara Slime Datta Ken Movie 2: Soukai no Namida-hen",
+    "judul": "Tensei shitara Slime Datta Ken Movie 2: Soukai no Namida-hen",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2026/07/Tensei-shitara-Slime-Datta-Ken-Movie-2-Soukai-no-Namida-hen.jpg",
+    "rating": "7.18",
+    "votes": 5015,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Comedy",
+      "Fantasy",
+      "Isekai",
+      "Reincarnation",
+      "Shounen"
+    ],
+    "sinopsis": "Movie Ke-2 dari anime Tensei shitara Slime Datta Ken\n\nTonton Juga:\nTensei shitara Slime Datta Ken Season 1\nTensei shitara Slime Datta Ken OVA\nTensei shitara Slime Datta Ken Season 2 Part 1\nTensura Nikki: Tensei shitara Slime Datta Ken\nTensei shitara Slime Datta Ken Season 2 Part 2\nTensei shitara Slime Datta Ken Movie: Guren no Kizuna-hen\nTensei shitara Slime Datta Ken: Coleus no Yume\nTensei shitara Slime Datta Ken Season 3\nTensei shitara Slime Datta Ken Season 4",
+    "related": [
+      {
+        "title": "Tensei shitara Slime Datta Ken Season 1",
+        "slug": "tensei-shitara-slime-datta-ken",
+        "source": "https://v2.samehadaku.how/anime/tensei-shitara-slime-datta-ken/"
+      },
+      {
+        "title": "Tensei shitara Slime Datta Ken OVA",
+        "slug": "tensei-shitara-slime-datta-ken-ova",
+        "source": "https://v2.samehadaku.how/anime/tensei-shitara-slime-datta-ken-ova/"
+      },
+      {
+        "title": "Tensei shitara Slime Datta Ken Season 2 Part 1",
+        "slug": "tensei-shitara-slime-datta-ken-2nd-season",
+        "source": "https://v2.samehadaku.how/anime/tensei-shitara-slime-datta-ken-2nd-season/"
+      },
+      {
+        "title": "Tensura Nikki: Tensei shitara Slime Datta Ken",
+        "slug": "tensura-nikki-tensei-shitara-slime-datta-ken",
+        "source": "https://v2.samehadaku.how/anime/tensura-nikki-tensei-shitara-slime-datta-ken/"
+      },
+      {
+        "title": "Tensei shitara Slime Datta Ken Season 2 Part 2",
+        "slug": "tensei-shitara-slime-datta-ken-season-2-part-2",
+        "source": "https://v2.samehadaku.how/anime/tensei-shitara-slime-datta-ken-season-2-part-2/"
+      },
+      {
+        "title": "Tensei shitara Slime Datta Ken Movie: Guren no Kizuna-hen",
+        "slug": "tensei-shitara-slime-datta-ken-movie-guren-no-kizuna-hen",
+        "source": "https://v2.samehadaku.how/anime/tensei-shitara-slime-datta-ken-movie-guren-no-kizuna-hen/"
+      },
+      {
+        "title": "Tensei shitara Slime Datta Ken: Coleus no Yume",
+        "slug": "tensei-shitara-slime-datta-ken-coleus-no-yume",
+        "source": "https://v2.samehadaku.how/anime/tensei-shitara-slime-datta-ken-coleus-no-yume/"
+      },
+      {
+        "title": "Tensei shitara Slime Datta Ken Season 3",
+        "slug": "tensei-shitara-slime-datta-ken-season-3",
+        "source": "https://v2.samehadaku.how/anime/tensei-shitara-slime-datta-ken-season-3/"
+      },
+      {
+        "title": "Tensei shitara Slime Datta Ken Season 4",
+        "slug": "tensei-shitara-slime-datta-ken-season-4",
+        "source": "https://v2.samehadaku.how/anime/tensei-shitara-slime-datta-ken-season-4/"
+      }
+    ],
+    "slug": "tensei-shitara-slime-datta-ken-movie-2-soukai-no-namida-hen",
+    "source": "https://v2.samehadaku.how/anime/tensei-shitara-slime-datta-ken-movie-2-soukai-no-namida-hen/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Tensei shitara Slime Datta Ken Movie 2: Soukai no Namida-hen Movie",
+        "slug": "tensei-shitara-slime-datta-ken-movie-2-soukai-no-namida-hen-movie",
+        "source": "https://v2.samehadaku.how/tensei-shitara-slime-datta-ken-movie-2-soukai-no-namida-hen-movie/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "wibufile",
+            "label": "Wibufile 480p",
+            "url": "https://api.wibufile.com/embed/d7dd645c-deaf-4a7a-bc5a-c886df97fc08",
+            "default": true,
+            "post": "51065",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "vip-streaming",
+            "label": "VIP STREAMING",
+            "url": "https://filedon.co/embed/RzaSYoZpXn",
+            "default": false,
+            "post": "51065",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "wibufile",
+            "label": "Wibufile 720p",
+            "url": "https://s0.wibufile.com/video01/Tensura-M2-MP4HD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "51065",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "wibufile",
+            "label": "Wibufile 1080p",
+            "url": "https://s0.wibufile.com/video01/Tensura-M2-FULLHD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "51065",
+            "nume": "4"
+          },
+          {
+            "no": 5,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/4ihEUBIJ#cMId03OhB3IS28xe89itzWwCKmXDkgWLY5Xl8BVb-b8",
+            "default": false,
+            "post": "51065",
+            "nume": "5"
+          },
+          {
+            "no": 6,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/wvxlhTBB#HB-nT9vIMRw8b3YtaxV6ZOTdv2X1OxgKaP2x6GXUSX8",
+            "default": false,
+            "post": "51065",
+            "nume": "6"
+          },
+          {
+            "no": 7,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/hn0zRByb#dGDdbVU668qFLY8B6-R8j2Uw_zHvHakuhOuRo8hVDWk",
+            "default": false,
+            "post": "51065",
+            "nume": "7"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "wibufile",
+        "label": "Wibufile 480p",
+        "url": "https://api.wibufile.com/embed/d7dd645c-deaf-4a7a-bc5a-c886df97fc08",
+        "default": true,
+        "post": "51065",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "vip-streaming",
+        "label": "VIP STREAMING",
+        "url": "https://filedon.co/embed/RzaSYoZpXn",
+        "default": false,
+        "post": "51065",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "wibufile",
+        "label": "Wibufile 720p",
+        "url": "https://s0.wibufile.com/video01/Tensura-M2-MP4HD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "51065",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "wibufile",
+        "label": "Wibufile 1080p",
+        "url": "https://s0.wibufile.com/video01/Tensura-M2-FULLHD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "51065",
+        "nume": "4"
+      },
+      {
+        "no": 5,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/4ihEUBIJ#cMId03OhB3IS28xe89itzWwCKmXDkgWLY5Xl8BVb-b8",
+        "default": false,
+        "post": "51065",
+        "nume": "5"
+      },
+      {
+        "no": 6,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/wvxlhTBB#HB-nT9vIMRw8b3YtaxV6ZOTdv2X1OxgKaP2x6GXUSX8",
+        "default": false,
+        "post": "51065",
+        "nume": "6"
+      },
+      {
+        "no": 7,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/hn0zRByb#dGDdbVU668qFLY8B6-R8j2Uw_zHvHakuhOuRo8hVDWk",
+        "default": false,
+        "post": "51065",
+        "nume": "7"
+      }
+    ],
+    "id": 1
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Kimetsu no Yaiba – The Movie: Infinity Castle – Part 1: Akaza Returns",
+    "judul": "Kimetsu no Yaiba – The Movie: Infinity Castle – Part 1: Akaza Returns",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2026/01/148216.jpg",
+    "rating": "8.7",
+    "votes": 136624,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Historical",
+      "Supernatural"
+    ],
+    "sinopsis": "Film pertama dari trilogi adaptasi Arc Kastil Tak Terbatas.",
+    "related": [],
+    "slug": "kimetsu-no-yaiba-the-movie-infinity-castle-part-1-akaza-returns",
+    "source": "https://v2.samehadaku.how/anime/kimetsu-no-yaiba-the-movie-infinity-castle-part-1-akaza-returns/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Kimetsu no Yaiba The Movie – Infinity Castle Part 1",
+        "slug": "kimetsu-no-yaiba-the-movie-infinity-castle-part-1",
+        "source": "https://v2.samehadaku.how/kimetsu-no-yaiba-the-movie-infinity-castle-part-1/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/2wQQhJba#s_-s3kaw28XOBZ_nQAClUTO9p3yIAWqmhigEe5EXY7c",
+            "default": true,
+            "post": "47644",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "wibufile",
+            "label": "Wibufile 480p",
+            "url": "https://api.wibufile.com/embed/e551a06f-a8a8-4c74-baf5-9b69c4a8d1c8",
+            "default": false,
+            "post": "47644",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "wibufile",
+            "label": "Wibufile 360p",
+            "url": "https://s0.wibufile.com/video01/KnY-TMICP1-360p-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "47644",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/CpICEZBA#0fjRPlYf3QbQximOZ37JFu2jyHvKyZCVMFNd9X-JwZI",
+            "default": false,
+            "post": "47644",
+            "nume": "4"
+          },
+          {
+            "no": 5,
+            "server": "wibufile",
+            "label": "Wibufile 720p",
+            "url": "https://s0.wibufile.com/video01/KnY-TMICP1-MP4HD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "47644",
+            "nume": "5"
+          },
+          {
+            "no": 6,
+            "server": "wibufile",
+            "label": "Wibufile 1080p",
+            "url": "https://s0.wibufile.com/video01/KnY-TMICP1-FULLHD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "47644",
+            "nume": "6"
+          },
+          {
+            "no": 7,
+            "server": "mega",
+            "label": "Mega 360p",
+            "url": "https://mega.nz/embed/CElV3QzS#Bx7eubMW6cs5KyddV9qtYO4vz7Zoq9KFwTIaHwNopH0",
+            "default": false,
+            "post": "47644",
+            "nume": "7"
+          },
+          {
+            "no": 8,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/aU1BiLCC#LHT48cBC0b7dMpK0ti8V6ROmTJKiYL1l2i0NouW_gaI",
+            "default": false,
+            "post": "47644",
+            "nume": "8"
+          },
+          {
+            "no": 9,
+            "server": "pucuk",
+            "label": "Pucuk 480p",
+            "url": "https://filedon.co/embed/I2i9Yu4cNh",
+            "default": false,
+            "post": "47644",
+            "nume": "9"
+          },
+          {
+            "no": 10,
+            "server": "pucuk",
+            "label": "Pucuk 360p",
+            "url": "https://filedon.co/embed/R2ZtcjAvJw",
+            "default": false,
+            "post": "47644",
+            "nume": "10"
+          },
+          {
+            "no": 11,
+            "server": "pucuk",
+            "label": "Pucuk 720p",
+            "url": "https://filedon.co/embed/y7ytDw0ZUL",
+            "default": false,
+            "post": "47644",
+            "nume": "11"
+          },
+          {
+            "no": 12,
+            "server": "pucuk",
+            "label": "Pucuk 1080p",
+            "url": "https://filedon.co/embed/XsMHoZoxpC",
+            "default": false,
+            "post": "47644",
+            "nume": "12"
+          },
+          {
+            "no": 13,
+            "server": "nakama",
+            "label": "nakama",
+            "url": "https://pixeldrain.com/api/file/M6xoQSxR",
+            "default": false,
+            "post": "47644",
+            "nume": "13"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 2,
+        "server": "wibufile",
+        "label": "Wibufile 480p",
+        "url": "https://api.wibufile.com/embed/e551a06f-a8a8-4c74-baf5-9b69c4a8d1c8",
+        "default": false,
+        "post": "47644",
+        "nume": "2"
+      },
+      {
+        "no": 1,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/2wQQhJba#s_-s3kaw28XOBZ_nQAClUTO9p3yIAWqmhigEe5EXY7c",
+        "default": true,
+        "post": "47644",
+        "nume": "1"
+      },
+      {
+        "no": 3,
+        "server": "wibufile",
+        "label": "Wibufile 360p",
+        "url": "https://s0.wibufile.com/video01/KnY-TMICP1-360p-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "47644",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/CpICEZBA#0fjRPlYf3QbQximOZ37JFu2jyHvKyZCVMFNd9X-JwZI",
+        "default": false,
+        "post": "47644",
+        "nume": "4"
+      },
+      {
+        "no": 5,
+        "server": "wibufile",
+        "label": "Wibufile 720p",
+        "url": "https://s0.wibufile.com/video01/KnY-TMICP1-MP4HD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "47644",
+        "nume": "5"
+      },
+      {
+        "no": 6,
+        "server": "wibufile",
+        "label": "Wibufile 1080p",
+        "url": "https://s0.wibufile.com/video01/KnY-TMICP1-FULLHD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "47644",
+        "nume": "6"
+      },
+      {
+        "no": 7,
+        "server": "mega",
+        "label": "Mega 360p",
+        "url": "https://mega.nz/embed/CElV3QzS#Bx7eubMW6cs5KyddV9qtYO4vz7Zoq9KFwTIaHwNopH0",
+        "default": false,
+        "post": "47644",
+        "nume": "7"
+      },
+      {
+        "no": 8,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/aU1BiLCC#LHT48cBC0b7dMpK0ti8V6ROmTJKiYL1l2i0NouW_gaI",
+        "default": false,
+        "post": "47644",
+        "nume": "8"
+      },
+      {
+        "no": 9,
+        "server": "pucuk",
+        "label": "Pucuk 480p",
+        "url": "https://filedon.co/embed/I2i9Yu4cNh",
+        "default": false,
+        "post": "47644",
+        "nume": "9"
+      },
+      {
+        "no": 10,
+        "server": "pucuk",
+        "label": "Pucuk 360p",
+        "url": "https://filedon.co/embed/R2ZtcjAvJw",
+        "default": false,
+        "post": "47644",
+        "nume": "10"
+      },
+      {
+        "no": 11,
+        "server": "pucuk",
+        "label": "Pucuk 720p",
+        "url": "https://filedon.co/embed/y7ytDw0ZUL",
+        "default": false,
+        "post": "47644",
+        "nume": "11"
+      },
+      {
+        "no": 12,
+        "server": "pucuk",
+        "label": "Pucuk 1080p",
+        "url": "https://filedon.co/embed/XsMHoZoxpC",
+        "default": false,
+        "post": "47644",
+        "nume": "12"
+      },
+      {
+        "no": 13,
+        "server": "nakama",
+        "label": "nakama",
+        "url": "https://pixeldrain.com/api/file/M6xoQSxR",
+        "default": false,
+        "post": "47644",
+        "nume": "13"
+      }
+    ],
+    "id": 2
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Chainsaw Man Reze-hen",
+    "judul": "Chainsaw Man Reze-hen",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2025/12/bx171627-ZN9D7P46yHnw.png",
+    "rating": "9.18",
+    "votes": null,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Fantasy",
+      "Gore",
+      "Shounen",
+      "Urban Fantasy"
+    ],
+    "sinopsis": "Movie lanjutan cerita Chainsaw Man",
+    "related": [],
+    "slug": "chainsaw-man-reze-hen-index",
+    "source": "https://v2.samehadaku.how/anime/chainsaw-man-reze-hen-index/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Chainsaw Man Reze-hen Movie",
+        "slug": "chainsaw-man-reze-hen-movie",
+        "source": "https://v2.samehadaku.how/chainsaw-man-reze-hen-movie/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "pucuk",
+            "label": "Pucuk 480p",
+            "url": "https://filedon.co/embed/x4b0R4sTQB",
+            "default": true,
+            "post": "47260",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "wibufile",
+            "label": "Wibufile 480p",
+            "url": "https://api.wibufile.com/embed/e3d56fa7-42f9-4c6b-b0ff-39d6447e8b6d",
+            "default": false,
+            "post": "47260",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "wibufile",
+            "label": "Wibufile 720p",
+            "url": "https://s0.wibufile.com/video01/CM-RH-MP4HD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "47260",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "wibufile",
+            "label": "Wibufile 1080p",
+            "url": "https://s0.wibufile.com/video01/CM-RH-FULLHD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "47260",
+            "nume": "4"
+          },
+          {
+            "no": 5,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/hAF3ASyb#3nk9ep9Q2vwj4wBRL_zVYFs4tlRyXj7AxsU8gkHcSIw",
+            "default": false,
+            "post": "47260",
+            "nume": "5"
+          },
+          {
+            "no": 6,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/S4IHhYZZ#CkrwqkPi_LYQ6A6rBXdgT9qDWG4YlNLBSAgf2yB4TsE",
+            "default": false,
+            "post": "47260",
+            "nume": "6"
+          },
+          {
+            "no": 7,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/gckyXQ7K#zkd2HfH0yU2GXVnhWuYWwoNeFjYbXYJ8QpmZxpRmLok",
+            "default": false,
+            "post": "47260",
+            "nume": "7"
+          },
+          {
+            "no": 8,
+            "server": "nakama",
+            "label": "Nakama 480p",
+            "url": "https://pixeldrain.com/u/w7KeCqhM",
+            "default": false,
+            "post": "47260",
+            "nume": "8"
+          },
+          {
+            "no": 9,
+            "server": "nakama",
+            "label": "Nakama 720p",
+            "url": "https://pixeldrain.com/u/L8AaqfGd",
+            "default": false,
+            "post": "47260",
+            "nume": "9"
+          },
+          {
+            "no": 10,
+            "server": "nakama",
+            "label": "Nakama 1080p",
+            "url": "https://pixeldrain.com/u/kz2xyiEJ",
+            "default": false,
+            "post": "47260",
+            "nume": "10"
+          },
+          {
+            "no": 11,
+            "server": "pucuk",
+            "label": "Pucuk 720p",
+            "url": "https://filedon.co/embed/LJXS0tIu7G",
+            "default": false,
+            "post": "47260",
+            "nume": "11"
+          },
+          {
+            "no": 12,
+            "server": "pucuk",
+            "label": "Pucuk 1080p",
+            "url": "https://filedon.co/embed/kvH0Pe7e2S",
+            "default": false,
+            "post": "47260",
+            "nume": "12"
+          },
+          {
+            "no": 13,
+            "server": "nakama-4k",
+            "label": "Nakama 4K",
+            "url": "https://pixeldrain.com/u/rAW8XWYS",
+            "default": false,
+            "post": "47260",
+            "nume": "13"
+          },
+          {
+            "no": 14,
+            "server": "mega-4k",
+            "label": "Mega 4K",
+            "url": "https://mega.nz/embed/YcMSHDyB#susSMcY9ocBN4EqBhL1hhCfCiFY5OcJ0TZF4_eZ2B_I",
+            "default": false,
+            "post": "47260",
+            "nume": "14"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 2,
+        "server": "wibufile",
+        "label": "Wibufile 480p",
+        "url": "https://api.wibufile.com/embed/e3d56fa7-42f9-4c6b-b0ff-39d6447e8b6d",
+        "default": false,
+        "post": "47260",
+        "nume": "2"
+      },
+      {
+        "no": 1,
+        "server": "pucuk",
+        "label": "Pucuk 480p",
+        "url": "https://filedon.co/embed/x4b0R4sTQB",
+        "default": true,
+        "post": "47260",
+        "nume": "1"
+      },
+      {
+        "no": 3,
+        "server": "wibufile",
+        "label": "Wibufile 720p",
+        "url": "https://s0.wibufile.com/video01/CM-RH-MP4HD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "47260",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "wibufile",
+        "label": "Wibufile 1080p",
+        "url": "https://s0.wibufile.com/video01/CM-RH-FULLHD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "47260",
+        "nume": "4"
+      },
+      {
+        "no": 5,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/hAF3ASyb#3nk9ep9Q2vwj4wBRL_zVYFs4tlRyXj7AxsU8gkHcSIw",
+        "default": false,
+        "post": "47260",
+        "nume": "5"
+      },
+      {
+        "no": 6,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/S4IHhYZZ#CkrwqkPi_LYQ6A6rBXdgT9qDWG4YlNLBSAgf2yB4TsE",
+        "default": false,
+        "post": "47260",
+        "nume": "6"
+      },
+      {
+        "no": 7,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/gckyXQ7K#zkd2HfH0yU2GXVnhWuYWwoNeFjYbXYJ8QpmZxpRmLok",
+        "default": false,
+        "post": "47260",
+        "nume": "7"
+      },
+      {
+        "no": 8,
+        "server": "nakama",
+        "label": "Nakama 480p",
+        "url": "https://pixeldrain.com/u/w7KeCqhM",
+        "default": false,
+        "post": "47260",
+        "nume": "8"
+      },
+      {
+        "no": 9,
+        "server": "nakama",
+        "label": "Nakama 720p",
+        "url": "https://pixeldrain.com/u/L8AaqfGd",
+        "default": false,
+        "post": "47260",
+        "nume": "9"
+      },
+      {
+        "no": 10,
+        "server": "nakama",
+        "label": "Nakama 1080p",
+        "url": "https://pixeldrain.com/u/kz2xyiEJ",
+        "default": false,
+        "post": "47260",
+        "nume": "10"
+      },
+      {
+        "no": 11,
+        "server": "pucuk",
+        "label": "Pucuk 720p",
+        "url": "https://filedon.co/embed/LJXS0tIu7G",
+        "default": false,
+        "post": "47260",
+        "nume": "11"
+      },
+      {
+        "no": 12,
+        "server": "pucuk",
+        "label": "Pucuk 1080p",
+        "url": "https://filedon.co/embed/kvH0Pe7e2S",
+        "default": false,
+        "post": "47260",
+        "nume": "12"
+      },
+      {
+        "no": 13,
+        "server": "nakama-4k",
+        "label": "Nakama 4K",
+        "url": "https://pixeldrain.com/u/rAW8XWYS",
+        "default": false,
+        "post": "47260",
+        "nume": "13"
+      },
+      {
+        "no": 14,
+        "server": "mega-4k",
+        "label": "Mega 4K",
+        "url": "https://mega.nz/embed/YcMSHDyB#susSMcY9ocBN4EqBhL1hhCfCiFY5OcJ0TZF4_eZ2B_I",
+        "default": false,
+        "post": "47260",
+        "nume": "14"
+      }
+    ],
+    "id": 3
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Sidonia no Kishi Ai Tsumugu Hoshi",
+    "judul": "Sidonia no Kishi Ai Tsumugu Hoshi",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2025/07/108354.jpg",
+    "rating": "7.45",
+    "votes": 5591,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Sci-Fi"
+    ],
+    "sinopsis": "Setelah Bumi dihancurkan oleh alien yang disebut dengan Gauna, sisa manusia yang selamat menyelamatkan diri ke luar angkasa ke dalam kapal besar disebut Sidonia. Setelah terombang-ambing di luar angkasa selama beberapa milenia, Sidonia diserang lagi oleh Gauna. Sekali lagi, manusia harus menghadapi ancaman kepunahan, kemenangan sementara melawan Gauna didapat berkat bantuan hibrida manusia-Gauna, Shiraui Tsumugi, dan pilot andalan Tanikaze Nagate. 10 tahun berlalu… Orang-orang Sidonia kembali dalam ketenangan. Hari demi hari berganti dan Tsumugi mulai menyadari perasaannya terhadap Nagate, yang dianggap sebagai pahlawan dari Sidonia. Akan tetapi, seperti yang diketahui Kapten Kobayashi, selama Gauna hidup, kedamaian takkan berlangsung lama. Keputusan pun dibuat: pertempuran terakhir, di mana nasib para manusia penyintas dipertaruhkan. Selagi kehancuran mendekat, apakah para kru Sidonia mampu melindungi apa yang mereka sayangi?",
+    "related": [],
+    "slug": "sidonia-no-kishi-ai-tsumugu-hoshi",
+    "source": "https://v2.samehadaku.how/anime/sidonia-no-kishi-ai-tsumugu-hoshi/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Sidonia no Kishi Ai Tsumugu Hoshi Movie",
+        "slug": "sidonia-no-kishi-ai-tsumugu-hoshi-movie",
+        "source": "https://v2.samehadaku.how/sidonia-no-kishi-ai-tsumugu-hoshi-movie/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "premium",
+            "label": "Premium 480p",
+            "url": "https://api.wibufile.com/embed/2f27d0c9-702f-46a3-a353-cc2fefeebadf",
+            "default": true,
+            "post": "44847",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "premium",
+            "label": "Premium 720p",
+            "url": "https://s0.wibufile.com/video01/SnKATH-MP4HD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "44847",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "premium",
+            "label": "Premium 1080p",
+            "url": "https://s0.wibufile.com/video01/SnKATH-FULLHD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "44847",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/cMp3FSyb#x33aMN0Y577a44CzeCmhbVV88_cfTcjsoFJOZKZG-8A",
+            "default": false,
+            "post": "44847",
+            "nume": "4"
+          },
+          {
+            "no": 5,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/8BRiRYwY#5X6VDXfbc7zERay3Ht7xDnYluT9fBC5h1lsyRsPqFrc",
+            "default": false,
+            "post": "44847",
+            "nume": "5"
+          },
+          {
+            "no": 6,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/UdJFgIJL#MgOFDWePD0BrjniKQj0DChN3Imc_51NLAyQkeT1-biQ",
+            "default": false,
+            "post": "44847",
+            "nume": "6"
+          },
+          {
+            "no": 7,
+            "server": "nakama",
+            "label": "Nakama 480p",
+            "url": "https://pixeldrain.com/u/4Mws67ms",
+            "default": false,
+            "post": "44847",
+            "nume": "7"
+          },
+          {
+            "no": 8,
+            "server": "nakama",
+            "label": "Nakama 720p",
+            "url": "https://pixeldrain.com/u/8mBvNpwk",
+            "default": false,
+            "post": "44847",
+            "nume": "8"
+          },
+          {
+            "no": 9,
+            "server": "nakama",
+            "label": "Nakama 1080p",
+            "url": "https://pixeldrain.com/u/WtFxwqyz",
+            "default": false,
+            "post": "44847",
+            "nume": "9"
+          },
+          {
+            "no": 10,
+            "server": "pucuk",
+            "label": "Pucuk 480p",
+            "url": "https://filedon.co/embed/0vR5Hg0i1h",
+            "default": false,
+            "post": "44847",
+            "nume": "10"
+          },
+          {
+            "no": 11,
+            "server": "pucuk",
+            "label": "Pucuk 720p",
+            "url": "https://filedon.co/embed/wM8mAG8N4d",
+            "default": false,
+            "post": "44847",
+            "nume": "11"
+          },
+          {
+            "no": 12,
+            "server": "pucuk",
+            "label": "Pucuk 1080p",
+            "url": "https://filedon.co/embed/xfLpOznp90",
+            "default": false,
+            "post": "44847",
+            "nume": "12"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "premium",
+        "label": "Premium 480p",
+        "url": "https://api.wibufile.com/embed/2f27d0c9-702f-46a3-a353-cc2fefeebadf",
+        "default": true,
+        "post": "44847",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "premium",
+        "label": "Premium 720p",
+        "url": "https://s0.wibufile.com/video01/SnKATH-MP4HD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "44847",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "premium",
+        "label": "Premium 1080p",
+        "url": "https://s0.wibufile.com/video01/SnKATH-FULLHD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "44847",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/cMp3FSyb#x33aMN0Y577a44CzeCmhbVV88_cfTcjsoFJOZKZG-8A",
+        "default": false,
+        "post": "44847",
+        "nume": "4"
+      },
+      {
+        "no": 5,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/8BRiRYwY#5X6VDXfbc7zERay3Ht7xDnYluT9fBC5h1lsyRsPqFrc",
+        "default": false,
+        "post": "44847",
+        "nume": "5"
+      },
+      {
+        "no": 6,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/UdJFgIJL#MgOFDWePD0BrjniKQj0DChN3Imc_51NLAyQkeT1-biQ",
+        "default": false,
+        "post": "44847",
+        "nume": "6"
+      },
+      {
+        "no": 7,
+        "server": "nakama",
+        "label": "Nakama 480p",
+        "url": "https://pixeldrain.com/u/4Mws67ms",
+        "default": false,
+        "post": "44847",
+        "nume": "7"
+      },
+      {
+        "no": 8,
+        "server": "nakama",
+        "label": "Nakama 720p",
+        "url": "https://pixeldrain.com/u/8mBvNpwk",
+        "default": false,
+        "post": "44847",
+        "nume": "8"
+      },
+      {
+        "no": 9,
+        "server": "nakama",
+        "label": "Nakama 1080p",
+        "url": "https://pixeldrain.com/u/WtFxwqyz",
+        "default": false,
+        "post": "44847",
+        "nume": "9"
+      },
+      {
+        "no": 10,
+        "server": "pucuk",
+        "label": "Pucuk 480p",
+        "url": "https://filedon.co/embed/0vR5Hg0i1h",
+        "default": false,
+        "post": "44847",
+        "nume": "10"
+      },
+      {
+        "no": 11,
+        "server": "pucuk",
+        "label": "Pucuk 720p",
+        "url": "https://filedon.co/embed/wM8mAG8N4d",
+        "default": false,
+        "post": "44847",
+        "nume": "11"
+      },
+      {
+        "no": 12,
+        "server": "pucuk",
+        "label": "Pucuk 1080p",
+        "url": "https://filedon.co/embed/xfLpOznp90",
+        "default": false,
+        "post": "44847",
+        "nume": "12"
+      }
+    ],
+    "id": 4
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Overlord Movie 3 Sei Oukoku hen",
+    "judul": "Overlord Movie 3 Sei Oukoku hen",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2025/04/144101.jpg",
+    "rating": "7.80",
+    "votes": 8842,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Adventure",
+      "Fantasy"
+    ],
+    "sinopsis": "Kerajaan Suci telah damai bertahun-tahun tanpa perang berkat tembok kolosal yang dibangun setelah tragedi bersejarah. Mereka sangat memahami betapa rapuhnya perdamaian. Ketika iblis mengerikan, Jaldabaoth, turun ke medan perang membawahi pimpinan gabungan pasukan dari suku-suku yang mengerikan, para pemimpin Kerajaan Suci tahu bahwa pertahanan mereka tidak cukup. Dengan keberadaan negara yang dipertaruhkan, orang-orang tidak punya pilihan selain mencari bantuan di mana pun mereka bisa, bahkan jika itu berarti melanggar tabu dan bersekongkol dengan raja mayat hidup dari Bangsa Kegelapan!",
+    "related": [],
+    "slug": "overlord-movie-3-sei-oukoku-hen",
+    "source": "https://v2.samehadaku.how/anime/overlord-movie-3-sei-oukoku-hen/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Overlord Movie Sei Oukoku hen",
+        "slug": "overlord-sei-oukoku-hen",
+        "source": "https://v2.samehadaku.how/overlord-sei-oukoku-hen/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "premium",
+            "label": "Premium 480p",
+            "url": "https://api.wibufile.com/embed/6b268eb5-40a2-4ffe-9ee3-4a496fc18d88",
+            "default": true,
+            "post": "42984",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "premium",
+            "label": "Premium 720p",
+            "url": "https://premi.wibufile.com/same2/OM3-SOhen-MP4HD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "42984",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "premium",
+            "label": "Premium 1080p",
+            "url": "https://s0.wibufile.com/video01/OM3-SOhen-FULLHD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "42984",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/E8QzQCRb#118BSNGEU58N_sJcORKZOPgjFTXLMS8r-LAMX6FTOxs",
+            "default": false,
+            "post": "42984",
+            "nume": "4"
+          },
+          {
+            "no": 5,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/OZhUHSia#8skHkOmrNEk6YJ6M_nXqwdmYh-Rvz4KqxKyIhkB50xo",
+            "default": false,
+            "post": "42984",
+            "nume": "5"
+          },
+          {
+            "no": 6,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/k4wnQZ4I#jioijH0S5SKcfAL9NFyz9KipEOJynOdDUWVR5aL7--s",
+            "default": false,
+            "post": "42984",
+            "nume": "6"
+          },
+          {
+            "no": 7,
+            "server": "nakama",
+            "label": "Nakama 480p",
+            "url": "https://pixeldrain.com/u/CydcfQoo",
+            "default": false,
+            "post": "42984",
+            "nume": "7"
+          },
+          {
+            "no": 8,
+            "server": "nakama",
+            "label": "Nakama 720p",
+            "url": "https://pixeldrain.com/u/1TXW8LiZ",
+            "default": false,
+            "post": "42984",
+            "nume": "8"
+          },
+          {
+            "no": 9,
+            "server": "nakama",
+            "label": "Nakama 1080p",
+            "url": "https://pixeldrain.com/u/zp1ZVVap",
+            "default": false,
+            "post": "42984",
+            "nume": "9"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "premium",
+        "label": "Premium 480p",
+        "url": "https://api.wibufile.com/embed/6b268eb5-40a2-4ffe-9ee3-4a496fc18d88",
+        "default": true,
+        "post": "42984",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "premium",
+        "label": "Premium 720p",
+        "url": "https://premi.wibufile.com/same2/OM3-SOhen-MP4HD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "42984",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "premium",
+        "label": "Premium 1080p",
+        "url": "https://s0.wibufile.com/video01/OM3-SOhen-FULLHD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "42984",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/E8QzQCRb#118BSNGEU58N_sJcORKZOPgjFTXLMS8r-LAMX6FTOxs",
+        "default": false,
+        "post": "42984",
+        "nume": "4"
+      },
+      {
+        "no": 5,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/OZhUHSia#8skHkOmrNEk6YJ6M_nXqwdmYh-Rvz4KqxKyIhkB50xo",
+        "default": false,
+        "post": "42984",
+        "nume": "5"
+      },
+      {
+        "no": 6,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/k4wnQZ4I#jioijH0S5SKcfAL9NFyz9KipEOJynOdDUWVR5aL7--s",
+        "default": false,
+        "post": "42984",
+        "nume": "6"
+      },
+      {
+        "no": 7,
+        "server": "nakama",
+        "label": "Nakama 480p",
+        "url": "https://pixeldrain.com/u/CydcfQoo",
+        "default": false,
+        "post": "42984",
+        "nume": "7"
+      },
+      {
+        "no": 8,
+        "server": "nakama",
+        "label": "Nakama 720p",
+        "url": "https://pixeldrain.com/u/1TXW8LiZ",
+        "default": false,
+        "post": "42984",
+        "nume": "8"
+      },
+      {
+        "no": 9,
+        "server": "nakama",
+        "label": "Nakama 1080p",
+        "url": "https://pixeldrain.com/u/zp1ZVVap",
+        "default": false,
+        "post": "42984",
+        "nume": "9"
+      }
+    ],
+    "id": 5
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Boku no Hero Academia the Movie 4",
+    "judul": "Boku no Hero Academia the Movie 4",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2025/02/143549.jpg",
+    "rating": "7.5",
+    "votes": 7820,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "School",
+      "Super Power"
+    ],
+    "sinopsis": "Movie ke 4 dari Boku no Hero Academia",
+    "related": [],
+    "slug": "boku-no-hero-academia-the-movie-4",
+    "source": "https://v2.samehadaku.how/anime/boku-no-hero-academia-the-movie-4/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Boku no Hero Academia the Movie 4 You’re Next",
+        "slug": "boku-no-hero-academia-the-movie-youre-next",
+        "source": "https://v2.samehadaku.how/boku-no-hero-academia-the-movie-youre-next/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "premium",
+            "label": "Premium 480p",
+            "url": "https://api.wibufile.com/embed/09f97c2d-ebdd-43f5-bfed-89bd61e19e30",
+            "default": true,
+            "post": "42230",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "premium",
+            "label": "Premium 360p",
+            "url": "https://premi.wibufile.com/same2/MHAYN2024-360p-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "42230",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "premium",
+            "label": "Premium 1080p",
+            "url": "https://s0.wibufile.com/video01/MHAYN2024-FULLHD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "42230",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "mega",
+            "label": "Mega 360p",
+            "url": "https://mega.nz/embed/nb4xTBRJ#g1UsMKmaH9YYcHGsfrRKpYr8mJwhscqWdHBEv9kvPzI",
+            "default": false,
+            "post": "42230",
+            "nume": "8"
+          },
+          {
+            "no": 5,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/u652FA4S#aeUokB2rZ87lw3khyXTlHBgdgIh5CgTKXTMSw09FS2g",
+            "default": false,
+            "post": "42230",
+            "nume": "9"
+          },
+          {
+            "no": 6,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/7CAkCbaa#XvaPOfqf3r2UecmsKRELjBTELuP1kBK6ZLBkaP2E1BE",
+            "default": false,
+            "post": "42230",
+            "nume": "10"
+          },
+          {
+            "no": 7,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/S74AxLxZ#rL636BYvwXCTImZhf2J3hnMKMoevAN9iahkh1OzIYn4",
+            "default": false,
+            "post": "42230",
+            "nume": "11"
+          },
+          {
+            "no": 8,
+            "server": "nakama",
+            "label": "Nakama 360p",
+            "url": "https://pixeldrain.com/u/SiFZpBKR",
+            "default": false,
+            "post": "42230",
+            "nume": "12"
+          },
+          {
+            "no": 9,
+            "server": "nakama",
+            "label": "Nakama 480p",
+            "url": "https://pixeldrain.com/u/tJ9ndFG4",
+            "default": false,
+            "post": "42230",
+            "nume": "13"
+          },
+          {
+            "no": 10,
+            "server": "nakama",
+            "label": "Nakama 720p",
+            "url": "https://pixeldrain.com/u/s6myFjTs",
+            "default": false,
+            "post": "42230",
+            "nume": "14"
+          },
+          {
+            "no": 11,
+            "server": "nakama",
+            "label": "Nakama 1080p",
+            "url": "https://pixeldrain.com/u/7oKMEmKt",
+            "default": false,
+            "post": "42230",
+            "nume": "15"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "premium",
+        "label": "Premium 480p",
+        "url": "https://api.wibufile.com/embed/09f97c2d-ebdd-43f5-bfed-89bd61e19e30",
+        "default": true,
+        "post": "42230",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "premium",
+        "label": "Premium 360p",
+        "url": "https://premi.wibufile.com/same2/MHAYN2024-360p-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "42230",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "premium",
+        "label": "Premium 1080p",
+        "url": "https://s0.wibufile.com/video01/MHAYN2024-FULLHD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "42230",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "mega",
+        "label": "Mega 360p",
+        "url": "https://mega.nz/embed/nb4xTBRJ#g1UsMKmaH9YYcHGsfrRKpYr8mJwhscqWdHBEv9kvPzI",
+        "default": false,
+        "post": "42230",
+        "nume": "8"
+      },
+      {
+        "no": 5,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/u652FA4S#aeUokB2rZ87lw3khyXTlHBgdgIh5CgTKXTMSw09FS2g",
+        "default": false,
+        "post": "42230",
+        "nume": "9"
+      },
+      {
+        "no": 6,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/7CAkCbaa#XvaPOfqf3r2UecmsKRELjBTELuP1kBK6ZLBkaP2E1BE",
+        "default": false,
+        "post": "42230",
+        "nume": "10"
+      },
+      {
+        "no": 7,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/S74AxLxZ#rL636BYvwXCTImZhf2J3hnMKMoevAN9iahkh1OzIYn4",
+        "default": false,
+        "post": "42230",
+        "nume": "11"
+      },
+      {
+        "no": 8,
+        "server": "nakama",
+        "label": "Nakama 360p",
+        "url": "https://pixeldrain.com/u/SiFZpBKR",
+        "default": false,
+        "post": "42230",
+        "nume": "12"
+      },
+      {
+        "no": 9,
+        "server": "nakama",
+        "label": "Nakama 480p",
+        "url": "https://pixeldrain.com/u/tJ9ndFG4",
+        "default": false,
+        "post": "42230",
+        "nume": "13"
+      },
+      {
+        "no": 10,
+        "server": "nakama",
+        "label": "Nakama 720p",
+        "url": "https://pixeldrain.com/u/s6myFjTs",
+        "default": false,
+        "post": "42230",
+        "nume": "14"
+      },
+      {
+        "no": 11,
+        "server": "nakama",
+        "label": "Nakama 1080p",
+        "url": "https://pixeldrain.com/u/7oKMEmKt",
+        "default": false,
+        "post": "42230",
+        "nume": "15"
+      }
+    ],
+    "id": 6
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Haikyuu!! Movie: Gomisuteba no Kessen",
+    "judul": "Haikyuu!! Movie: Gomisuteba no Kessen",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2024/10/140360.jpg",
+    "rating": "8.65",
+    "votes": 34719,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "School",
+      "Sports"
+    ],
+    "sinopsis": "Kozume Kenma tidak pernah menganggap bola voli sebagai sesuatu yang menyenangkan atau mendebarkan: bola voli hanyalah sesuatu yang ia kuasai. Namun kini tim bola voli SMA Nekoma telah lolos kualifikasi untuk mengikuti Kejuaraan Nasional Musim Semi dan bersiap untuk melawan rival lama mereka, Karasuno. Sekarang, Kenma harus menganalisis tim yang paling membingungkan dan tangguh dan membawa Nekoma meraih kemenangan melawan mereka. Selain itu, ia akan bermain melawan temannya Hinata Shoyo, middle blocker Karasuno yang bertubuh pendek namun sangat mahir.",
+    "related": [],
+    "slug": "haikyuu-movie-gomisuteba-no-kessen",
+    "source": "https://v2.samehadaku.how/anime/haikyuu-movie-gomisuteba-no-kessen/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Haikyuu Movie: Gomisuteba no Kessen",
+        "slug": "haikyuu-gomisuteba-no-kessen",
+        "source": "https://v2.samehadaku.how/haikyuu-gomisuteba-no-kessen/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "premium",
+            "label": "Premium 480p",
+            "url": "https://api.wibufile.com/embed/c0f82794-7755-443a-97be-8f9ce8fa1a1d",
+            "default": true,
+            "post": "39619",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "premium",
+            "label": "Premium 360p",
+            "url": "https://s0.wibufile.com/video01/Hky-GnK-360p-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "39619",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "premium",
+            "label": "Premium 720p",
+            "url": "https://s0.wibufile.com/video01/Hky-GnK-MP4HD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "39619",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/9vUEzIIC#VcbloV2kJw3Z2lFopJsmttzqchvyeDRqr3CoiouA34E",
+            "default": false,
+            "post": "39619",
+            "nume": "7"
+          },
+          {
+            "no": 5,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/Byt1VSJa#6_79fmlONNDtQVNeElmmWNYwHI1dkHhBK0oTbo3GpFI",
+            "default": false,
+            "post": "39619",
+            "nume": "8"
+          },
+          {
+            "no": 6,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/pzMGmILK#-UnDislQKxpgi-fC2qNUoSvqsEsRu4ZS6toVh1MiRQ4",
+            "default": false,
+            "post": "39619",
+            "nume": "9"
+          },
+          {
+            "no": 7,
+            "server": "nakama",
+            "label": "Nakama 480p",
+            "url": "https://pixeldrain.com/u/n4L6tHHK",
+            "default": false,
+            "post": "39619",
+            "nume": "10"
+          },
+          {
+            "no": 8,
+            "server": "nakama",
+            "label": "Nakama 720p",
+            "url": "https://pixeldrain.com/u/R6Jvb1D8",
+            "default": false,
+            "post": "39619",
+            "nume": "11"
+          },
+          {
+            "no": 9,
+            "server": "nakama",
+            "label": "Nakama 1080p",
+            "url": "https://pixeldrain.com/u/Ra5A3rtj",
+            "default": false,
+            "post": "39619",
+            "nume": "12"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "premium",
+        "label": "Premium 480p",
+        "url": "https://api.wibufile.com/embed/c0f82794-7755-443a-97be-8f9ce8fa1a1d",
+        "default": true,
+        "post": "39619",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "premium",
+        "label": "Premium 360p",
+        "url": "https://s0.wibufile.com/video01/Hky-GnK-360p-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "39619",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "premium",
+        "label": "Premium 720p",
+        "url": "https://s0.wibufile.com/video01/Hky-GnK-MP4HD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "39619",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/9vUEzIIC#VcbloV2kJw3Z2lFopJsmttzqchvyeDRqr3CoiouA34E",
+        "default": false,
+        "post": "39619",
+        "nume": "7"
+      },
+      {
+        "no": 5,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/Byt1VSJa#6_79fmlONNDtQVNeElmmWNYwHI1dkHhBK0oTbo3GpFI",
+        "default": false,
+        "post": "39619",
+        "nume": "8"
+      },
+      {
+        "no": 6,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/pzMGmILK#-UnDislQKxpgi-fC2qNUoSvqsEsRu4ZS6toVh1MiRQ4",
+        "default": false,
+        "post": "39619",
+        "nume": "9"
+      },
+      {
+        "no": 7,
+        "server": "nakama",
+        "label": "Nakama 480p",
+        "url": "https://pixeldrain.com/u/n4L6tHHK",
+        "default": false,
+        "post": "39619",
+        "nume": "10"
+      },
+      {
+        "no": 8,
+        "server": "nakama",
+        "label": "Nakama 720p",
+        "url": "https://pixeldrain.com/u/R6Jvb1D8",
+        "default": false,
+        "post": "39619",
+        "nume": "11"
+      },
+      {
+        "no": 9,
+        "server": "nakama",
+        "label": "Nakama 1080p",
+        "url": "https://pixeldrain.com/u/Ra5A3rtj",
+        "default": false,
+        "post": "39619",
+        "nume": "12"
+      }
+    ],
+    "id": 7
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Blue Lock: Episode Nagi",
+    "judul": "Blue Lock: Episode Nagi",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2024/09/139928.jpg",
+    "rating": "7.3",
+    "votes": 7736,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Sports"
+    ],
+    "sinopsis": "Film spin-off Blue Lock yang berfokus pada Seishirou Nagi.",
+    "related": [],
+    "slug": "blue-lock-episode-nagi",
+    "source": "https://v2.samehadaku.how/anime/blue-lock-episode-nagi/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Blue Lock Movie Episode Nagi",
+        "slug": "blue-lock-movie-episode-nagi",
+        "source": "https://v2.samehadaku.how/blue-lock-movie-episode-nagi/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "premium",
+            "label": "Premium 480p",
+            "url": "https://api.wibufile.com/embed/dec2689c-12bc-4439-bde9-75dfe3dbecd0",
+            "default": true,
+            "post": "38264",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "premium",
+            "label": "Premium 360p",
+            "url": "https://s0.wibufile.com/video01/BLepsNAGI-360p-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "38264",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "premium",
+            "label": "Premium 720p",
+            "url": "https://s0.wibufile.com/video01/BLepsNAGI-MP4HD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "38264",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "vidhide",
+            "label": "Vidhide 360p",
+            "url": "https://mega.nz/embed/HE8BkBxZ#uEezEmMwLWo5YdDe22DeIqaorHwt4wdus2O3YUWQDxc",
+            "default": false,
+            "post": "38264",
+            "nume": "8"
+          },
+          {
+            "no": 5,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/fUl1WJyS#rmln38XfE6LPm7lBMXJnhn_M55KDJdwQL6_VmsAmtgQ",
+            "default": false,
+            "post": "38264",
+            "nume": "9"
+          },
+          {
+            "no": 6,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/3IE1GTYb#kearpo6Ik5r9pRN0L4u_PIxvz8fddppL0FMz2vz32qU",
+            "default": false,
+            "post": "38264",
+            "nume": "10"
+          },
+          {
+            "no": 7,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/GQ0CjIBA#EL_olB3HUiOZOlvOJMdNbCyJyFcFmtT_UzwtR-wLR84",
+            "default": false,
+            "post": "38264",
+            "nume": "11"
+          },
+          {
+            "no": 8,
+            "server": "nakama",
+            "label": "Nakama 360p",
+            "url": "https://pixeldrain.com/u/pH33Cxre",
+            "default": false,
+            "post": "38264",
+            "nume": "12"
+          },
+          {
+            "no": 9,
+            "server": "nakama",
+            "label": "Nakama 480p",
+            "url": "https://pixeldrain.com/u/kichEcfs",
+            "default": false,
+            "post": "38264",
+            "nume": "13"
+          },
+          {
+            "no": 10,
+            "server": "nakama",
+            "label": "Nakama 720p",
+            "url": "https://pixeldrain.com/u/oq5WAHur",
+            "default": false,
+            "post": "38264",
+            "nume": "14"
+          },
+          {
+            "no": 11,
+            "server": "nakama",
+            "label": "Nakama 1080p",
+            "url": "https://pixeldrain.com/u/jo8Su4M2",
+            "default": false,
+            "post": "38264",
+            "nume": "15"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "premium",
+        "label": "Premium 480p",
+        "url": "https://api.wibufile.com/embed/dec2689c-12bc-4439-bde9-75dfe3dbecd0",
+        "default": true,
+        "post": "38264",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "premium",
+        "label": "Premium 360p",
+        "url": "https://s0.wibufile.com/video01/BLepsNAGI-360p-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "38264",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "premium",
+        "label": "Premium 720p",
+        "url": "https://s0.wibufile.com/video01/BLepsNAGI-MP4HD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "38264",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "vidhide",
+        "label": "Vidhide 360p",
+        "url": "https://mega.nz/embed/HE8BkBxZ#uEezEmMwLWo5YdDe22DeIqaorHwt4wdus2O3YUWQDxc",
+        "default": false,
+        "post": "38264",
+        "nume": "8"
+      },
+      {
+        "no": 5,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/fUl1WJyS#rmln38XfE6LPm7lBMXJnhn_M55KDJdwQL6_VmsAmtgQ",
+        "default": false,
+        "post": "38264",
+        "nume": "9"
+      },
+      {
+        "no": 6,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/3IE1GTYb#kearpo6Ik5r9pRN0L4u_PIxvz8fddppL0FMz2vz32qU",
+        "default": false,
+        "post": "38264",
+        "nume": "10"
+      },
+      {
+        "no": 7,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/GQ0CjIBA#EL_olB3HUiOZOlvOJMdNbCyJyFcFmtT_UzwtR-wLR84",
+        "default": false,
+        "post": "38264",
+        "nume": "11"
+      },
+      {
+        "no": 8,
+        "server": "nakama",
+        "label": "Nakama 360p",
+        "url": "https://pixeldrain.com/u/pH33Cxre",
+        "default": false,
+        "post": "38264",
+        "nume": "12"
+      },
+      {
+        "no": 9,
+        "server": "nakama",
+        "label": "Nakama 480p",
+        "url": "https://pixeldrain.com/u/kichEcfs",
+        "default": false,
+        "post": "38264",
+        "nume": "13"
+      },
+      {
+        "no": 10,
+        "server": "nakama",
+        "label": "Nakama 720p",
+        "url": "https://pixeldrain.com/u/oq5WAHur",
+        "default": false,
+        "post": "38264",
+        "nume": "14"
+      },
+      {
+        "no": 11,
+        "server": "nakama",
+        "label": "Nakama 1080p",
+        "url": "https://pixeldrain.com/u/jo8Su4M2",
+        "default": false,
+        "post": "38264",
+        "nume": "15"
+      }
+    ],
+    "id": 8
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Spy x Family: Code White",
+    "judul": "Spy x Family: Code White",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2024/08/139388.jpg",
+    "rating": "8.1",
+    "votes": 25248,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Comedy"
+    ],
+    "sinopsis": "Loid Forger, an elite spy, is warned by his handler that he may potentially be reassigned from his ongoing mission, Operation Strix. To maintain his position, he must make significant progress toward the operation’s objectives, which involves having his adoptive daughter Anya earn sufficient Stella Stars to become an Imperial Scholar at Eden Academy.",
+    "related": [],
+    "slug": "spy-x-family-code-white",
+    "source": "https://v2.samehadaku.how/anime/spy-x-family-code-white/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Spy X Family Movie : Code White",
+        "slug": "spy-x-family-movie-code-white",
+        "source": "https://v2.samehadaku.how/spy-x-family-movie-code-white/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "premium",
+            "label": "Premium 480p",
+            "url": "https://api.wibufile.com/embed/0f4e255d-1494-4ace-b1d2-10eee1dcef99",
+            "default": true,
+            "post": "36211",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "premium",
+            "label": "Premium 360p",
+            "url": "https://s0.wibufile.com/video01/SpxFCW-360p-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "36211",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "premium",
+            "label": "Premium 720p",
+            "url": "https://s0.wibufile.com/video01/SpxFCW-MP4HD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "36211",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/zrA0jCIJ#TCnGyHhaGZ21jwgwsxo2ADHTo3LoqOZlpMLlqnpzGyw",
+            "default": false,
+            "post": "36211",
+            "nume": "7"
+          },
+          {
+            "no": 5,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/GioWHAYI#zMsQ0uRltpbSTrz95v6zLW_d5_5PiR3eHWrkhb4CgJ0",
+            "default": false,
+            "post": "36211",
+            "nume": "8"
+          },
+          {
+            "no": 6,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/Sn5yWbhC#MkxgZOut1FSmLAA-n8BVQRH3JPssgfTc7UbCdbWk-Og",
+            "default": false,
+            "post": "36211",
+            "nume": "9"
+          },
+          {
+            "no": 7,
+            "server": "nakama",
+            "label": "Nakama 480p",
+            "url": "https://pixeldrain.com/u/WZhhQoJt",
+            "default": false,
+            "post": "36211",
+            "nume": "10"
+          },
+          {
+            "no": 8,
+            "server": "nakama",
+            "label": "Nakama 720p",
+            "url": "https://pixeldrain.com/u/PdY2jqvE",
+            "default": false,
+            "post": "36211",
+            "nume": "11"
+          },
+          {
+            "no": 9,
+            "server": "nakama",
+            "label": "Nakama 1080p",
+            "url": "https://pixeldrain.com/u/FxCMfqao",
+            "default": false,
+            "post": "36211",
+            "nume": "12"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "premium",
+        "label": "Premium 480p",
+        "url": "https://api.wibufile.com/embed/0f4e255d-1494-4ace-b1d2-10eee1dcef99",
+        "default": true,
+        "post": "36211",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "premium",
+        "label": "Premium 360p",
+        "url": "https://s0.wibufile.com/video01/SpxFCW-360p-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "36211",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "premium",
+        "label": "Premium 720p",
+        "url": "https://s0.wibufile.com/video01/SpxFCW-MP4HD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "36211",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/zrA0jCIJ#TCnGyHhaGZ21jwgwsxo2ADHTo3LoqOZlpMLlqnpzGyw",
+        "default": false,
+        "post": "36211",
+        "nume": "7"
+      },
+      {
+        "no": 5,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/GioWHAYI#zMsQ0uRltpbSTrz95v6zLW_d5_5PiR3eHWrkhb4CgJ0",
+        "default": false,
+        "post": "36211",
+        "nume": "8"
+      },
+      {
+        "no": 6,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/Sn5yWbhC#MkxgZOut1FSmLAA-n8BVQRH3JPssgfTc7UbCdbWk-Og",
+        "default": false,
+        "post": "36211",
+        "nume": "9"
+      },
+      {
+        "no": 7,
+        "server": "nakama",
+        "label": "Nakama 480p",
+        "url": "https://pixeldrain.com/u/WZhhQoJt",
+        "default": false,
+        "post": "36211",
+        "nume": "10"
+      },
+      {
+        "no": 8,
+        "server": "nakama",
+        "label": "Nakama 720p",
+        "url": "https://pixeldrain.com/u/PdY2jqvE",
+        "default": false,
+        "post": "36211",
+        "nume": "11"
+      },
+      {
+        "no": 9,
+        "server": "nakama",
+        "label": "Nakama 1080p",
+        "url": "https://pixeldrain.com/u/FxCMfqao",
+        "default": false,
+        "post": "36211",
+        "nume": "12"
+      }
+    ],
+    "id": 9
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Seishun Buta Yarou wa Randoseru Girl no Yume wo Minai",
+    "judul": "Seishun Buta Yarou wa Randoseru Girl no Yume wo Minai",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2024/06/138379.jpg",
+    "rating": "8.2",
+    "votes": 9308,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Drama",
+      "Romance",
+      "School",
+      "Supernatural"
+    ],
+    "sinopsis": "Akhirnya, hari kelulusan SMA Mai telah tiba. Ketika Sakuta dengan penuh semangat menunggu pacarnya, seorang anak SD yang tampak persis seperti pacarnya muncul di hadapannya. Kejadian itu sangatlah mencurigakan… Sementara itu, ayah Sakuta dan Kaede tiba-tiba menelepon dan mengatakan bahwa ibu Sakuta ingin bertemu dengan putrinya, Kaede. Ibu Sakuta dirawat di rumah sakit karena kondisi Kaede terlalu berat untuk ditanggung, jadi apakah yang kini mungkin dia lakukan?",
+    "related": [],
+    "slug": "seishun-buta-yarou-wa-randoseru-girl-no-yume-wo-minai",
+    "source": "https://v2.samehadaku.how/anime/seishun-buta-yarou-wa-randoseru-girl-no-yume-wo-minai/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Seishun Buta Yarou wa Randoseru Girl no Yume wo Minai Movie",
+        "slug": "seishun-buta-yarou-wa-randoseru-girl-no-yume-wo-minai-movie",
+        "source": "https://v2.samehadaku.how/seishun-buta-yarou-wa-randoseru-girl-no-yume-wo-minai-movie/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "premium",
+            "label": "Premium 480p",
+            "url": "https://login.wibufile.com/v/dQzCwNDgAjPT5bx",
+            "default": true,
+            "post": "33462",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "premium",
+            "label": "Premium 360p",
+            "url": "https://s0.wibufile.com/video01/SBYwRGnYwM-360p-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "33462",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "premium",
+            "label": "Premium 720p",
+            "url": "https://s0.wibufile.com/video01/SBYwRGnYwM-MP4HD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "33462",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "premium",
+            "label": "Premium 1080p",
+            "url": "https://s0.wibufile.com/video01/SBYwRGnYwM-FULLHD-SAMEAHDAKU.CARE.mp4",
+            "default": false,
+            "post": "33462",
+            "nume": "4"
+          },
+          {
+            "no": 5,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/QnlUUYCY#crnh6Fq2RokRWVTMrNxUoRkDg8beOJkJQxJY2OwrvcQ",
+            "default": false,
+            "post": "33462",
+            "nume": "9"
+          },
+          {
+            "no": 6,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/oik2WLpY#x-loHL6cxQBc_ofJ820Is_DA-OVV44wfVcC6RZ7NGnw",
+            "default": false,
+            "post": "33462",
+            "nume": "10"
+          },
+          {
+            "no": 7,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/B20jjIDY#TIuP280IxvyiQxmaPO9MoKl5ETEzm6u8AW0UiqKCy90",
+            "default": false,
+            "post": "33462",
+            "nume": "11"
+          },
+          {
+            "no": 8,
+            "server": "nakama",
+            "label": "Nakama 360p",
+            "url": "https://pixeldrain.com/u/hifYLMKE",
+            "default": false,
+            "post": "33462",
+            "nume": "12"
+          },
+          {
+            "no": 9,
+            "server": "nakama",
+            "label": "Nakama 480p",
+            "url": "https://pixeldrain.com/u/DZ2KQbtz",
+            "default": false,
+            "post": "33462",
+            "nume": "13"
+          },
+          {
+            "no": 10,
+            "server": "nakama",
+            "label": "Nakama 720p",
+            "url": "https://pixeldrain.com/u/ufN8CvUd",
+            "default": false,
+            "post": "33462",
+            "nume": "14"
+          },
+          {
+            "no": 11,
+            "server": "nakama",
+            "label": "Nakama 1080p",
+            "url": "https://pixeldrain.com/u/jurJ8ntf",
+            "default": false,
+            "post": "33462",
+            "nume": "15"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "premium",
+        "label": "Premium 480p",
+        "url": "https://login.wibufile.com/v/dQzCwNDgAjPT5bx",
+        "default": true,
+        "post": "33462",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "premium",
+        "label": "Premium 360p",
+        "url": "https://s0.wibufile.com/video01/SBYwRGnYwM-360p-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "33462",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "premium",
+        "label": "Premium 720p",
+        "url": "https://s0.wibufile.com/video01/SBYwRGnYwM-MP4HD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "33462",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "premium",
+        "label": "Premium 1080p",
+        "url": "https://s0.wibufile.com/video01/SBYwRGnYwM-FULLHD-SAMEAHDAKU.CARE.mp4",
+        "default": false,
+        "post": "33462",
+        "nume": "4"
+      },
+      {
+        "no": 5,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/QnlUUYCY#crnh6Fq2RokRWVTMrNxUoRkDg8beOJkJQxJY2OwrvcQ",
+        "default": false,
+        "post": "33462",
+        "nume": "9"
+      },
+      {
+        "no": 6,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/oik2WLpY#x-loHL6cxQBc_ofJ820Is_DA-OVV44wfVcC6RZ7NGnw",
+        "default": false,
+        "post": "33462",
+        "nume": "10"
+      },
+      {
+        "no": 7,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/B20jjIDY#TIuP280IxvyiQxmaPO9MoKl5ETEzm6u8AW0UiqKCy90",
+        "default": false,
+        "post": "33462",
+        "nume": "11"
+      },
+      {
+        "no": 8,
+        "server": "nakama",
+        "label": "Nakama 360p",
+        "url": "https://pixeldrain.com/u/hifYLMKE",
+        "default": false,
+        "post": "33462",
+        "nume": "12"
+      },
+      {
+        "no": 9,
+        "server": "nakama",
+        "label": "Nakama 480p",
+        "url": "https://pixeldrain.com/u/DZ2KQbtz",
+        "default": false,
+        "post": "33462",
+        "nume": "13"
+      },
+      {
+        "no": 10,
+        "server": "nakama",
+        "label": "Nakama 720p",
+        "url": "https://pixeldrain.com/u/ufN8CvUd",
+        "default": false,
+        "post": "33462",
+        "nume": "14"
+      },
+      {
+        "no": 11,
+        "server": "nakama",
+        "label": "Nakama 1080p",
+        "url": "https://pixeldrain.com/u/jurJ8ntf",
+        "default": false,
+        "post": "33462",
+        "nume": "15"
+      }
+    ],
+    "id": 10
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Kimitachi wa Dou Ikiru ka",
+    "judul": "Kimitachi wa Dou Ikiru ka",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2024/06/140262.jpg",
+    "rating": "7.6",
+    "votes": 44472,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Adventure",
+      "Drama",
+      "Fantasy",
+      "Isekai"
+    ],
+    "sinopsis": "Setelah perperangan selama tiga tahun, Mahito Maki kehilangan ibunya dalam sebuah kebakaran tragis di rumah sakit. Tak lama kemudian, ayahnya menikah dengan Natsuko, adik perempuan dari ibu Mahito. Mereka membawa Mahito keluar dari Tokyo untuk mencari perlindungan di rumah keluarga pedesaan mendiang ibunya. Di sana, Mahito terus-menerus diejek oleh seekor burung bangau abu-abu aneh, yang tampaknya menaruh minat padanya. Tidak dapat menerima kehilangannya dan berjuang untuk menyesuaikan diri dengan kehidupan baru di tempat yang asing, anak laki-laki itu terkejut saat mengetahui bahwa Natsuko hamil. Dan parahnya, burung bangau yang mengganggu itu dapat berbicara dan mengklaim kalau ibu Mahito masih hidup. Sambil membawa anak itu ke menara dekat kediamannya, bangau tersebut bilang kalau Mahito bisa menyelamatkannya dari kematian, akan tetapi bocah itu tidak mudah terpengaruh. Namun, saat Natsuko menghilang, Mahito melihatnya berjalan ke menara dan terdorong untuk masuk demi menyelamatkannya. Dia melihat dirinya jatuh ke dunia lain yang ada di bawahnya. Saat dia menjelajahi dunia asing ini untuk menemukan Natsuko, Mahito harus memahami apa artinya hidup jika dia ingin kembali ke rumah dengan selamat.",
+    "related": [],
+    "slug": "kimitachi-wa-dou-ikiru-ka",
+    "source": "https://v2.samehadaku.how/anime/kimitachi-wa-dou-ikiru-ka/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Kimitachi wa Dou Ikiru ka Movie",
+        "slug": "kimitachi-wa-dou-ikiru-ka-movie",
+        "source": "https://v2.samehadaku.how/kimitachi-wa-dou-ikiru-ka-movie/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "premium",
+            "label": "Premium 480p",
+            "url": "https://login.wibufile.com/v/9kCsP1M1LGuZXtq",
+            "default": true,
+            "post": "33406",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "premium",
+            "label": "Premium 360p",
+            "url": "https://s0.wibufile.com/video01/KwIDk-360p-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "33406",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "premium",
+            "label": "Premium 720p",
+            "url": "https://s0.wibufile.com/video01/KwIDk-MP4HD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "33406",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "premium",
+            "label": "Premium 1080p",
+            "url": "https://s0.wibufile.com/video01/KwIDk-FULLHD-V2-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "33406",
+            "nume": "4"
+          },
+          {
+            "no": 5,
+            "server": "mega",
+            "label": "Mega 360p",
+            "url": "https://mega.nz/embed/47kClDwQ#vlxZ68sX6dA7JES-gf6zMg0ziu-fkejfiiDj6kaJPts",
+            "default": false,
+            "post": "33406",
+            "nume": "9"
+          },
+          {
+            "no": 6,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/UvMxhZZa#NUz_iuTwi9HFpMFj1p1Rktue8jIlRmRSnnEn5tKWMh8",
+            "default": false,
+            "post": "33406",
+            "nume": "10"
+          },
+          {
+            "no": 7,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/tzslATSA#SpWOqvo83rOm_QtOiIu-sGvTWM4p5kmfbYfSbQlksFg",
+            "default": false,
+            "post": "33406",
+            "nume": "11"
+          },
+          {
+            "no": 8,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/I682xSSC#2XtmdJQIzYUZN2YIBWaimIr8hG0reahXrnyT2XFmpbo",
+            "default": false,
+            "post": "33406",
+            "nume": "12"
+          },
+          {
+            "no": 9,
+            "server": "nakama",
+            "label": "Nakama 360p",
+            "url": "https://pixeldrain.com/u/2g1bTYF2",
+            "default": false,
+            "post": "33406",
+            "nume": "13"
+          },
+          {
+            "no": 10,
+            "server": "nakama",
+            "label": "Nakama 480p",
+            "url": "https://pixeldrain.com/u/vWRTw5VH",
+            "default": false,
+            "post": "33406",
+            "nume": "14"
+          },
+          {
+            "no": 11,
+            "server": "nakama",
+            "label": "Nakama 720p",
+            "url": "https://pixeldrain.com/u/pj9H1aWZ",
+            "default": false,
+            "post": "33406",
+            "nume": "15"
+          },
+          {
+            "no": 12,
+            "server": "nakama",
+            "label": "Nakama 1080p",
+            "url": "https://pixeldrain.com/u/dMLRjUPP",
+            "default": false,
+            "post": "33406",
+            "nume": "16"
+          },
+          {
+            "no": 13,
+            "server": "mega-4k",
+            "label": "Mega 4K",
+            "url": "https://mega.nz/embed/YitBxI5A#vKIVjP-YD5ugv2Bsk8yTGfCwbQV7lK-7RJira7JUtac",
+            "default": false,
+            "post": "33406",
+            "nume": "18"
+          },
+          {
+            "no": 14,
+            "server": "nakama-4k",
+            "label": "Nakama 4K",
+            "url": "https://pixeldrain.com/u/vuAUi8yG",
+            "default": false,
+            "post": "33406",
+            "nume": "19"
+          },
+          {
+            "no": 15,
+            "server": "nakama-v.2-4k",
+            "label": "Nakama V.2 4K",
+            "url": "https://pixeldrain.com/u/aSKoS5h5",
+            "default": false,
+            "post": "33406",
+            "nume": "20"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "premium",
+        "label": "Premium 480p",
+        "url": "https://login.wibufile.com/v/9kCsP1M1LGuZXtq",
+        "default": true,
+        "post": "33406",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "premium",
+        "label": "Premium 360p",
+        "url": "https://s0.wibufile.com/video01/KwIDk-360p-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "33406",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "premium",
+        "label": "Premium 720p",
+        "url": "https://s0.wibufile.com/video01/KwIDk-MP4HD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "33406",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "premium",
+        "label": "Premium 1080p",
+        "url": "https://s0.wibufile.com/video01/KwIDk-FULLHD-V2-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "33406",
+        "nume": "4"
+      },
+      {
+        "no": 5,
+        "server": "mega",
+        "label": "Mega 360p",
+        "url": "https://mega.nz/embed/47kClDwQ#vlxZ68sX6dA7JES-gf6zMg0ziu-fkejfiiDj6kaJPts",
+        "default": false,
+        "post": "33406",
+        "nume": "9"
+      },
+      {
+        "no": 6,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/UvMxhZZa#NUz_iuTwi9HFpMFj1p1Rktue8jIlRmRSnnEn5tKWMh8",
+        "default": false,
+        "post": "33406",
+        "nume": "10"
+      },
+      {
+        "no": 7,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/tzslATSA#SpWOqvo83rOm_QtOiIu-sGvTWM4p5kmfbYfSbQlksFg",
+        "default": false,
+        "post": "33406",
+        "nume": "11"
+      },
+      {
+        "no": 8,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/I682xSSC#2XtmdJQIzYUZN2YIBWaimIr8hG0reahXrnyT2XFmpbo",
+        "default": false,
+        "post": "33406",
+        "nume": "12"
+      },
+      {
+        "no": 9,
+        "server": "nakama",
+        "label": "Nakama 360p",
+        "url": "https://pixeldrain.com/u/2g1bTYF2",
+        "default": false,
+        "post": "33406",
+        "nume": "13"
+      },
+      {
+        "no": 10,
+        "server": "nakama",
+        "label": "Nakama 480p",
+        "url": "https://pixeldrain.com/u/vWRTw5VH",
+        "default": false,
+        "post": "33406",
+        "nume": "14"
+      },
+      {
+        "no": 11,
+        "server": "nakama",
+        "label": "Nakama 720p",
+        "url": "https://pixeldrain.com/u/pj9H1aWZ",
+        "default": false,
+        "post": "33406",
+        "nume": "15"
+      },
+      {
+        "no": 12,
+        "server": "nakama",
+        "label": "Nakama 1080p",
+        "url": "https://pixeldrain.com/u/dMLRjUPP",
+        "default": false,
+        "post": "33406",
+        "nume": "16"
+      },
+      {
+        "no": 13,
+        "server": "mega-4k",
+        "label": "Mega 4K",
+        "url": "https://mega.nz/embed/YitBxI5A#vKIVjP-YD5ugv2Bsk8yTGfCwbQV7lK-7RJira7JUtac",
+        "default": false,
+        "post": "33406",
+        "nume": "18"
+      },
+      {
+        "no": 14,
+        "server": "nakama-4k",
+        "label": "Nakama 4K",
+        "url": "https://pixeldrain.com/u/vuAUi8yG",
+        "default": false,
+        "post": "33406",
+        "nume": "19"
+      },
+      {
+        "no": 15,
+        "server": "nakama-v.2-4k",
+        "label": "Nakama V.2 4K",
+        "url": "https://pixeldrain.com/u/aSKoS5h5",
+        "default": false,
+        "post": "33406",
+        "nume": "20"
+      }
+    ],
+    "id": 11
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Digimon Adventure 02: The Beginning",
+    "judul": "Digimon Adventure 02: The Beginning",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2024/06/137453.jpg",
+    "rating": "6.75",
+    "votes": 2277,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Adventure",
+      "Comedy",
+      "Drama",
+      "Fantasy"
+    ],
+    "sinopsis": "Dua tahun setelah pertempuran melawan Eosmon, Davis Motomiya, Ken Ichijouji, Yolei Inoue, Cody Hida, T. K. Takaishi, dan Kari Kamiya bertemu dengan seorang anak laki-laki bernama Rui Owada, yang ditemukan dengan penguatan digivice dan mengaku sebagai Digidestined pertama yang pernah ada. Selain itu, Digimon bernama Ukkomon muncul di dunia nyata, yang ingin setiap orang di dunia memiliki pasangan Digimon mereka sendiri.",
+    "related": [],
+    "slug": "digimon-adventure-02-the-beginning",
+    "source": "https://v2.samehadaku.how/anime/digimon-adventure-02-the-beginning/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Digimon Adventure 02 The Beginning Movie",
+        "slug": "digimon-adventure-02-the-beginning-movie",
+        "source": "https://v2.samehadaku.how/digimon-adventure-02-the-beginning-movie/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "premium",
+            "label": "Premium 480p",
+            "url": "https://login.wibufile.com/v/XR8NAQJFursjHK2",
+            "default": true,
+            "post": "33320",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "premium",
+            "label": "Premium 720p",
+            "url": "https://s0.wibufile.com/video01/DA-02-TB-MP4HD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "33320",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "premium",
+            "label": "Premium 1080p",
+            "url": "https://s0.wibufile.com/video01/DA-02-TB-FULLHD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "33320",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/GUUGSaaZ#G_0Spxu9DYzhrOrXjXVab37TKKsaB5SlNRRG6wpV7pI",
+            "default": false,
+            "post": "33320",
+            "nume": "7"
+          },
+          {
+            "no": 5,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/bdlQHQyb#RWM6uKfSkyQdWeD0BysUGmPYO4NVtyOUV_tmciqRnYw",
+            "default": false,
+            "post": "33320",
+            "nume": "8"
+          },
+          {
+            "no": 6,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/aNcAXBxK#dp2Z8UvDaemvOnW9izDkVdXr2ICQRbfA33338sSra_E",
+            "default": false,
+            "post": "33320",
+            "nume": "9"
+          },
+          {
+            "no": 7,
+            "server": "nakama",
+            "label": "Nakama 480p",
+            "url": "https://pixeldrain.com/u/FAu8gb7a",
+            "default": false,
+            "post": "33320",
+            "nume": "10"
+          },
+          {
+            "no": 8,
+            "server": "nakama",
+            "label": "Nakama 720p",
+            "url": "https://pixeldrain.com/u/YboxA16a",
+            "default": false,
+            "post": "33320",
+            "nume": "11"
+          },
+          {
+            "no": 9,
+            "server": "nakama",
+            "label": "Nakama 1080p",
+            "url": "https://pixeldrain.com/u/g1fXNAhS",
+            "default": false,
+            "post": "33320",
+            "nume": "12"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "premium",
+        "label": "Premium 480p",
+        "url": "https://login.wibufile.com/v/XR8NAQJFursjHK2",
+        "default": true,
+        "post": "33320",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "premium",
+        "label": "Premium 720p",
+        "url": "https://s0.wibufile.com/video01/DA-02-TB-MP4HD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "33320",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "premium",
+        "label": "Premium 1080p",
+        "url": "https://s0.wibufile.com/video01/DA-02-TB-FULLHD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "33320",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/GUUGSaaZ#G_0Spxu9DYzhrOrXjXVab37TKKsaB5SlNRRG6wpV7pI",
+        "default": false,
+        "post": "33320",
+        "nume": "7"
+      },
+      {
+        "no": 5,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/bdlQHQyb#RWM6uKfSkyQdWeD0BysUGmPYO4NVtyOUV_tmciqRnYw",
+        "default": false,
+        "post": "33320",
+        "nume": "8"
+      },
+      {
+        "no": 6,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/aNcAXBxK#dp2Z8UvDaemvOnW9izDkVdXr2ICQRbfA33338sSra_E",
+        "default": false,
+        "post": "33320",
+        "nume": "9"
+      },
+      {
+        "no": 7,
+        "server": "nakama",
+        "label": "Nakama 480p",
+        "url": "https://pixeldrain.com/u/FAu8gb7a",
+        "default": false,
+        "post": "33320",
+        "nume": "10"
+      },
+      {
+        "no": 8,
+        "server": "nakama",
+        "label": "Nakama 720p",
+        "url": "https://pixeldrain.com/u/YboxA16a",
+        "default": false,
+        "post": "33320",
+        "nume": "11"
+      },
+      {
+        "no": 9,
+        "server": "nakama",
+        "label": "Nakama 1080p",
+        "url": "https://pixeldrain.com/u/g1fXNAhS",
+        "default": false,
+        "post": "33320",
+        "nume": "12"
+      }
+    ],
+    "id": 12
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Kidou Senshi Gundam SEED Freedom",
+    "judul": "Kidou Senshi Gundam SEED Freedom",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2024/06/139748.jpg",
+    "rating": "7.9",
+    "votes": 2360,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Drama",
+      "Mecha",
+      "Military",
+      "Sci-Fi"
+    ],
+    "sinopsis": "Dengan adanya pergerakan kemerdekaan dan agresi oleh Blue Cosmos, demi menenangkan situasi, agensi pengawas perdamaian global bernama COMPASS diciptakan, dengan Lacus debagai presiden pertamanya. Sebagai anggota COMPASS, Kira dan teman-temannya harus turut campur dalam peperangan antar beberapa wilayah. Lalu, sebuah negara yang baru diciptakan bernama Foundation mengusulkan kerja sama untuk melawan Blue Comsos.",
+    "related": [],
+    "slug": "kidou-senshi-gundam-seed-freedom",
+    "source": "https://v2.samehadaku.how/anime/kidou-senshi-gundam-seed-freedom/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Kidou Senshi Gundam SEED Freedom Movie",
+        "slug": "kidou-senshi-gundam-seed-freedom-movie",
+        "source": "https://v2.samehadaku.how/kidou-senshi-gundam-seed-freedom-movie/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "premium",
+            "label": "Premium 480p",
+            "url": "https://login.wibufile.com/v/ZHXp1ABKsr2g9Tk",
+            "default": true,
+            "post": "33144",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "premium",
+            "label": "Premium 360p",
+            "url": "https://s0.wibufile.com/video01/KSGSF-360p-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "33144",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "premium",
+            "label": "Premium 720p",
+            "url": "https://s0.wibufile.com/video01/KSGSF-MP4HD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "33144",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "premium",
+            "label": "Premium 1080p",
+            "url": "https://s0.wibufile.com/video01/KSGSF-FULLHD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "33144",
+            "nume": "4"
+          },
+          {
+            "no": 5,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/gA43XZSD#CIaDEBPvrC76nBnEQPX-AzvPGybfyPpIln_mhTR3MeU",
+            "default": false,
+            "post": "33144",
+            "nume": "8"
+          },
+          {
+            "no": 6,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/JJZwCRAC#Uzo5vTMK0-Um7lL7vrDIwp0ZlDit0c4JsDdL8opfMRo",
+            "default": false,
+            "post": "33144",
+            "nume": "9"
+          },
+          {
+            "no": 7,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/MUJhgJrA#AiUlfGLH9LBfJ20SPJIOgAx7BpVkWYx_hpTC62Bb2f0",
+            "default": false,
+            "post": "33144",
+            "nume": "10"
+          },
+          {
+            "no": 8,
+            "server": "nakama",
+            "label": "Nakama 360p",
+            "url": "[pdrain id=T9J4CurJ]",
+            "default": false,
+            "post": "33144",
+            "nume": "11"
+          },
+          {
+            "no": 9,
+            "server": "nakama",
+            "label": "Nakama 480p",
+            "url": "https://pixeldrain.com/u/gPeB2LFq",
+            "default": false,
+            "post": "33144",
+            "nume": "12"
+          },
+          {
+            "no": 10,
+            "server": "nakama",
+            "label": "Nakama 720p",
+            "url": "https://pixeldrain.com/u/Ww8NXzMM",
+            "default": false,
+            "post": "33144",
+            "nume": "13"
+          },
+          {
+            "no": 11,
+            "server": "nakama",
+            "label": "Nakama 1080p",
+            "url": "https://pixeldrain.com/u/JLLZgiLB",
+            "default": false,
+            "post": "33144",
+            "nume": "14"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "premium",
+        "label": "Premium 480p",
+        "url": "https://login.wibufile.com/v/ZHXp1ABKsr2g9Tk",
+        "default": true,
+        "post": "33144",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "premium",
+        "label": "Premium 360p",
+        "url": "https://s0.wibufile.com/video01/KSGSF-360p-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "33144",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "premium",
+        "label": "Premium 720p",
+        "url": "https://s0.wibufile.com/video01/KSGSF-MP4HD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "33144",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "premium",
+        "label": "Premium 1080p",
+        "url": "https://s0.wibufile.com/video01/KSGSF-FULLHD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "33144",
+        "nume": "4"
+      },
+      {
+        "no": 5,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/gA43XZSD#CIaDEBPvrC76nBnEQPX-AzvPGybfyPpIln_mhTR3MeU",
+        "default": false,
+        "post": "33144",
+        "nume": "8"
+      },
+      {
+        "no": 6,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/JJZwCRAC#Uzo5vTMK0-Um7lL7vrDIwp0ZlDit0c4JsDdL8opfMRo",
+        "default": false,
+        "post": "33144",
+        "nume": "9"
+      },
+      {
+        "no": 7,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/MUJhgJrA#AiUlfGLH9LBfJ20SPJIOgAx7BpVkWYx_hpTC62Bb2f0",
+        "default": false,
+        "post": "33144",
+        "nume": "10"
+      },
+      {
+        "no": 8,
+        "server": "nakama",
+        "label": "Nakama 360p",
+        "url": "[pdrain id=T9J4CurJ]",
+        "default": false,
+        "post": "33144",
+        "nume": "11"
+      },
+      {
+        "no": 9,
+        "server": "nakama",
+        "label": "Nakama 480p",
+        "url": "https://pixeldrain.com/u/gPeB2LFq",
+        "default": false,
+        "post": "33144",
+        "nume": "12"
+      },
+      {
+        "no": 10,
+        "server": "nakama",
+        "label": "Nakama 720p",
+        "url": "https://pixeldrain.com/u/Ww8NXzMM",
+        "default": false,
+        "post": "33144",
+        "nume": "13"
+      },
+      {
+        "no": 11,
+        "server": "nakama",
+        "label": "Nakama 1080p",
+        "url": "https://pixeldrain.com/u/JLLZgiLB",
+        "default": false,
+        "post": "33144",
+        "nume": "14"
+      }
+    ],
+    "id": 13
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "The First Slam Dunk",
+    "judul": "The First Slam Dunk",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2024/03/129284l.jpg",
+    "rating": "8.8",
+    "votes": 10871,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "School",
+      "Sports",
+      "Team Sports"
+    ],
+    "sinopsis": "“Penyerang Cepat” dan Point Guard Shohoku, Ryouta Miyagi, selalu bermain dengan otak dan kecepatan tinggi, dan berlari mengelilingi lawannya sambil berpura-pura tenang. Lahir dan besar di Okinawa, Ryouta memiliki saudara laki-laki tiga tahun lebih tua darinya. Mengikuti jejak kakak laki-lakinya yang merupakan pemain lokal terkenal sejak kecil, Ryouta pun menjadi menyukai permainan bola basket.",
+    "related": [],
+    "slug": "the-first-slam-dunk",
+    "source": "https://v2.samehadaku.how/anime/the-first-slam-dunk/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "The First Slam Dunk Movie",
+        "slug": "the-first-slam-dunk-movie",
+        "source": "https://v2.samehadaku.how/the-first-slam-dunk-movie/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "premium",
+            "label": "Premium 480p",
+            "url": "https://login.wibufile.com/v/rKfs7f35KMolb3g",
+            "default": true,
+            "post": "31079",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/yk0F0aYK#lDTUeaOlk7VAweRQpiq4llKBAAx4or0BJjsG5yabrhw",
+            "default": false,
+            "post": "31079",
+            "nume": "6"
+          },
+          {
+            "no": 3,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/XkMjXDjI#mq9IMxemqAnzat_Pv1viYaGKfwC7rCnA8rdCKyWpSVU",
+            "default": false,
+            "post": "31079",
+            "nume": "7"
+          },
+          {
+            "no": 4,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/jwMByCLY#WFHMt-dDnlySvS25kl3zmixSeKUksCoFHWrgFuHPX9o",
+            "default": false,
+            "post": "31079",
+            "nume": "8"
+          },
+          {
+            "no": 5,
+            "server": "premium",
+            "label": "Premium 720p",
+            "url": "https://s0.wibufile.com/video01/TFSD-MP4HD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "31079",
+            "nume": "9"
+          },
+          {
+            "no": 6,
+            "server": "kraken-4k",
+            "label": "Kraken 4k",
+            "url": "https://krakenfiles.com/embed-video/TdxNyAT2nz",
+            "default": false,
+            "post": "31079",
+            "nume": "11"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "premium",
+        "label": "Premium 480p",
+        "url": "https://login.wibufile.com/v/rKfs7f35KMolb3g",
+        "default": true,
+        "post": "31079",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/yk0F0aYK#lDTUeaOlk7VAweRQpiq4llKBAAx4or0BJjsG5yabrhw",
+        "default": false,
+        "post": "31079",
+        "nume": "6"
+      },
+      {
+        "no": 3,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/XkMjXDjI#mq9IMxemqAnzat_Pv1viYaGKfwC7rCnA8rdCKyWpSVU",
+        "default": false,
+        "post": "31079",
+        "nume": "7"
+      },
+      {
+        "no": 4,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/jwMByCLY#WFHMt-dDnlySvS25kl3zmixSeKUksCoFHWrgFuHPX9o",
+        "default": false,
+        "post": "31079",
+        "nume": "8"
+      },
+      {
+        "no": 5,
+        "server": "premium",
+        "label": "Premium 720p",
+        "url": "https://s0.wibufile.com/video01/TFSD-MP4HD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "31079",
+        "nume": "9"
+      },
+      {
+        "no": 6,
+        "server": "kraken-4k",
+        "label": "Kraken 4k",
+        "url": "https://krakenfiles.com/embed-video/TdxNyAT2nz",
+        "default": false,
+        "post": "31079",
+        "nume": "11"
+      }
+    ],
+    "id": 14
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Seishun Buta Yarou wa Odekake Sister no Yume o Minai",
+    "judul": "Seishun Buta Yarou wa Odekake Sister no Yume o Minai",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2023/12/128404.jpg",
+    "rating": "7.7",
+    "votes": 2894,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Drama",
+      "Romance",
+      "School",
+      "Supernatural"
+    ],
+    "sinopsis": "Setelah bulan Desember yang melelahkan, Sakuta memasuki akhir tahun kelas 2 di SMA. Karena Mai adalah siswi kelas tiga, mereka tidak punya banyak waktu untuk bersama, sebelum kelulusan tiba. Sementara itu, adiknya, Kaede, perlahan tapi pasti kembali bertualang di luar ruangan. Saat Kaede mulai menemukan tujuannya, dia mengatakan bahwa impiannya adalah masuk ke sekolah yang sama dengan kakaknya! Sakuta tahu melebihi siapa pun bahwa hal itu dilakukan oleh Kaede, dan dia siap mendukungnya sekuat tenaga. Dia hanya tidak yakin apakah itu pilihan terbaik untuk Kaede atau apa Kaede benar-benar meinginkan hal itu.",
+    "related": [],
+    "slug": "seishun-buta-yarou-wa-odekake-sister-no-yume-o-minai",
+    "source": "https://v2.samehadaku.how/anime/seishun-buta-yarou-wa-odekake-sister-no-yume-o-minai/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Seishun Buta Yarou wa Odekake Sister no Yume o Minai Movie",
+        "slug": "seishun-buta-yarou-wa-odekake-sister-no-yume-o-minai-movie",
+        "source": "https://v2.samehadaku.how/seishun-buta-yarou-wa-odekake-sister-no-yume-o-minai-movie/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/u3RHQIRL#vg1TrCmall7NhUziwXImJlNM5CTKKLgiwOYdsxKprls",
+            "default": true,
+            "post": "28583",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/TmoVXKwI#Ln5cvkgBMwPgG8Algmkc75W-3HNK1ut7YpJvha2sFiQ",
+            "default": false,
+            "post": "28583",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/SqwxWLIB#j0WrZLuDFYzbzid7SO6xCUEXp8JZp03jHh25To1998g",
+            "default": false,
+            "post": "28583",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "krakenfiles",
+            "label": "Krakenfiles 480p",
+            "url": "https://krakenfiles.com/embed-video/uSuAhbZgK8",
+            "default": false,
+            "post": "28583",
+            "nume": "4"
+          },
+          {
+            "no": 5,
+            "server": "krakenfiles",
+            "label": "Krakenfiles 720p",
+            "url": "https://krakenfiles.com/embed-video/XQ82dNfYhh",
+            "default": false,
+            "post": "28583",
+            "nume": "5"
+          },
+          {
+            "no": 6,
+            "server": "krakenfiles",
+            "label": "Krakenfiles 1080p",
+            "url": "https://krakenfiles.com/embed-video/0SkO0S0tpx",
+            "default": false,
+            "post": "28583",
+            "nume": "6"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/u3RHQIRL#vg1TrCmall7NhUziwXImJlNM5CTKKLgiwOYdsxKprls",
+        "default": true,
+        "post": "28583",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/TmoVXKwI#Ln5cvkgBMwPgG8Algmkc75W-3HNK1ut7YpJvha2sFiQ",
+        "default": false,
+        "post": "28583",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/SqwxWLIB#j0WrZLuDFYzbzid7SO6xCUEXp8JZp03jHh25To1998g",
+        "default": false,
+        "post": "28583",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "krakenfiles",
+        "label": "Krakenfiles 480p",
+        "url": "https://krakenfiles.com/embed-video/uSuAhbZgK8",
+        "default": false,
+        "post": "28583",
+        "nume": "4"
+      },
+      {
+        "no": 5,
+        "server": "krakenfiles",
+        "label": "Krakenfiles 720p",
+        "url": "https://krakenfiles.com/embed-video/XQ82dNfYhh",
+        "default": false,
+        "post": "28583",
+        "nume": "5"
+      },
+      {
+        "no": 6,
+        "server": "krakenfiles",
+        "label": "Krakenfiles 1080p",
+        "url": "https://krakenfiles.com/embed-video/0SkO0S0tpx",
+        "default": false,
+        "post": "28583",
+        "nume": "6"
+      }
+    ],
+    "id": 15
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Gridman Universe",
+    "judul": "Gridman Universe",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2023/10/Gridman-Universe-Cover.jpg",
+    "rating": "7.97",
+    "votes": 919,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Mecha",
+      "Sci-Fi"
+    ],
+    "sinopsis": "Setahun telah berlalu sejak peristiwa SSSS.Gridman. Dunia dalam keadaan damai, hanya Rikka dan Utsumi yang masih memiliki ingatan tentang kaiju, Gridman, maupun Akane Shinjou. Yuuta yang meskipun ikut bertarung sebagai Gridman kala itu, sama sekali tidak dapat mengingat momen-momen penting itu. Jadi ketika ada Kaiju baru muncul, Yuuta ingin membuktikan bahwa dirinya juga merupakan seorang pahlawan dengan berubah menjadi Gridman lagi.",
+    "related": [],
+    "slug": "gridman-universe",
+    "source": "https://v2.samehadaku.how/anime/gridman-universe/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Gridman Universe Movie",
+        "slug": "gridman-universe-movie",
+        "source": "https://v2.samehadaku.how/gridman-universe-movie/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/QPt3SYIZ#IjJPiO1P28Gc7ZBdy0IXKsqAtERZAx3j5sca1hkeCDM",
+            "default": true,
+            "post": "27788",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/56kDiQxR#pppOIoy2xUGta3R-HIEsOEkE1Qdzep0i7D4Lb7blGf8",
+            "default": false,
+            "post": "27788",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/tLsT1Z7K#uTNS_OyL4eTjEtl0UjMhkpRYlIas5XcbcQ_x6LJ5kkA",
+            "default": false,
+            "post": "27788",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "krakenfiles",
+            "label": "Krakenfiles 480p",
+            "url": "https://krakenfiles.com/embed-video/TicvientDm",
+            "default": false,
+            "post": "27788",
+            "nume": "4"
+          },
+          {
+            "no": 5,
+            "server": "krakenfiles",
+            "label": "Krakenfiles 720p",
+            "url": "https://krakenfiles.com/embed-video/yfUhmyFnKj",
+            "default": false,
+            "post": "27788",
+            "nume": "5"
+          },
+          {
+            "no": 6,
+            "server": "krakenfiles",
+            "label": "Krakenfiles 1080p",
+            "url": "https://krakenfiles.com/embed-video/S4ZTBAmEBO",
+            "default": false,
+            "post": "27788",
+            "nume": "6"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/QPt3SYIZ#IjJPiO1P28Gc7ZBdy0IXKsqAtERZAx3j5sca1hkeCDM",
+        "default": true,
+        "post": "27788",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/56kDiQxR#pppOIoy2xUGta3R-HIEsOEkE1Qdzep0i7D4Lb7blGf8",
+        "default": false,
+        "post": "27788",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/tLsT1Z7K#uTNS_OyL4eTjEtl0UjMhkpRYlIas5XcbcQ_x6LJ5kkA",
+        "default": false,
+        "post": "27788",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "krakenfiles",
+        "label": "Krakenfiles 480p",
+        "url": "https://krakenfiles.com/embed-video/TicvientDm",
+        "default": false,
+        "post": "27788",
+        "nume": "4"
+      },
+      {
+        "no": 5,
+        "server": "krakenfiles",
+        "label": "Krakenfiles 720p",
+        "url": "https://krakenfiles.com/embed-video/yfUhmyFnKj",
+        "default": false,
+        "post": "27788",
+        "nume": "5"
+      },
+      {
+        "no": 6,
+        "server": "krakenfiles",
+        "label": "Krakenfiles 1080p",
+        "url": "https://krakenfiles.com/embed-video/S4ZTBAmEBO",
+        "default": false,
+        "post": "27788",
+        "nume": "6"
+      }
+    ],
+    "id": 16
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Suzume no Tojimari",
+    "judul": "Suzume no Tojimari",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2023/07/Suzume-no-Tojimari.jpg",
+    "rating": "8.42",
+    "votes": 84451,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Adventure",
+      "Fantasy"
+    ],
+    "sinopsis": "Sinopsis Suzume no Tojimari ;",
+    "related": [],
+    "slug": "suzume-no-tojimari",
+    "source": "https://v2.samehadaku.how/anime/suzume-no-tojimari/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Suzume no Tojimari Movie",
+        "slug": "suzume-no-tojimari-movie",
+        "source": "https://v2.samehadaku.how/suzume-no-tojimari-movie/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "mega",
+            "label": "Mega 360p",
+            "url": "https://mega.nz/embed/pG82TZ6L#OGgb3eZcTc1frUCnJ5Q4018cCUcTAypQrPesyi7sXNI",
+            "default": true,
+            "post": "25172",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/0YIwEaLZ#n_SjAjtjFSXPjFLl5qFLWxY1RJhTFY-j7Ks1YZ_-9pw",
+            "default": false,
+            "post": "25172",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/hXcw2Kba#zd0MOzrX7zuuko_h9k3HBQLm8kYG92DhG3LGW7ip2V0",
+            "default": false,
+            "post": "25172",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/JNJDhLTY#WfbhK6SmSY0yVFCCSttYQ8HkpQ4CwbI67OMi6bjrXLk",
+            "default": false,
+            "post": "25172",
+            "nume": "4"
+          },
+          {
+            "no": 5,
+            "server": "krakenfiles",
+            "label": "Krakenfiles 360p",
+            "url": "https://krakenfiles.com/embed-video/V1pLzRI4ZP",
+            "default": false,
+            "post": "25172",
+            "nume": "5"
+          },
+          {
+            "no": 6,
+            "server": "krakenfiles",
+            "label": "Krakenfiles 480p",
+            "url": "https://krakenfiles.com/embed-video/jTOFZQUR1T",
+            "default": false,
+            "post": "25172",
+            "nume": "6"
+          },
+          {
+            "no": 7,
+            "server": "krakenfiles",
+            "label": "Krakenfiles 720p",
+            "url": "https://krakenfiles.com/embed-video/gZIMfj4JCT",
+            "default": false,
+            "post": "25172",
+            "nume": "7"
+          },
+          {
+            "no": 8,
+            "server": "krakenfiles",
+            "label": "Krakenfiles 1080p",
+            "url": "https://krakenfiles.com/embed-video/BzU8QhzxeD",
+            "default": false,
+            "post": "25172",
+            "nume": "8"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "mega",
+        "label": "Mega 360p",
+        "url": "https://mega.nz/embed/pG82TZ6L#OGgb3eZcTc1frUCnJ5Q4018cCUcTAypQrPesyi7sXNI",
+        "default": true,
+        "post": "25172",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/0YIwEaLZ#n_SjAjtjFSXPjFLl5qFLWxY1RJhTFY-j7Ks1YZ_-9pw",
+        "default": false,
+        "post": "25172",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/hXcw2Kba#zd0MOzrX7zuuko_h9k3HBQLm8kYG92DhG3LGW7ip2V0",
+        "default": false,
+        "post": "25172",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/JNJDhLTY#WfbhK6SmSY0yVFCCSttYQ8HkpQ4CwbI67OMi6bjrXLk",
+        "default": false,
+        "post": "25172",
+        "nume": "4"
+      },
+      {
+        "no": 5,
+        "server": "krakenfiles",
+        "label": "Krakenfiles 360p",
+        "url": "https://krakenfiles.com/embed-video/V1pLzRI4ZP",
+        "default": false,
+        "post": "25172",
+        "nume": "5"
+      },
+      {
+        "no": 6,
+        "server": "krakenfiles",
+        "label": "Krakenfiles 480p",
+        "url": "https://krakenfiles.com/embed-video/jTOFZQUR1T",
+        "default": false,
+        "post": "25172",
+        "nume": "6"
+      },
+      {
+        "no": 7,
+        "server": "krakenfiles",
+        "label": "Krakenfiles 720p",
+        "url": "https://krakenfiles.com/embed-video/gZIMfj4JCT",
+        "default": false,
+        "post": "25172",
+        "nume": "7"
+      },
+      {
+        "no": 8,
+        "server": "krakenfiles",
+        "label": "Krakenfiles 1080p",
+        "url": "https://krakenfiles.com/embed-video/BzU8QhzxeD",
+        "default": false,
+        "post": "25172",
+        "nume": "8"
+      }
+    ],
+    "id": 17
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Black Clover: Mahou Tei no Ken",
+    "judul": "Black Clover: Mahou Tei no Ken",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2023/06/136363l.jpg",
+    "rating": "8.41",
+    "votes": 2599,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Comedy",
+      "Fantasy",
+      "Shounen"
+    ],
+    "sinopsis": "Nonton Black Clover: Mahou Tei no Ken Subtitle Indonesia, kalian bisa download episode terbaru Black Clover: Mahou Tei no Ken Sub Indo secara gratis di website streaming Samehadaku format mkv mp4 dan HD",
+    "related": [],
+    "slug": "black-clover-mahou-tei-no-ken",
+    "source": "https://v2.samehadaku.how/anime/black-clover-mahou-tei-no-ken/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Black Clover: Mahou Tei no Ken (Sword of the Wizard King)",
+        "slug": "black-clover-mahou-tei-no-ken-sword-of-the-wizard-king",
+        "source": "https://v2.samehadaku.how/black-clover-mahou-tei-no-ken-sword-of-the-wizard-king/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/x31VUaiA#fnxslh1sXTWTGuN-6nvVtAQhM__wYsWR7IYUF7d-DnM",
+            "default": true,
+            "post": "24821",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/IW1XVQhL#YHsBSnhULRIjQ1mHDZDMxgWwX2tY-aADKBDMduGo42Q",
+            "default": false,
+            "post": "24821",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/AnlABSrJ#Z_Zu2B0hBBrS5fWg_QjLnAXOODeeQTyB_HwepPal5nk",
+            "default": false,
+            "post": "24821",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "krakenfiles",
+            "label": "Krakenfiles 480p",
+            "url": "https://krakenfiles.com/embed-video/AHzJZfHKRm",
+            "default": false,
+            "post": "24821",
+            "nume": "4"
+          },
+          {
+            "no": 5,
+            "server": "krakenfiles",
+            "label": "Krakenfiles 720p",
+            "url": "https://krakenfiles.com/embed-video/SvQGnlJFFD",
+            "default": false,
+            "post": "24821",
+            "nume": "5"
+          },
+          {
+            "no": 6,
+            "server": "krakenfiles",
+            "label": "Krakenfiles 1080p",
+            "url": "https://krakenfiles.com/embed-video/rfgp7fkOYy",
+            "default": false,
+            "post": "24821",
+            "nume": "6"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/x31VUaiA#fnxslh1sXTWTGuN-6nvVtAQhM__wYsWR7IYUF7d-DnM",
+        "default": true,
+        "post": "24821",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/IW1XVQhL#YHsBSnhULRIjQ1mHDZDMxgWwX2tY-aADKBDMduGo42Q",
+        "default": false,
+        "post": "24821",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/AnlABSrJ#Z_Zu2B0hBBrS5fWg_QjLnAXOODeeQTyB_HwepPal5nk",
+        "default": false,
+        "post": "24821",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "krakenfiles",
+        "label": "Krakenfiles 480p",
+        "url": "https://krakenfiles.com/embed-video/AHzJZfHKRm",
+        "default": false,
+        "post": "24821",
+        "nume": "4"
+      },
+      {
+        "no": 5,
+        "server": "krakenfiles",
+        "label": "Krakenfiles 720p",
+        "url": "https://krakenfiles.com/embed-video/SvQGnlJFFD",
+        "default": false,
+        "post": "24821",
+        "nume": "5"
+      },
+      {
+        "no": 6,
+        "server": "krakenfiles",
+        "label": "Krakenfiles 1080p",
+        "url": "https://krakenfiles.com/embed-video/rfgp7fkOYy",
+        "default": false,
+        "post": "24821",
+        "nume": "6"
+      }
+    ],
+    "id": 18
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Tensei shitara Slime Datta Ken Movie: Guren no Kizuna-hen",
+    "judul": "Tensei shitara Slime Datta Ken Movie: Guren no Kizuna-hen",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2023/03/pc75KETPdVnqHWCum3mFnmM0nSn.jpg",
+    "rating": "7.60",
+    "votes": 12902,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Adventure",
+      "Comedy",
+      "Fantasy",
+      "Isekai",
+      "Reincarnation"
+    ],
+    "sinopsis": "Rimuru dan Teman-temannya terlibat dalam konspirasi lama di negara baru bernama Razha terkait dengan seorang gadis yang memiliki kekuatan misterius. Rimuru dan Benimaru bertemu dengan Ogre lain bernama Hiiro yang dulu sangat menghormati Benimaru.",
+    "related": [],
+    "slug": "tensei-shitara-slime-datta-ken-movie-guren-no-kizuna-hen",
+    "source": "https://v2.samehadaku.how/anime/tensei-shitara-slime-datta-ken-movie-guren-no-kizuna-hen/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Tensei shitara Slime Datta Ken Movie: Guren no Kizuna-hen Movie",
+        "slug": "tensei-shitara-slime-datta-ken-movie-guren-no-kizuna-hen-movie",
+        "source": "https://v2.samehadaku.how/tensei-shitara-slime-datta-ken-movie-guren-no-kizuna-hen-movie/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "wibufile",
+            "label": "Wibufile 480p",
+            "url": "https://wibufile.com/embed/j7KsUJU2f2FCDGZ",
+            "default": true,
+            "post": "23282",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "mega",
+            "label": "Mega 360p",
+            "url": "https://mega.nz/embed/wZkyzLCK#JGz3Pj0pZNwm6Oo6UNd0apYLUzz_VVjH5Mus2J4nmPs",
+            "default": false,
+            "post": "23282",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/Fc8XEILQ#YeoN8HejNZkRMhkDy2D9nwW6_mr5GY_wYtINfNzs59Y",
+            "default": false,
+            "post": "23282",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/dIUTWCjI#r8fpDXlXSFhfvyKCvj2wRy4K1bpfJQJY1P0RxexIE7g",
+            "default": false,
+            "post": "23282",
+            "nume": "4"
+          },
+          {
+            "no": 5,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/tIdWXSBK#uqhha1wAh3E1Pe6gkeLgQ4yl-XKMMLkBdmca06VHLgw",
+            "default": false,
+            "post": "23282",
+            "nume": "5"
+          },
+          {
+            "no": 6,
+            "server": "fembed-360p-1080p",
+            "label": "Fembed 360p-1080p",
+            "url": "https://suzihaza.com/v/8n5jqbpgj6lwnr2",
+            "default": false,
+            "post": "23282",
+            "nume": "6"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "wibufile",
+        "label": "Wibufile 480p",
+        "url": "https://wibufile.com/embed/j7KsUJU2f2FCDGZ",
+        "default": true,
+        "post": "23282",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "mega",
+        "label": "Mega 360p",
+        "url": "https://mega.nz/embed/wZkyzLCK#JGz3Pj0pZNwm6Oo6UNd0apYLUzz_VVjH5Mus2J4nmPs",
+        "default": false,
+        "post": "23282",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/Fc8XEILQ#YeoN8HejNZkRMhkDy2D9nwW6_mr5GY_wYtINfNzs59Y",
+        "default": false,
+        "post": "23282",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/dIUTWCjI#r8fpDXlXSFhfvyKCvj2wRy4K1bpfJQJY1P0RxexIE7g",
+        "default": false,
+        "post": "23282",
+        "nume": "4"
+      },
+      {
+        "no": 5,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/tIdWXSBK#uqhha1wAh3E1Pe6gkeLgQ4yl-XKMMLkBdmca06VHLgw",
+        "default": false,
+        "post": "23282",
+        "nume": "5"
+      },
+      {
+        "no": 6,
+        "server": "fembed-360p-1080p",
+        "label": "Fembed 360p-1080p",
+        "url": "https://suzihaza.com/v/8n5jqbpgj6lwnr2",
+        "default": false,
+        "post": "23282",
+        "nume": "6"
+      }
+    ],
+    "id": 19
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "One Piece Film: Red",
+    "judul": "One Piece Film: Red",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2022/11/OPFR-Cover.jpg",
+    "rating": "7.98",
+    "votes": 33050,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Adventure",
+      "Comedy",
+      "Drama",
+      "Fantasy"
+    ],
+    "sinopsis": "Sebagai seorang anak, Uta—mantan musisi Bajak Laut Rambut Merah dan teman masa kecil Monkey D. Luffy—berjanji bahwa dia akan membangun era baru, kebebasan dengan menampilkan musik yang menyenangkan bagi dunia.",
+    "related": [],
+    "slug": "one-piece-film-red",
+    "source": "https://v2.samehadaku.how/anime/one-piece-film-red/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "One Piece Film: Red [HDTS]",
+        "slug": "one-piece-film-red-hdts",
+        "source": "https://v2.samehadaku.how/one-piece-film-red-hdts/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "wibufile",
+            "label": "Wibufile 480p",
+            "url": "https://wibufile.com/embed/G2gHN8LZyt9nEuf",
+            "default": true,
+            "post": "20472",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/Y0diCRiY#IL6wx27k_cNM75L3UDDzfh5cK6NSbURAXFJYVsVUXa0",
+            "default": false,
+            "post": "20472",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/tkVmwbJa#or0J8Sv6ttlAeqV1_eW81vog4lynf_4inNGyLvTM8x4",
+            "default": false,
+            "post": "20472",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/05twnArI#25RE162sTjDnZqUQ8FRr_a7uW7jGpuzpgFJEkJvRm3E",
+            "default": false,
+            "post": "20472",
+            "nume": "4"
+          },
+          {
+            "no": 5,
+            "server": "fembed-360p-1080p",
+            "label": "Fembed 360p-1080p",
+            "url": "https://suzihaza.com/v/g46w5h-303r208j",
+            "default": false,
+            "post": "20472",
+            "nume": "5"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "wibufile",
+        "label": "Wibufile 480p",
+        "url": "https://wibufile.com/embed/G2gHN8LZyt9nEuf",
+        "default": true,
+        "post": "20472",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/Y0diCRiY#IL6wx27k_cNM75L3UDDzfh5cK6NSbURAXFJYVsVUXa0",
+        "default": false,
+        "post": "20472",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/tkVmwbJa#or0J8Sv6ttlAeqV1_eW81vog4lynf_4inNGyLvTM8x4",
+        "default": false,
+        "post": "20472",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/05twnArI#25RE162sTjDnZqUQ8FRr_a7uW7jGpuzpgFJEkJvRm3E",
+        "default": false,
+        "post": "20472",
+        "nume": "4"
+      },
+      {
+        "no": 5,
+        "server": "fembed-360p-1080p",
+        "label": "Fembed 360p-1080p",
+        "url": "https://suzihaza.com/v/g46w5h-303r208j",
+        "default": false,
+        "post": "20472",
+        "nume": "5"
+      }
+    ],
+    "id": 20
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Dragon Ball Super Movie: Super Hero",
+    "judul": "Dragon Ball Super Movie: Super Hero",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2022/09/122797.jpg",
+    "rating": "7.54",
+    "votes": 24821,
+    "durasi": "Movie",
+    "episodes_count": 2,
+    "genre": [
+      "Action",
+      "Adventure",
+      "Fantasy",
+      "Shounen",
+      "Super Power"
+    ],
+    "sinopsis": "Sekuel Movie Dragon Ball Super Movie: Broly.",
+    "related": [],
+    "slug": "dragon-ball-super-movie-super-hero",
+    "source": "https://v2.samehadaku.how/anime/dragon-ball-super-movie-super-hero/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Dragon Ball Super Movie: Super Hero [HDTS]",
+        "slug": "dragon-ball-super-movie-super-hero",
+        "source": "https://v2.samehadaku.how/dragon-ball-super-movie-super-hero/",
+        "date": "",
+        "players": []
+      },
+      {
+        "episode": 1,
+        "title": "Dragon Ball Super Movie: Super Hero [BLURAY] FIX",
+        "slug": "dragon-ball-super-movie-super-hero-bluray",
+        "source": "https://v2.samehadaku.how/dragon-ball-super-movie-super-hero-bluray/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "wibu",
+            "label": "Wibu 480p",
+            "url": "https://wibufile.com/embed/4ZR37QL5MJTUmgA",
+            "default": true,
+            "post": "20704",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "mega-360p-fix",
+            "label": "Mega 360p FIX",
+            "url": "https://mega.nz/embed/6y4jUKha#ntfTO_jEJZ5xOIP4zPR6m4ErFUmVbjCaLvLASOnQSuA",
+            "default": false,
+            "post": "20704",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/6iZjkQSI#V1ig94o3Zv0W3-FNApJcCg7yM2N6yT8Vo5tAmE1xwQQ",
+            "default": false,
+            "post": "20704",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/uzY1yDiJ#EPyhNHH3F2ED88kdA9su0r5AIdO3OSC4vJcOVwyFFh4",
+            "default": false,
+            "post": "20704",
+            "nume": "4"
+          },
+          {
+            "no": 5,
+            "server": "mega-1080p-fix",
+            "label": "Mega 1080p FIX",
+            "url": "https://mega.nz/embed/OzZEXR4S#AMA_iynYLEGqHiKSWg5e_DxkiCT_wC9QPTheXV5UJUo",
+            "default": false,
+            "post": "20704",
+            "nume": "5"
+          },
+          {
+            "no": 6,
+            "server": "fembed-360p-1080p-fix",
+            "label": "Fembed 360p-1080p FIX",
+            "url": "https://suzihaza.com/v/jd0eytd8zxkmm18",
+            "default": false,
+            "post": "20704",
+            "nume": "6"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "wibu",
+        "label": "Wibu 480p",
+        "url": "https://wibufile.com/embed/4ZR37QL5MJTUmgA",
+        "default": true,
+        "post": "20704",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "mega-360p-fix",
+        "label": "Mega 360p FIX",
+        "url": "https://mega.nz/embed/6y4jUKha#ntfTO_jEJZ5xOIP4zPR6m4ErFUmVbjCaLvLASOnQSuA",
+        "default": false,
+        "post": "20704",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/6iZjkQSI#V1ig94o3Zv0W3-FNApJcCg7yM2N6yT8Vo5tAmE1xwQQ",
+        "default": false,
+        "post": "20704",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/uzY1yDiJ#EPyhNHH3F2ED88kdA9su0r5AIdO3OSC4vJcOVwyFFh4",
+        "default": false,
+        "post": "20704",
+        "nume": "4"
+      },
+      {
+        "no": 5,
+        "server": "mega-1080p-fix",
+        "label": "Mega 1080p FIX",
+        "url": "https://mega.nz/embed/OzZEXR4S#AMA_iynYLEGqHiKSWg5e_DxkiCT_wC9QPTheXV5UJUo",
+        "default": false,
+        "post": "20704",
+        "nume": "5"
+      },
+      {
+        "no": 6,
+        "server": "fembed-360p-1080p-fix",
+        "label": "Fembed 360p-1080p FIX",
+        "url": "https://suzihaza.com/v/jd0eytd8zxkmm18",
+        "default": false,
+        "post": "20704",
+        "nume": "6"
+      }
+    ],
+    "id": 21
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Jujutsu Kaisen 0",
+    "judul": "Jujutsu Kaisen 0",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2022/09/119045l.jpg",
+    "rating": "8.51",
+    "votes": 157403,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Fantasy",
+      "School",
+      "Shounen"
+    ],
+    "sinopsis": "Film ini berfokus pada karakter protagonis bernama Yuta Okkotsu. Yuta merupakan anak SMA yang kaku dan menjadi korban bully. Suatu hari, Rika Orimoto, teman masa kecil Yuta, meninggal karena kecelakaan.",
+    "related": [],
+    "slug": "jujutsu-kaisen-0",
+    "source": "https://v2.samehadaku.how/anime/jujutsu-kaisen-0/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Jujutsu Kaisen 0 BD",
+        "slug": "jujutsu-kaisen-0-bd",
+        "source": "https://v2.samehadaku.how/jujutsu-kaisen-0-bd/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "wibuu",
+            "label": "Wibuu 480p",
+            "url": "https://wibufile.com/embed/FcfzZywhQpBf6Kc",
+            "default": true,
+            "post": "19576",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "server-1",
+            "label": "Server 1 480p",
+            "url": "https://mega.nz/embed/KZ4FDYoJ#Ro97LOabC31HAo268ByamWFemHKDgla-D9bhLnG6eRs",
+            "default": false,
+            "post": "19576",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "server-2",
+            "label": "Server 2 720p",
+            "url": "https://mega.nz/embed/eUhHCRgQ#yZUWEhPiCFCFSXyIfG5RKwZm4fFsdDq2GH34tDLce5U",
+            "default": false,
+            "post": "19576",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "server-3",
+            "label": "Server 3 1080p",
+            "url": "https://mega.nz/embed/qFogyRxD#eFcfnG8JAAQ1bGfjpAT5w7RF6TFbyFJfDWgoHPgUDyM",
+            "default": false,
+            "post": "19576",
+            "nume": "4"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "wibuu",
+        "label": "Wibuu 480p",
+        "url": "https://wibufile.com/embed/FcfzZywhQpBf6Kc",
+        "default": true,
+        "post": "19576",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "server-1",
+        "label": "Server 1 480p",
+        "url": "https://mega.nz/embed/KZ4FDYoJ#Ro97LOabC31HAo268ByamWFemHKDgla-D9bhLnG6eRs",
+        "default": false,
+        "post": "19576",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "server-2",
+        "label": "Server 2 720p",
+        "url": "https://mega.nz/embed/eUhHCRgQ#yZUWEhPiCFCFSXyIfG5RKwZm4fFsdDq2GH34tDLce5U",
+        "default": false,
+        "post": "19576",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "server-3",
+        "label": "Server 3 1080p",
+        "url": "https://mega.nz/embed/qFogyRxD#eFcfnG8JAAQ1bGfjpAT5w7RF6TFbyFJfDWgoHPgUDyM",
+        "default": false,
+        "post": "19576",
+        "nume": "4"
+      }
+    ],
+    "id": 22
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Sword Art Online: Progressive Movie Hoshi Naki Yoru no Aria",
+    "judul": "Sword Art Online: Progressive Movie Hoshi Naki Yoru no Aria",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2022/07/116274.jpg",
+    "rating": "7.95",
+    "votes": 16409,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Adventure",
+      "Fantasy"
+    ],
+    "sinopsis": "Sword Art Online: Progressive Movie – Hoshi Naki Yoru no Aria: Menceritakan kembali Arc Aincrad yang diambil dari sudut pandang Asuna. Yuuki Asuna sedang dalam masa ujian masuk SMA-nya. Teman sekelasnya, Misumi “Mito” Tozawa, menyarankannya agar beristirahat sejenak dari belajar dan ikut bermain game dengannya pada hari peluncuran Sword Art Online (SAO)—game realitas virtual online yang sangat dinanti-nanti. Asuna pun menerima tawaran temannya dan segera menemuinya di dalam game. Namun tidak disangka, Asuna, Mito, dan semua pemain lain yang bermain SAO harus terjebak dalam permainan itu selamanya. Satu-satunya jalan keluar adalah dengan menyelesaikan seratus lantai permainan, dan yang terlebih buruk lagi, mati di dalam permainan akan membunuh pemain di kehidupan nyata juga.",
+    "related": [],
+    "slug": "sword-art-online-progressive",
+    "source": "https://v2.samehadaku.how/anime/sword-art-online-progressive/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Sword Art Online: Progressive Movie Hoshi Naki Yoru no Aria",
+        "slug": "sword-art-online-progressi-no-aria",
+        "source": "https://v2.samehadaku.how/sword-art-online-progressi-no-aria/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "wibufile",
+            "label": "Wibufile 480p",
+            "url": "https://wibufile.com/embed/6kux76OaC1UQW06",
+            "default": true,
+            "post": "18685",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "server-1",
+            "label": "Server 1 480p",
+            "url": "https://mega.nz/embed/L2JwhCZY#HjRtXL-kXXLQ5AqJYAyqJ6W5Ru6WkCdv92NX87Hdmp0",
+            "default": false,
+            "post": "18685",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "server-2",
+            "label": "Server 2 720p",
+            "url": "https://mega.nz/embed/334m3a7a#Ia1ArwjuweQkvjBbbsIAb9aUqxJo2-a0fM_B8GKuKUo",
+            "default": false,
+            "post": "18685",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "server-3",
+            "label": "Server 3 1080p",
+            "url": "https://mega.nz/embed/iyoxnYIT#A2a4-RRcA6iF1r3CKJM6IF9sZwVaw4pYyanwiWFFEdI",
+            "default": false,
+            "post": "18685",
+            "nume": "4"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "wibufile",
+        "label": "Wibufile 480p",
+        "url": "https://wibufile.com/embed/6kux76OaC1UQW06",
+        "default": true,
+        "post": "18685",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "server-1",
+        "label": "Server 1 480p",
+        "url": "https://mega.nz/embed/L2JwhCZY#HjRtXL-kXXLQ5AqJYAyqJ6W5Ru6WkCdv92NX87Hdmp0",
+        "default": false,
+        "post": "18685",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "server-2",
+        "label": "Server 2 720p",
+        "url": "https://mega.nz/embed/334m3a7a#Ia1ArwjuweQkvjBbbsIAb9aUqxJo2-a0fM_B8GKuKUo",
+        "default": false,
+        "post": "18685",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "server-3",
+        "label": "Server 3 1080p",
+        "url": "https://mega.nz/embed/iyoxnYIT#A2a4-RRcA6iF1r3CKJM6IF9sZwVaw4pYyanwiWFFEdI",
+        "default": false,
+        "post": "18685",
+        "nume": "4"
+      }
+    ],
+    "id": 23
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Boku no Hero Academia the Movie 3: World Heroes Mission",
+    "judul": "Boku no Hero Academia the Movie 3: World Heroes Mission",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2022/02/115605.jpg",
+    "rating": "7.62",
+    "votes": 16190,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Comedy"
+    ],
+    "sinopsis": "Di bawah doktrin Teori Kiamat Quirk, kelompok ideologi Humarise yakin bahwa semua manusia yang memiliki Quirk adalah penyakit dan harus dibasmi. Untuk membangun kembali dunia, kelompok ekstremis telah membangun perangkat mematikan yang dikenal sebagai “Trigger Bomb” yang menyebabkan orang-orang dengan Quirk kehilangan kendali dan mati. Pemimpin mereka, Flect Turn, menghindari penangkapan dari Pahlawan Profesional yang dikerahkan di seluruh dunia.",
+    "related": [],
+    "slug": "boku-no-hero-academia-the-movie-3-world-heroes-mission",
+    "source": "https://v2.samehadaku.how/anime/boku-no-hero-academia-the-movie-3-world-heroes-mission/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Boku no Hero Academia Movie 3: World Heroes Mission",
+        "slug": "boku-no-hero-academia-movie-3-world-heroes-mission",
+        "source": "https://v2.samehadaku.how/boku-no-hero-academia-movie-3-world-heroes-mission/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "wibufile",
+            "label": "Wibufile 480p",
+            "url": "https://wibufile.com/embed/wagqpvCMhaiHNhJ",
+            "default": true,
+            "post": "17111",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "server-1",
+            "label": "Server 1 480p",
+            "url": "https://mega.nz/embed/9VBCxbyL#y8gEfV6mZC7r--n8y5rpcCIdofAj4NqreYvCORAK8hU",
+            "default": false,
+            "post": "17111",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "server-2",
+            "label": "Server 2 720p",
+            "url": "https://mega.nz/embed/8RYWWDYS#iDuzsBRBY4o5PA_hd7gS-RP5mrINnJes5tKTHF3lpeg",
+            "default": false,
+            "post": "17111",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "server-3",
+            "label": "Server 3 1080p",
+            "url": "https://mega.nz/embed/FE5R2ADC#SNFhPbRnMSq97qNEENL3Gj_yXfHAf1s5I6bx_iQNqXk",
+            "default": false,
+            "post": "17111",
+            "nume": "4"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "wibufile",
+        "label": "Wibufile 480p",
+        "url": "https://wibufile.com/embed/wagqpvCMhaiHNhJ",
+        "default": true,
+        "post": "17111",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "server-1",
+        "label": "Server 1 480p",
+        "url": "https://mega.nz/embed/9VBCxbyL#y8gEfV6mZC7r--n8y5rpcCIdofAj4NqreYvCORAK8hU",
+        "default": false,
+        "post": "17111",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "server-2",
+        "label": "Server 2 720p",
+        "url": "https://mega.nz/embed/8RYWWDYS#iDuzsBRBY4o5PA_hd7gS-RP5mrINnJes5tKTHF3lpeg",
+        "default": false,
+        "post": "17111",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "server-3",
+        "label": "Server 3 1080p",
+        "url": "https://mega.nz/embed/FE5R2ADC#SNFhPbRnMSq97qNEENL3Gj_yXfHAf1s5I6bx_iQNqXk",
+        "default": false,
+        "post": "17111",
+        "nume": "4"
+      }
+    ],
+    "id": 24
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Gintama: The Final",
+    "judul": "Gintama: The Final",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2021/07/109706.jpg",
+    "rating": "9.10",
+    "votes": 16417,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Comedy",
+      "Drama",
+      "Historical",
+      "Samurai",
+      "Sci-Fi",
+      "Shounen"
+    ],
+    "sinopsis": "Movie Final Anime Gintama.",
+    "related": [],
+    "slug": "gintama-the-final",
+    "source": "https://v2.samehadaku.how/anime/gintama-the-final/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Gintama: The Final BLURAY",
+        "slug": "gintama-the-final-bluray",
+        "source": "https://v2.samehadaku.how/gintama-the-final-bluray/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "wibufile",
+            "label": "Wibufile 480p",
+            "url": "https://wibufile.com/embed/4jF0q8XFevjsV51",
+            "default": true,
+            "post": "13342",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "server-1",
+            "label": "Server 1 480p",
+            "url": "https://mega.nz/embed/NUhHxKgI#Y9jYIrMa3sLHmUKiZiFS1NRJ8eGFW1ymcajVVdh_ItU",
+            "default": false,
+            "post": "13342",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "server-2",
+            "label": "Server 2 720p",
+            "url": "https://mega.nz/embed/JRQ1TYDA#B3g66La-uZZwinpf2hp8xKRe521cdUTX2JkUg2gC9NQ",
+            "default": false,
+            "post": "13342",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "server-3",
+            "label": "Server 3 1080p",
+            "url": "https://mega.nz/embed/embed/lBoTwSCS#y7rrbgT6jUXoyVdESHsWiiBFBAqR-rHUhzdzVAXVwkU",
+            "default": false,
+            "post": "13342",
+            "nume": "4"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "wibufile",
+        "label": "Wibufile 480p",
+        "url": "https://wibufile.com/embed/4jF0q8XFevjsV51",
+        "default": true,
+        "post": "13342",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "server-1",
+        "label": "Server 1 480p",
+        "url": "https://mega.nz/embed/NUhHxKgI#Y9jYIrMa3sLHmUKiZiFS1NRJ8eGFW1ymcajVVdh_ItU",
+        "default": false,
+        "post": "13342",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "server-2",
+        "label": "Server 2 720p",
+        "url": "https://mega.nz/embed/JRQ1TYDA#B3g66La-uZZwinpf2hp8xKRe521cdUTX2JkUg2gC9NQ",
+        "default": false,
+        "post": "13342",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "server-3",
+        "label": "Server 3 1080p",
+        "url": "https://mega.nz/embed/embed/lBoTwSCS#y7rrbgT6jUXoyVdESHsWiiBFBAqR-rHUhzdzVAXVwkU",
+        "default": false,
+        "post": "13342",
+        "nume": "4"
+      }
+    ],
+    "id": 25
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Digimon Adventure: Last Evolution Kizuna",
+    "judul": "Digimon Adventure: Last Evolution Kizuna",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2020/09/104884.jpg",
+    "rating": "7.85",
+    "votes": 965,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Adventure",
+      "Comedy",
+      "Drama"
+    ],
+    "sinopsis": "Nonton Digimon Adventure: Last Evolution Kizuna Subtitle Indonesia, kalian bisa download episode terbaru Digimon Adventure: Last Evolution Kizuna Sub Indo secara gratis di website streaming Samehadaku format mkv mp4 dan HD",
+    "related": [],
+    "slug": "digimon-adventure-last-evolution-kizuna",
+    "source": "https://v2.samehadaku.how/anime/digimon-adventure-last-evolution-kizuna/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Digimon Adventure: Last Evolution Kizuna",
+        "slug": "digimon-adventure-last-evolution-kizuna-subindo",
+        "source": "https://v2.samehadaku.how/digimon-adventure-last-evolution-kizuna-subindo/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "360p",
+            "label": "360P",
+            "url": "https://file.fm/embed/playerv2?hash=56wm4cwj&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=56wm4cwj",
+            "default": true,
+            "post": "8055",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "480p",
+            "label": "480P",
+            "url": "https://file.fm/embed/playerv2?hash=dgg985xm&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=dgg985xm",
+            "default": false,
+            "post": "8055",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "mp4hd",
+            "label": "MP4HD",
+            "url": "https://file.fm/embed/playerv2?hash=kev5ye8r&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=kev5ye8r",
+            "default": false,
+            "post": "8055",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "fullhd",
+            "label": "FULLHD",
+            "url": "https://file.fm/embed/playerv2?hash=acf6yfnw&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=acf6yfnw",
+            "default": false,
+            "post": "8055",
+            "nume": "4"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "360p",
+        "label": "360P",
+        "url": "https://file.fm/embed/playerv2?hash=56wm4cwj&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=56wm4cwj",
+        "default": true,
+        "post": "8055",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "480p",
+        "label": "480P",
+        "url": "https://file.fm/embed/playerv2?hash=dgg985xm&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=dgg985xm",
+        "default": false,
+        "post": "8055",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "mp4hd",
+        "label": "MP4HD",
+        "url": "https://file.fm/embed/playerv2?hash=kev5ye8r&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=kev5ye8r",
+        "default": false,
+        "post": "8055",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "fullhd",
+        "label": "FULLHD",
+        "url": "https://file.fm/embed/playerv2?hash=acf6yfnw&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=acf6yfnw",
+        "default": false,
+        "post": "8055",
+        "nume": "4"
+      }
+    ],
+    "id": 26
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Goblin Slayer: Goblin’s Crown",
+    "judul": "Goblin Slayer: Goblin’s Crown",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2020/07/100023l.jpg",
+    "rating": "7.21",
+    "votes": 5.165,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Adventure",
+      "Fantasy"
+    ],
+    "sinopsis": "Adaptasi Movie dari Light Novel Goblin Slayer.",
+    "related": [],
+    "slug": "goblin-slayer-goblins-crown",
+    "source": "https://v2.samehadaku.how/anime/goblin-slayer-goblins-crown/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Goblin Slayer: Goblin’s Crown",
+        "slug": "goblin-slayer-goblins-crown-00",
+        "source": "https://v2.samehadaku.how/goblin-slayer-goblins-crown-00/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "wibuu",
+            "label": "Wibuu 480p",
+            "url": "https://wibufile.com/embed/8XzuNuaumIrTLxh",
+            "default": true,
+            "post": "6368",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "360p-server-1",
+            "label": "360p Server 1",
+            "url": "https://file.fm/embed/playerv2?hash=z4hvr8mk&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=z4hvr8mk",
+            "default": false,
+            "post": "6368",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "480p-server-1",
+            "label": "480p Server 1",
+            "url": "https://file.fm/embed/playerv2?hash=jfejxt8b&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=jfejxt8b",
+            "default": false,
+            "post": "6368",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "mp4hd-server-1",
+            "label": "MP4HD Server 1",
+            "url": "https://file.fm/embed/playerv2?hash=txfgx52k&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=txfgx52k",
+            "default": false,
+            "post": "6368",
+            "nume": "4"
+          },
+          {
+            "no": 5,
+            "server": "fullhd-server-1",
+            "label": "FULLHD Server 1",
+            "url": "https://file.fm/embed/playerv2?hash=pkfz63kr&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=pkfz63kr",
+            "default": false,
+            "post": "6368",
+            "nume": "5"
+          },
+          {
+            "no": 6,
+            "server": "360p-server-2",
+            "label": "360p Server 2",
+            "url": "https://dood.to/e/cu27fyna1itx",
+            "default": false,
+            "post": "6368",
+            "nume": "6"
+          },
+          {
+            "no": 7,
+            "server": "480p-server-2",
+            "label": "480p Server 2",
+            "url": "[animov id=havtap0u27go]",
+            "default": false,
+            "post": "6368",
+            "nume": "7"
+          },
+          {
+            "no": 8,
+            "server": "mp4hd-server-2",
+            "label": "MP4HD Server 2",
+            "url": "[animov id=cnbzuhzg5ksi]",
+            "default": false,
+            "post": "6368",
+            "nume": "8"
+          },
+          {
+            "no": 9,
+            "server": "fullhd-server-2",
+            "label": "FULLHD Server 2",
+            "url": "[animov id=gmlos3amwh7o]",
+            "default": false,
+            "post": "6368",
+            "nume": "9"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "wibuu",
+        "label": "Wibuu 480p",
+        "url": "https://wibufile.com/embed/8XzuNuaumIrTLxh",
+        "default": true,
+        "post": "6368",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "360p-server-1",
+        "label": "360p Server 1",
+        "url": "https://file.fm/embed/playerv2?hash=z4hvr8mk&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=z4hvr8mk",
+        "default": false,
+        "post": "6368",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "480p-server-1",
+        "label": "480p Server 1",
+        "url": "https://file.fm/embed/playerv2?hash=jfejxt8b&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=jfejxt8b",
+        "default": false,
+        "post": "6368",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "mp4hd-server-1",
+        "label": "MP4HD Server 1",
+        "url": "https://file.fm/embed/playerv2?hash=txfgx52k&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=txfgx52k",
+        "default": false,
+        "post": "6368",
+        "nume": "4"
+      },
+      {
+        "no": 5,
+        "server": "fullhd-server-1",
+        "label": "FULLHD Server 1",
+        "url": "https://file.fm/embed/playerv2?hash=pkfz63kr&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=pkfz63kr",
+        "default": false,
+        "post": "6368",
+        "nume": "5"
+      },
+      {
+        "no": 6,
+        "server": "360p-server-2",
+        "label": "360p Server 2",
+        "url": "https://dood.to/e/cu27fyna1itx",
+        "default": false,
+        "post": "6368",
+        "nume": "6"
+      },
+      {
+        "no": 7,
+        "server": "480p-server-2",
+        "label": "480p Server 2",
+        "url": "[animov id=havtap0u27go]",
+        "default": false,
+        "post": "6368",
+        "nume": "7"
+      },
+      {
+        "no": 8,
+        "server": "mp4hd-server-2",
+        "label": "MP4HD Server 2",
+        "url": "[animov id=cnbzuhzg5ksi]",
+        "default": false,
+        "post": "6368",
+        "nume": "8"
+      },
+      {
+        "no": 9,
+        "server": "fullhd-server-2",
+        "label": "FULLHD Server 2",
+        "url": "[animov id=gmlos3amwh7o]",
+        "default": false,
+        "post": "6368",
+        "nume": "9"
+      }
+    ],
+    "id": 27
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Sora no Aosa wo Shiru Hito yo",
+    "judul": "Sora no Aosa wo Shiru Hito yo",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2020/06/102527.jpg",
+    "rating": "7.68",
+    "votes": 2777,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Drama"
+    ],
+    "sinopsis": "Bercerita tentang Aoi Aioi, seorang anak SMA yang hidup bersama kakaknya, Akane, setelah kecelakaan tragis yang merenggut nyawa kedua orang tuanya 13 tahun lalu. Aoi Aioi ingin pindah ke Tokyo untuk meringankan beban kakaknya yang selama ini membesarkannya seorang diri dan ingin mengejar karir di bidang musik seperti mantan pacar Akane, Shinnosuke “Shinno” Kanamuro. Shinno merupakan anggota sebuah band sampai akhirnya dia pergi ke Tokyo untuk jadi musisi profesional dan tak pernah kembali lagi.",
+    "related": [],
+    "slug": "sora-no-aosa-wo-shiru-hito-yo-bd",
+    "source": "https://v2.samehadaku.how/anime/sora-no-aosa-wo-shiru-hito-yo-bd/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Sora no Aosa wo Shiru Hito yo [BD]",
+        "slug": "sora-no-aosa-wo-shiru-hito-yo-subindo",
+        "source": "https://v2.samehadaku.how/sora-no-aosa-wo-shiru-hito-yo-subindo/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "360p-server-1",
+            "label": "360p Server 1",
+            "url": "https://file.fm/embed/playerv2?hash=vhyf3ztg&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=vhyf3ztg",
+            "default": true,
+            "post": "4005",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "480p-server-1",
+            "label": "480p Server 1",
+            "url": "https://file.fm/embed/playerv2?hash=u9sbhu7x&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=u9sbhu7x",
+            "default": false,
+            "post": "4005",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "720p-server-1",
+            "label": "720p Server 1",
+            "url": "https://file.fm/embed/playerv2?hash=e4ddkch4&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=e4ddkch4",
+            "default": false,
+            "post": "4005",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "1080p-server-1",
+            "label": "1080p Server 1",
+            "url": "https://file.fm/embed/playerv2?hash=2a8jv3zr&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=2a8jv3zr",
+            "default": false,
+            "post": "4005",
+            "nume": "4"
+          },
+          {
+            "no": 5,
+            "server": "360p-server-2",
+            "label": "360p Server 2",
+            "url": "https://dood.to/e/vbv475pserga",
+            "default": false,
+            "post": "4005",
+            "nume": "5"
+          },
+          {
+            "no": 6,
+            "server": "480p-server-2",
+            "label": "480p Server 2",
+            "url": "https://dood.to/e/kswmhkz4s4vm",
+            "default": false,
+            "post": "4005",
+            "nume": "6"
+          },
+          {
+            "no": 7,
+            "server": "720p-server-2",
+            "label": "720p Server 2",
+            "url": "https://dood.to/e/hghpxeytdptl",
+            "default": false,
+            "post": "4005",
+            "nume": "7"
+          },
+          {
+            "no": 8,
+            "server": "1080p-server-2",
+            "label": "1080p Server 2",
+            "url": "https://dood.to/e/v4dnnysgk81k",
+            "default": false,
+            "post": "4005",
+            "nume": "8"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "360p-server-1",
+        "label": "360p Server 1",
+        "url": "https://file.fm/embed/playerv2?hash=vhyf3ztg&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=vhyf3ztg",
+        "default": true,
+        "post": "4005",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "480p-server-1",
+        "label": "480p Server 1",
+        "url": "https://file.fm/embed/playerv2?hash=u9sbhu7x&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=u9sbhu7x",
+        "default": false,
+        "post": "4005",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "720p-server-1",
+        "label": "720p Server 1",
+        "url": "https://file.fm/embed/playerv2?hash=e4ddkch4&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=e4ddkch4",
+        "default": false,
+        "post": "4005",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "1080p-server-1",
+        "label": "1080p Server 1",
+        "url": "https://file.fm/embed/playerv2?hash=2a8jv3zr&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=2a8jv3zr",
+        "default": false,
+        "post": "4005",
+        "nume": "4"
+      },
+      {
+        "no": 5,
+        "server": "360p-server-2",
+        "label": "360p Server 2",
+        "url": "https://dood.to/e/vbv475pserga",
+        "default": false,
+        "post": "4005",
+        "nume": "5"
+      },
+      {
+        "no": 6,
+        "server": "480p-server-2",
+        "label": "480p Server 2",
+        "url": "https://dood.to/e/kswmhkz4s4vm",
+        "default": false,
+        "post": "4005",
+        "nume": "6"
+      },
+      {
+        "no": 7,
+        "server": "720p-server-2",
+        "label": "720p Server 2",
+        "url": "https://dood.to/e/hghpxeytdptl",
+        "default": false,
+        "post": "4005",
+        "nume": "7"
+      },
+      {
+        "no": 8,
+        "server": "1080p-server-2",
+        "label": "1080p Server 2",
+        "url": "https://dood.to/e/v4dnnysgk81k",
+        "default": false,
+        "post": "4005",
+        "nume": "8"
+      }
+    ],
+    "id": 28
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Tenki no Ko",
+    "judul": "Tenki no Ko",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2020/05/101146.jpg",
+    "rating": "8.56",
+    "votes": 95857,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Drama",
+      "Fantasy",
+      "Romance",
+      "Slice of Life"
+    ],
+    "sinopsis": "Tenki no Ko bercerita tentang petualangan seorang anak laki-laki bernama Hodaka Morishima dan Hina Amano, seorang “Gadis Matahari” dengan kekuatan misterius yang bisa merubah cuaca dengan kekuatan “doa”nya. Hujan yang terus turun membasahi Tokyo setiap hari membuat banyak orang berharap cuaca cerah. Saat itulah Hina dan Amano menawarkan jasa “Layanan Matahari” yang membuat cuaca cerah. Namun, ada “harga” yang harus dibayar agar semua itu bisa tercapai. Petualangan penuh emosional mereka berdua pun berlangsung.",
+    "related": [],
+    "slug": "tenki-no-ko",
+    "source": "https://v2.samehadaku.how/anime/tenki-no-ko/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Tenki no Ko [BD]",
+        "slug": "tenki-no-ko-bd-subtitle-indonesia",
+        "source": "https://v2.samehadaku.how/tenki-no-ko-bd-subtitle-indonesia/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "wibuu",
+            "label": "Wibuu 480p",
+            "url": "https://wibufile.com/embed/Zg4XNiO85I1lqaL",
+            "default": true,
+            "post": "3716",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "480p",
+            "label": "480p",
+            "url": "https://file.fm/embed/playerv2?hash=83js3227h&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=83js3227h",
+            "default": false,
+            "post": "3716",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "360p",
+            "label": "360P",
+            "url": "https://dood.to/e/dm8bqpw4mho5",
+            "default": false,
+            "post": "3716",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "480p",
+            "label": "480P",
+            "url": "https://dood.to/e/v8wjffu1a1yn",
+            "default": false,
+            "post": "3716",
+            "nume": "4"
+          },
+          {
+            "no": 5,
+            "server": "720p",
+            "label": "720P",
+            "url": "https://dood.to/e/mhmx0q9o6hiu",
+            "default": false,
+            "post": "3716",
+            "nume": "5"
+          },
+          {
+            "no": 6,
+            "server": "1080p",
+            "label": "1080P",
+            "url": "https://dood.to/e/gnuqe0vup97t",
+            "default": false,
+            "post": "3716",
+            "nume": "6"
+          },
+          {
+            "no": 7,
+            "server": "480p",
+            "label": "480p",
+            "url": "https://file.fm/embed/playerv2?hash=83js3227h&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=83js3227h",
+            "default": false,
+            "post": "3716",
+            "nume": "7"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "wibuu",
+        "label": "Wibuu 480p",
+        "url": "https://wibufile.com/embed/Zg4XNiO85I1lqaL",
+        "default": true,
+        "post": "3716",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "480p",
+        "label": "480p",
+        "url": "https://file.fm/embed/playerv2?hash=83js3227h&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=83js3227h",
+        "default": false,
+        "post": "3716",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "360p",
+        "label": "360P",
+        "url": "https://dood.to/e/dm8bqpw4mho5",
+        "default": false,
+        "post": "3716",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "480p",
+        "label": "480P",
+        "url": "https://dood.to/e/v8wjffu1a1yn",
+        "default": false,
+        "post": "3716",
+        "nume": "4"
+      },
+      {
+        "no": 5,
+        "server": "720p",
+        "label": "720P",
+        "url": "https://dood.to/e/mhmx0q9o6hiu",
+        "default": false,
+        "post": "3716",
+        "nume": "5"
+      },
+      {
+        "no": 6,
+        "server": "1080p",
+        "label": "1080P",
+        "url": "https://dood.to/e/gnuqe0vup97t",
+        "default": false,
+        "post": "3716",
+        "nume": "6"
+      },
+      {
+        "no": 7,
+        "server": "480p",
+        "label": "480p",
+        "url": "https://file.fm/embed/playerv2?hash=83js3227h&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=83js3227h",
+        "default": false,
+        "post": "3716",
+        "nume": "7"
+      }
+    ],
+    "id": 29
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Boku no Hero Academia the Movie 1: Futari no Hero",
+    "judul": "Boku no Hero Academia the Movie 1: Futari no Hero",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2020/04/93138.jpg",
+    "rating": "7.98",
+    "votes": 129157,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Shounen",
+      "Super Power"
+    ],
+    "sinopsis": "A.A. Murid-murid SMA Kelas 1-A telah sampai pada liburan musim panas. Izuku Midoriya menemani mentornya, All Might, ke festival superhero perayaan di I-Island, sebidang tanah terpencil yang didedikasikan untuk meneliti Quirks dan segala sesuatu yang terkait dengan bisnis pahlawan. Midoriya diberikan kesempatan untuk bertemu teman All Might, Dave dan putri Dave, Melissa, dua insinyur peralatan pahlawan berbakat. Dia juga bertemu dengan teman-teman sekelasnya, yang sebagian besar telah diberi kesempatan untuk menghabiskan sebagian dari liburan musim panas mereka di festival.",
+    "related": [],
+    "slug": "movie-boku-no-hero-academia-the-movie-1-futari-no-hero",
+    "source": "https://v2.samehadaku.how/anime/movie-boku-no-hero-academia-the-movie-1-futari-no-hero/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Boku no Hero Academia the Movie 1: Futari no Hero",
+        "slug": "bokuu-no-hero-academia-the-movie-1-futari-no-hero",
+        "source": "https://v2.samehadaku.how/bokuu-no-hero-academia-the-movie-1-futari-no-hero/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "server-1",
+            "label": "Server 1",
+            "url": "https://file.fm/embed/playerv2?hash=kgg4apmr&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=kgg4apmr",
+            "default": true,
+            "post": "1157",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "server-2",
+            "label": "Server 2",
+            "url": "https://gdriveplayer.to/embed2.php?link=c1YWFyrXQgdMXVtuAyveSgMnMTFctkQrNpr14IiRzFHfpk0IvT5IWCVE6us8nCFZUf50x%252BnBvDThHKvmpJo5EoL%252BRqMcZiOaZMWAHaH68sJl9mQr4e0oraM1s5EtFfak48F4qIZJNCOrlKlvV9Pp1y4RJSCwf8qtbQe12u8KVjtXvyoRiN%252FQTgcNMeTxG%252FcfA%253D",
+            "default": false,
+            "post": "1157",
+            "nume": "2"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "server-1",
+        "label": "Server 1",
+        "url": "https://file.fm/embed/playerv2?hash=kgg4apmr&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=kgg4apmr",
+        "default": true,
+        "post": "1157",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "server-2",
+        "label": "Server 2",
+        "url": "https://gdriveplayer.to/embed2.php?link=c1YWFyrXQgdMXVtuAyveSgMnMTFctkQrNpr14IiRzFHfpk0IvT5IWCVE6us8nCFZUf50x%252BnBvDThHKvmpJo5EoL%252BRqMcZiOaZMWAHaH68sJl9mQr4e0oraM1s5EtFfak48F4qIZJNCOrlKlvV9Pp1y4RJSCwf8qtbQe12u8KVjtXvyoRiN%252FQTgcNMeTxG%252FcfA%253D",
+        "default": false,
+        "post": "1157",
+        "nume": "2"
+      }
+    ],
+    "id": 30
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Dragon Ball Super Movie: Broly",
+    "judul": "Dragon Ball Super Movie: Broly",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2020/04/93498.jpg",
+    "rating": "8.20",
+    "votes": 74128,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Adventure",
+      "Comedy",
+      "Fantasy",
+      "Shounen",
+      "Super Power"
+    ],
+    "sinopsis": "Empat puluh satu tahun yang lalu di Planet Vegeta, rumah dari ras prajurit Saiyan yang terkenal, Raja Vegeta memperhatikan seorang bayi bernama Broly yang kekuatan latennya melebihi kekuatan putranya sendiri. Percaya bahwa kekuatan Broly suatu hari akan melampaui kekuatan anaknya, Vegeta, raja mengirim Broly ke planet Vampa yang sunyi. Ayah Broly, Paragus, mengikutinya, bermaksud menyelamatkan putranya. Namun, kapalnya rusak, menyebabkan keduanya menghabiskan bertahun-tahun terperangkap di dunia tandus, tidak menyadari keselamatan yang suatu hari akan datang dari sekutu yang tidak mungkin.",
+    "related": [],
+    "slug": "dragon-ball-super-movie-broly",
+    "source": "https://v2.samehadaku.how/anime/dragon-ball-super-movie-broly/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Dragon Ball Super Movie: Broly",
+        "slug": "dragon-ball-super-movie-broly-subindo",
+        "source": "https://v2.samehadaku.how/dragon-ball-super-movie-broly-subindo/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "server-1",
+            "label": "Server 1",
+            "url": "https://file.fm/embed/playerv2?hash=vfhg82a9&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=vfhg82a9",
+            "default": true,
+            "post": "1160",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "server-2",
+            "label": "Server 2",
+            "url": "https://gdriveplayer.to/embed2.php?link=5X3OQ8i1Vn5RjwrBX7WyIglaQyMBhp%252FRYGuyThMsyLFRtBLKFWCH%252Bq8vZg4O%252BHWJxXIymvCiDbV8r1%252FESkDgc3wM%252B64Tkxpl%252BVEmIxAl1Dotw3mzHCfoXKDghbIxq4z%252BV%252FuPuLcXq7da5nFSMccYpbMywbIrQ2LiKcNwTHyFANB4vv4z3k%252BPR0Uusc4vIXFhQ%253D",
+            "default": false,
+            "post": "1160",
+            "nume": "2"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "server-1",
+        "label": "Server 1",
+        "url": "https://file.fm/embed/playerv2?hash=vfhg82a9&w=100%&h=100%&poster_src=https://file.fm/thumb_video_picture.php?i=vfhg82a9",
+        "default": true,
+        "post": "1160",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "server-2",
+        "label": "Server 2",
+        "url": "https://gdriveplayer.to/embed2.php?link=5X3OQ8i1Vn5RjwrBX7WyIglaQyMBhp%252FRYGuyThMsyLFRtBLKFWCH%252Bq8vZg4O%252BHWJxXIymvCiDbV8r1%252FESkDgc3wM%252B64Tkxpl%252BVEmIxAl1Dotw3mzHCfoXKDghbIxq4z%252BV%252FuPuLcXq7da5nFSMccYpbMywbIrQ2LiKcNwTHyFANB4vv4z3k%252BPR0Uusc4vIXFhQ%253D",
+        "default": false,
+        "post": "1160",
+        "nume": "2"
+      }
+    ],
+    "id": 31
+  }
+]

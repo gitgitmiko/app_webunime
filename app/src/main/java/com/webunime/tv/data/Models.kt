@@ -1,0 +1,124 @@
+package com.webunime.tv.data
+
+import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
+
+@JsonClass(generateAdapter = false)
+data class CatalogItem(
+    val id: Int? = null,
+    val type: String? = null,
+    val nama: String? = null,
+    val judul: String? = null,
+    val tahun: String? = null,
+    val thumbnail: String? = null,
+    val rating: String? = null,
+    val durasi: String? = null,
+    val genre: List<String>? = null,
+    val sinopsis: String? = null,
+    val slug: String? = null,
+    val source: String? = null,
+    val players: List<PlayerServer>? = null,
+    val episodes: List<Episode>? = null,
+    val episodes_count: Int? = null,
+    val anime_slug: String? = null,
+    val episode: Int? = null,
+    val episode_source: String? = null,
+) {
+    fun displayTitle(): String = judul?.takeIf { it.isNotBlank() } ?: nama ?: slug ?: "Tanpa judul"
+
+    fun displayMeta(): String {
+        val parts = mutableListOf<String>()
+        tahun?.takeIf { it.isNotBlank() }?.let { parts += it }
+        rating?.takeIf { it.isNotBlank() }?.let { parts += "★ $it" }
+        durasi?.takeIf { it.isNotBlank() }?.let { parts += it }
+        return parts.joinToString(" · ")
+    }
+
+    fun isSeriesLike(): Boolean =
+        type == "series" || type == "anime" || type == "anime-movie" || !episodes.isNullOrEmpty()
+}
+
+@JsonClass(generateAdapter = false)
+data class PlayerServer(
+    val no: Int? = null,
+    val server: String? = null,
+    val label: String? = null,
+    val url: String? = null,
+    @Json(name = "default") val isDefault: Boolean? = null,
+) {
+    fun displayName(): String {
+        val raw = label?.takeIf { it.isNotBlank() } ?: server ?: "Server"
+        return raw
+            .replace(Regex("^ganti\\s*player\\s*", RegexOption.IGNORE_CASE), "")
+            .trim()
+            .ifBlank { "Server" }
+            .uppercase()
+    }
+}
+
+@JsonClass(generateAdapter = false)
+data class Episode(
+    val season: Int? = null,
+    val episode: Int? = null,
+    val title: String? = null,
+    val slug: String? = null,
+    val source: String? = null,
+    val date: String? = null,
+    val players: List<PlayerServer>? = null,
+) {
+    fun displayTitle(): String {
+        val ep = episode ?: return title ?: "Episode"
+        val s = season
+        return if (s != null && s > 0) "S${s}E$ep" else "E$ep"
+    }
+}
+
+data class CatalogSnapshot(
+    val movies: List<CatalogItem> = emptyList(),
+    val series: List<CatalogItem> = emptyList(),
+    val horror: List<CatalogItem> = emptyList(),
+    val anime: List<CatalogItem> = emptyList(),
+    val animeMovies: List<CatalogItem> = emptyList(),
+    val animeLatest: List<CatalogItem> = emptyList(),
+) {
+    fun findBySlug(slug: String): CatalogItem? {
+        if (slug.isBlank()) return null
+        val all = movies + series + horror + anime + animeMovies
+        all.firstOrNull { it.slug == slug }?.let { return it }
+        // Feed anime-terbaru: hanya anime_slug — ambil entri penuh dari katalog anime
+        anime.firstOrNull { it.slug == slug || it.anime_slug == slug }?.let { return it }
+        animeMovies.firstOrNull { it.slug == slug || it.anime_slug == slug }?.let { return it }
+        return null
+    }
+
+    fun findLatestFeedEntry(animeSlug: String, episode: Int?): CatalogItem? =
+        animeLatest.firstOrNull {
+            it.anime_slug == animeSlug && (episode == null || it.episode == episode)
+        }
+
+    /** Cari di seluruh katalog (film, series, horror, anime). */
+    fun search(query: String, limit: Int = 40): List<CatalogItem> {
+        val q = query.trim().lowercase()
+        if (q.length < 2) return emptyList()
+        val pool = (movies + series + horror + anime + animeMovies)
+            .distinctBy { it.slug ?: "${it.anime_slug}:${it.judul}" }
+        return pool
+            .asSequence()
+            .filter { item ->
+                val title = item.displayTitle().lowercase()
+                val slug = (item.slug ?: item.anime_slug ?: "").lowercase()
+                val genres = item.genre.orEmpty().joinToString(" ").lowercase()
+                title.contains(q) || slug.contains(q) || genres.contains(q)
+            }
+            .sortedBy { item ->
+                val title = item.displayTitle().lowercase()
+                when {
+                    title.startsWith(q) -> 0
+                    title.contains(q) -> 1
+                    else -> 2
+                }
+            }
+            .take(limit)
+            .toList()
+    }
+}

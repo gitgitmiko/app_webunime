@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Netflix-inspired palette -->
+    <color name="wu_bg">#141414</color>
+    <color name="wu_bg_elevated">#181818</color>
+    <color name="wu_surface">#2F2F2F</color>
+    <color name="wu_surface_soft">#1F1F1F</color>
+    <color name="wu_accent">#E50914</color>
+    <color name="wu_accent_dark">#B20710</color>
+    <color name="wu_text">#FFFFFF</color>
+    <color name="wu_text_dim">#B3B3B3</color>
+    <color name="wu_text_muted">#808080</color>
+    <color name="wu_focus">#FFFFFF</color>
+    <color name="wu_row_header">#E5E5E5</color>
+    <color name="wu_overlay">#CC000000</color>
+    <color name="wu_scrim">#99000000</color>
+</resources>
