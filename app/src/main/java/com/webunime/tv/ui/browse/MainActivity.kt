@@ -54,8 +54,11 @@ class MainActivity : FragmentActivity() {
         val code = event.keyCode
         if (isDpadOrOk(code) && event.action == KeyEvent.ACTION_DOWN) {
             val browse = browseFragment()
-            val grid = browse?.rowsGrid()
-            if (grid != null && !grid.hasFocus()) {
+            // Hanya pulihkan fokus ke grid bila fokus BENAR-BENAR hilang (null).
+            // Jangan merebut fokus saat tombol search / view lain sedang fokus,
+            // agar OK di tombol search membuka pencarian (bukan malah ke bawah).
+            val focused = window.decorView.findFocus()
+            if (browse != null && focused == null) {
                 browse.restoreRowFocus()
             }
         }

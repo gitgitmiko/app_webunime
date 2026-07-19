@@ -3,6 +3,8 @@ package com.webunime.tv.ui.player
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
 import android.webkit.WebChromeClient
@@ -26,6 +28,7 @@ import androidx.media3.ui.PlayerView
 import com.webunime.tv.R
 import com.webunime.tv.data.EmbedResolver
 import com.webunime.tv.data.PlayerRouter
+import com.webunime.tv.data.WebPlayerProxy
 import kotlinx.coroutines.launch
 
 class PlayerActivity : AppCompatActivity() {
@@ -33,6 +36,7 @@ class PlayerActivity : AppCompatActivity() {
     private var exoPlayer: ExoPlayer? = null
     private lateinit var playerView: PlayerView
     private lateinit var webView: WebView
+    private lateinit var titleBar: View
     private lateinit var titleView: TextView
     private lateinit var modeView: TextView
 
@@ -40,12 +44,33 @@ class PlayerActivity : AppCompatActivity() {
     private var serverLabel: String = ""
     private var exoFallbackUsed = false
 
+    /**
+     * True setelah pemutaran WebView benar-benar dimulai (event `play` pertama).
+     * Selama false — termasuk saat masih ada gerbang/dialog seperti verifikasi
+     * Cast ("click to verify you're a human") atau "Resume watching?" — tombol OK
+     * diteruskan ke WebView agar mengklik tombol yang sedang fokus. Setelah play
+     * dimulai, OK berpindah jadi toggle play/pause.
+     */
+    @Volatile
+    private var webVideoActive = false
+
+    /**
+     * True bila WebView memuat Hydrax/abyss di dalam iframe wrapper. Untuk kasus
+     * ini tombol OK SELALU toggle play/pause (via postMessage ke iframe), karena
+     * wrapper tidak punya elemen fokus yang perlu diklik.
+     */
+    private var isAbyssWrapper = false
+
+    private val hideHandler = Handler(Looper.getMainLooper())
+    private val hideTitleRunnable = Runnable { titleBar.visibility = View.GONE }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_player)
 
         playerView = findViewById(R.id.exoPlayerView)
         webView = findViewById(R.id.webPlayer)
+        titleBar = findViewById(R.id.playerTitleBar)
         titleView = findViewById(R.id.playerTitle)
         modeView = findViewById(R.id.playerMode)
 
@@ -137,6 +162,10 @@ class PlayerActivity : AppCompatActivity() {
         player.prepare()
         player.playWhenReady = true
         player.addListener(object : Player.Listener {
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                setTitleBarVisible(!isPlaying)
+            }
+
             override fun onPlayerError(error: PlaybackException) {
                 // Pixeldrain API gagal → fallback embed bersih
                 val embed = EmbedResolver.pixeldrainEmbedUrl(sourceUrl)
@@ -157,11 +186,48 @@ class PlayerActivity : AppCompatActivity() {
         playerView.requestFocus()
     }
 
+    /** Sembunyikan bar judul saat sedang play, tampilkan lagi saat pause. */
+    private fun setTitleBarVisible(visible: Boolean) {
+        runOnUiThread {
+            hideHandler.removeCallbacks(hideTitleRunnable)
+            titleBar.visibility = if (visible) View.VISIBLE else View.GONE
+        }
+    }
+
+    /**
+     * Tampilkan judul lalu sembunyikan otomatis setelah beberapa detik.
+     * Dipakai untuk embed iframe lintas-origin yang status play/pause-nya
+     * tidak bisa dibaca — judul muncul saat ada interaksi tombol, lalu hilang.
+     */
+    private fun showTitleThenAutoHide() {
+        runOnUiThread {
+            titleBar.visibility = View.VISIBLE
+            hideHandler.removeCallbacks(hideTitleRunnable)
+            hideHandler.postDelayed(hideTitleRunnable, TITLE_AUTO_HIDE_MS)
+        }
+    }
+
+    /** Bridge dari <video> di WebView (same-origin, mis. Pixeldrain) → toggle judul. */
+    private inner class PlaybackBridge {
+        @android.webkit.JavascriptInterface
+        fun onPlay() {
+            webVideoActive = true
+            setTitleBarVisible(false)
+        }
+
+        @android.webkit.JavascriptInterface
+        fun onPause() = setTitleBarVisible(true)
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     private fun startWeb(url: String, server: String) {
         playerView.visibility = View.GONE
         webView.visibility = View.VISIBLE
         modeView.text = "$server · WebView"
+        webVideoActive = false
+        isAbyssWrapper = WebPlayerProxy.isAbyss(url)
+
+        webView.addJavascriptInterface(PlaybackBridge(), "WebunimePlayback")
 
         webView.settings.apply {
             javaScriptEnabled = true
@@ -185,6 +251,13 @@ class PlayerActivity : AppCompatActivity() {
 
         val isPixeldrain = url.contains("pixeldrain", ignoreCase = true)
         webView.webViewClient = object : WebViewClient() {
+            override fun shouldInterceptRequest(
+                view: WebView,
+                request: WebResourceRequest
+            ): android.webkit.WebResourceResponse? {
+                return WebPlayerProxy.intercept(request)
+            }
+
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val next = request.url?.toString().orEmpty()
                 return handleNav(view, next)
@@ -208,6 +281,30 @@ class PlayerActivity : AppCompatActivity() {
             }
 
             override fun onPageFinished(view: WebView?, pageUrl: String?) {
+                // Hook play/pause dari elemen <video> same-origin agar judul ikut
+                // hilang saat diputar dan muncul lagi saat dijeda. Iframe lintas-origin
+                // tidak bisa diakses, judul tetap tampil (aman, tidak error).
+                view?.evaluateJavascript(
+                    """
+                    (function(){
+                      function hook(v){
+                        if(!v||v.__wuHooked)return;
+                        v.__wuHooked=true;
+                        v.addEventListener('play',function(){try{WebunimePlayback.onPlay();}catch(e){}});
+                        v.addEventListener('playing',function(){try{WebunimePlayback.onPlay();}catch(e){}});
+                        v.addEventListener('pause',function(){try{WebunimePlayback.onPause();}catch(e){}});
+                        v.addEventListener('ended',function(){try{WebunimePlayback.onPause();}catch(e){}});
+                        if(!v.paused){try{WebunimePlayback.onPlay();}catch(e){}}
+                      }
+                      document.querySelectorAll('video').forEach(hook);
+                      var mo=new MutationObserver(function(){
+                        document.querySelectorAll('video').forEach(hook);
+                      });
+                      mo.observe(document.documentElement,{childList:true,subtree:true});
+                    })();
+                    """.trimIndent(),
+                    null
+                )
                 if (isPixeldrain) {
                     // Sembunyikan chrome Pixeldrain; fokus ke video
                     view?.evaluateJavascript(
@@ -239,18 +336,34 @@ class PlayerActivity : AppCompatActivity() {
             return
         }
 
-        val headers = mutableMapOf<String, String>()
-        PlayerRouter.refererFor(url)?.let { headers["Referer"] = it }
-        if (headers.isEmpty()) {
-            webView.loadUrl(url)
+        if (WebPlayerProxy.isAbyss(url)) {
+            // Hydrax/abyss harus berjalan di dalam iframe (anti-direct-access),
+            // seolah di-embed dari playeriframe.sbs.
+            webView.loadDataWithBaseURL(
+                WebPlayerProxy.ABYSS_WRAPPER_BASE,
+                WebPlayerProxy.abyssWrapperHtml(url),
+                "text/html",
+                "utf-8",
+                null
+            )
         } else {
-            webView.loadUrl(url, headers)
+            val headers = mutableMapOf<String, String>()
+            PlayerRouter.refererFor(url)?.let { headers["Referer"] = it }
+            if (headers.isEmpty()) {
+                webView.loadUrl(url)
+            } else {
+                webView.loadUrl(url, headers)
+            }
         }
         webView.requestFocus()
+        // Embed dianggap langsung memutar → judul tampil sebentar lalu hilang.
+        showTitleThenAutoHide()
     }
 
     private fun handleNav(view: WebView, next: String): Boolean {
         if (next.isBlank() || next.startsWith("about:")) return false
+        // Iklan / pop-under: blokir tanpa keluar dari player
+        if (WebPlayerProxy.isAdRequest(next)) return true
         if (EmbedResolver.isBlockedNavigation(next)) {
             Toast.makeText(this, "Link situs sumber diblokir", Toast.LENGTH_SHORT).show()
             return true
@@ -263,8 +376,37 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_UP && isBackLike(event.keyCode)) {
+            // Jika WebView sempat terlempar ke halaman lain (iklan), back kembali
+            // ke player dulu — bukan langsung keluar ke pemilihan server.
+            if (webView.visibility == View.VISIBLE && webView.canGoBack()) {
+                webView.goBack()
+                return true
+            }
             finish()
             return true
+        }
+        // Mode WebView (embed lintas-origin): tekan tombol remote (selain OK) →
+        // judul muncul sebentar lalu hilang lagi otomatis.
+        if (webView.visibility == View.VISIBLE &&
+            event.action == KeyEvent.ACTION_DOWN &&
+            !isBackLike(event.keyCode) &&
+            !isOkKey(event.keyCode)
+        ) {
+            showTitleThenAutoHide()
+        }
+        // Tombol OK di WebView:
+        // - Bila video sudah aktif → toggle play/pause via API player (JWPlayer/
+        //   <video>), bukan tap. Konsumsi kedua ACTION agar tidak double-toggle.
+        // - Bila belum ada video (mis. gerbang verifikasi Cast) → TERUSKAN ke
+        //   WebView agar tombol yang sedang fokus menerima klik asli (tepercaya).
+        if (webView.visibility == View.VISIBLE && isOkKey(event.keyCode)) {
+            // Hydrax (iframe) selalu toggle; embed lain toggle setelah play dimulai.
+            if (webVideoActive || isAbyssWrapper) {
+                if (event.action == KeyEvent.ACTION_UP) togglePlayback()
+                return true
+            }
+            showTitleThenAutoHide()
+            return super.dispatchKeyEvent(event)
         }
         if (playerView.visibility == View.VISIBLE && !isBackLike(event.keyCode)) {
             if (playerView.dispatchKeyEvent(event)) return true
@@ -275,12 +417,39 @@ class PlayerActivity : AppCompatActivity() {
     private fun isBackLike(keyCode: Int): Boolean =
         keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_ESCAPE
 
+    private fun isOkKey(keyCode: Int): Boolean =
+        keyCode == KeyEvent.KEYCODE_DPAD_CENTER ||
+            keyCode == KeyEvent.KEYCODE_ENTER ||
+            keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER ||
+            keyCode == KeyEvent.KEYCODE_BUTTON_A ||
+            keyCode == KeyEvent.KEYCODE_BUTTON_SELECT
+
+    /**
+     * Toggle play/pause di WebView. Untuk Cast/TurboVIP (dokumen top) langsung
+     * memanggil `window.__wuToggle()`; untuk Hydrax (di dalam iframe) perintah
+     * dikirim ke iframe lewat postMessage. Fungsi __wuToggle didefinisikan di
+     * shim (WebPlayerProxy.clientShim).
+     */
+    private fun togglePlayback() {
+        val js = """
+            (function(){
+              try{
+                if(typeof window.__wuToggle==="function"){ window.__wuToggle(); return; }
+                var f=document.querySelector("iframe");
+                if(f&&f.contentWindow){ f.contentWindow.postMessage("__wuToggle","*"); }
+              }catch(e){}
+            })();
+        """.trimIndent()
+        webView.evaluateJavascript(js, null)
+    }
+
     override fun onStop() {
         super.onStop()
         exoPlayer?.playWhenReady = false
     }
 
     override fun onDestroy() {
+        hideHandler.removeCallbacks(hideTitleRunnable)
         if (this::webView.isInitialized) {
             webView.loadUrl("about:blank")
             webView.destroy()
@@ -294,5 +463,6 @@ class PlayerActivity : AppCompatActivity() {
         const val EXTRA_URL = "url"
         const val EXTRA_TITLE = "title"
         const val EXTRA_SERVER = "server"
+        private const val TITLE_AUTO_HIDE_MS = 4_000L
     }
 }
