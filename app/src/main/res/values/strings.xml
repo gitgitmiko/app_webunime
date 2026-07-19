@@ -3,6 +3,7 @@
     <string name="app_name">WEBUNIME</string>
     <string name="browse_title">WEBUNIME</string>
     <string name="row_movies">Film</string>
+    <string name="row_movies_year">Film %1$d</string>
     <string name="row_series">Series</string>
     <string name="row_horror">Horor</string>
     <string name="row_anime_latest">Anime Terbaru</string>

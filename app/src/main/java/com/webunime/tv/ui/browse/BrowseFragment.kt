@@ -30,6 +30,7 @@ import com.webunime.tv.R
 import com.webunime.tv.WebunimeApp
 import com.webunime.tv.data.CatalogItem
 import com.webunime.tv.ui.search.SearchActivity
+import java.util.Calendar
 
 /**
  * Browse Netflix-style: background berubah mengikuti poster item yang sedang difokus.
@@ -199,16 +200,26 @@ class BrowseFragment : BrowseSupportFragment() {
         val previous = selectedPosition
         rowsAdapter.clear()
 
-        fun addRow(titleRes: Int, items: List<CatalogItem>) {
+        fun addRow(title: String, items: List<CatalogItem>) {
             if (items.isEmpty()) return
             val list = ArrayObjectAdapter(cardPresenter)
             items.take(40).forEach { list.add(it) }
             rowsAdapter.add(
-                ListRow(HeaderItem(rowsAdapter.size().toLong(), getString(titleRes)), list)
+                ListRow(HeaderItem(rowsAdapter.size().toLong(), title), list)
             )
         }
 
+        fun addRow(titleRes: Int, items: List<CatalogItem>) =
+            addRow(getString(titleRes), items)
+
+        // Tahun berjalan (mengikuti jam perangkat), bukan angka hardcode.
+        val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+
         addRow(R.string.row_movies, snap.movies)
+        addRow(
+            getString(R.string.row_movies_year, currentYear),
+            snap.movies.filter { it.tahun == currentYear.toString() }
+        )
         addRow(R.string.row_series, snap.series)
         addRow(R.string.row_anime_latest, snap.animeLatest)
         addRow(R.string.row_anime, snap.anime)
