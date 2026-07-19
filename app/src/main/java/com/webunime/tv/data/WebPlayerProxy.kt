@@ -69,8 +69,15 @@ object WebPlayerProxy {
     fun abyssWrapperHtml(embedUrl: String): String = """
         <!DOCTYPE html><html><head><meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>html,body{margin:0;height:100%;background:#000;overflow:hidden}
-        iframe{border:0;outline:0;width:100vw;height:100vh;display:block}</style></head>
+        <style>
+        html,body{margin:0;padding:0;height:100%;width:100%;background:#000;overflow:hidden}
+        iframe#wuEmbed{
+          border:0!important;outline:0!important;box-shadow:none!important;
+          margin:0!important;padding:0!important;
+          width:100vw!important;height:100vh!important;display:block;
+          background:#000!important;
+        }
+        </style></head>
         <body>
         <iframe id="wuEmbed" src="$embedUrl" allow="autoplay; fullscreen; encrypted-media"
         allowfullscreen scrolling="no"></iframe>
@@ -439,6 +446,28 @@ object WebPlayerProxy {
   })();
 
   if (IS_ABYSS) {
+    // Hapus frame/border putih di sekeliling video Hydrax/JWPlayer
+    (function injectAbyssCss(){
+      try{
+        var s=document.createElement("style");
+        s.setAttribute("data-webunime-abyss-css","1");
+        s.textContent=[
+          "html,body{margin:0!important;padding:0!important;background:#000!important;overflow:hidden!important;}",
+          "html,body,*,*:before,*:after{outline:none!important;outline-color:transparent!important;}",
+          "#player,.jwplayer,.jw-wrapper,.jw-aspect,.jw-media,.jw-preview,video,",
+          ".jw-controls,.container,#container,.player{",
+          "border:0!important;outline:0!important;box-shadow:none!important;",
+          "background:#000!important;}",
+          ".jwplayer.jw-flag-focus,.jw-flag-focus,.jwplayer:focus,*:focus{",
+          "outline:0!important;border:0!important;border-color:transparent!important;box-shadow:none!important;}",
+          /* frame putih: border putih / box-shadow terang di tepi player */
+          ".jwplayer,[class*='player'],[id*='player']{",
+          "border-color:transparent!important;}",
+          "iframe{border:0!important;outline:0!important;}"
+        ].join("");
+        (document.head||document.documentElement).appendChild(s);
+      }catch(e){}
+    })();
     try {
       Object.defineProperty(window,"fuckAdBlock",{configurable:true,get:function(){return {onDetected:function(){},onNotDetected:function(cb){try{cb&&cb();}catch(e){}}};},set:function(){}});
       Object.defineProperty(window,"FuckAdBlock",{configurable:true,get:function(){return function(){};},set:function(){}});
