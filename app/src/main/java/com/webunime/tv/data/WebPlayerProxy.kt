@@ -60,14 +60,44 @@ object WebPlayerProxy {
         return h.contains("abyss") || h.contains("iamcdn") || h.contains("short.icu")
     }
 
-    /** Wrapper HTML agar Hydrax berjalan di dalam iframe (bukan dokumen top). */
+    /**
+     * Wrapper HTML agar Hydrax berjalan di dalam iframe (bukan dokumen top).
+     * Script bridge: iframe lintas-origin tidak bisa memanggil @JavascriptInterface
+     * dari frame anak (targetSdk>=17), jadi kualitas dikirim via postMessage ke
+     * parent → WebunimePlayback.
+     */
     fun abyssWrapperHtml(embedUrl: String): String = """
         <!DOCTYPE html><html><head><meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>html,body{margin:0;height:100%;background:#000;overflow:hidden}
-        iframe{border:0;width:100vw;height:100vh;display:block}</style></head>
-        <body><iframe src="$embedUrl" allow="autoplay; fullscreen; encrypted-media"
-        allowfullscreen scrolling="no"></iframe></body></html>
+        iframe{border:0;outline:0;width:100vw;height:100vh;display:block}</style></head>
+        <body>
+        <iframe id="wuEmbed" src="$embedUrl" allow="autoplay; fullscreen; encrypted-media"
+        allowfullscreen scrolling="no"></iframe>
+        <script>
+        (function(){
+          window.addEventListener("message", function(e){
+            var d = e && e.data;
+            if (!d || typeof d !== "object") return;
+            if (d.type === "__wuQualities") {
+              try { WebunimePlayback.onQualities(JSON.stringify(d)); } catch (ex) {}
+            }
+          });
+          window.__wuRequestQualities = function(){
+            try {
+              var f = document.getElementById("wuEmbed");
+              if (f && f.contentWindow) f.contentWindow.postMessage("__wuGetQualities", "*");
+            } catch (ex) {}
+          };
+          window.__wuSetQuality = function(idx){
+            try {
+              var f = document.getElementById("wuEmbed");
+              if (f && f.contentWindow) f.contentWindow.postMessage({type:"__wuSetQuality",index:idx}, "*");
+            } catch (ex) {}
+          };
+        })();
+        </script>
+        </body></html>
     """.trimIndent()
 
     /** Base URL wrapper: seolah embed berasal dari playeriframe.sbs. */
@@ -318,10 +348,49 @@ object WebPlayerProxy {
   function __wuVideo(){ try{return document.querySelector("video");}catch(e){return null;} }
   function __wuJw(){ try{ if(typeof jwplayer==="function"){ var p=jwplayer(); if(p&&typeof p.getState==="function") return p; } }catch(e){} return null; }
   function __wuIsPlaying(){ var v=__wuVideo(); if(v) return !v.paused && !v.ended; var jp=__wuJw(); if(jp){ var s=jp.getState(); return s==="playing"||s==="buffering"; } return false; }
-  window.__wuPlay=function(){ window.__wuUserPaused=false; try{var jp=__wuJw(); if(jp) jp.play();}catch(e){} try{var v=__wuVideo(); if(v){ v.muted=false; v.play(); }}catch(e){} try{WebunimePlayback.onPlay();}catch(e){} };
-  window.__wuPause=function(){ window.__wuUserPaused=true; try{var jp=__wuJw(); if(jp) jp.pause();}catch(e){} try{var v=__wuVideo(); if(v) v.pause();}catch(e){} try{WebunimePlayback.onPause();}catch(e){} };
+  window.__wuPlay=function(){ window.__wuUserPaused=false; try{var jp=__wuJw(); if(jp) jp.play();}catch(e){} try{var v=__wuVideo(); if(v){ v.muted=false; v.play(); }}catch(e){} try{WebunimePlayback.onPlay();}catch(e){} try{ if(typeof window.__wuHidePlayerUi==="function") setTimeout(window.__wuHidePlayerUi, 1200); }catch(e){} };
+  window.__wuPause=function(){ window.__wuUserPaused=true; try{var jp=__wuJw(); if(jp) jp.pause();}catch(e){} try{var v=__wuVideo(); if(v) v.pause();}catch(e){} try{ if(typeof window.__wuShowPlayerUi==="function") window.__wuShowPlayerUi(); }catch(e){} try{WebunimePlayback.onPause();}catch(e){} };
   window.__wuToggle=function(){ if(__wuIsPlaying()) window.__wuPause(); else window.__wuPlay(); };
-  try{ window.addEventListener("message", function(e){ var d=e&&e.data; if(d==="__wuToggle") window.__wuToggle(); else if(d==="__wuPlay") window.__wuPlay(); else if(d==="__wuPause") window.__wuPause(); }); }catch(e){}
+  try{ window.addEventListener("message", function(e){ var d=e&&e.data; if(d==="__wuToggle") window.__wuToggle(); else if(d==="__wuPlay") window.__wuPlay(); else if(d==="__wuPause") window.__wuPause(); else if(d==="__wuGetQualities"){ try{window.__wuReportQualities();}catch(ex){} } else if(d==="__wuShowUi"){ try{ if(typeof window.__wuShowPlayerUi==="function") window.__wuShowPlayerUi(); }catch(ex){} } else if(d&&typeof d==="object"&&d.type==="__wuSetQuality"){ try{window.__wuSetQuality(d.index);}catch(ex){} } }); }catch(e){}
+
+  // ---- Kualitas / resolusi (JWPlayer) untuk remote TV ----
+  function __wuJwAny(){
+    try{ if(typeof jwplayer==="function"){ var p=jwplayer("video_player"); if(p&&typeof p.getQualityLevels==="function") return p; } }catch(e){}
+    return __wuJw();
+  }
+  window.__wuCollectQualities=function(){
+    var jp=__wuJwAny();
+    if(!jp||typeof jp.getQualityLevels!=="function") return {levels:[],current:-1};
+    var levels=jp.getQualityLevels()||[];
+    var cur=typeof jp.getCurrentQuality==="function"?jp.getCurrentQuality():-1;
+    var out=[];
+    for(var i=0;i<levels.length;i++){
+      var l=levels[i]||{};
+      var label=l.label||(l.height?String(l.height)+"p":(l.width?String(l.width)+"w":("Quality "+(i+1))));
+      out.push({i:i,label:String(label),active:i===cur});
+    }
+    return {levels:out,current:cur};
+  };
+  window.__wuReportQualities=function(){
+    var data=window.__wuCollectQualities();
+    data.type="__wuQualities";
+    // Frame anak (Hydrax iframe): HANYA postMessage ke parent.
+    // Jangan panggil WebunimePlayback di sini — parent bridge yang memanggil,
+    // supaya dialog kualitas tidak muncul 2x.
+    try{
+      if(window.parent && window.parent!==window){
+        window.parent.postMessage(data,"*");
+        return;
+      }
+    }catch(e){}
+    try{ WebunimePlayback.onQualities(JSON.stringify(data)); }catch(e){}
+  };
+  window.__wuSetQuality=function(idx){
+    try{
+      var jp=__wuJwAny();
+      if(jp&&typeof jp.setCurrentQuality==="function") jp.setCurrentQuality(Number(idx));
+    }catch(e){}
+  };
   // Deteksi <video> → beri tahu app (agar tombol OK beralih ke mode toggle),
   // dan sinkronkan bar judul (hilang saat play, muncul saat pause).
   // Selain event, status paused juga di-POLL agar terlaporkan walau video sudah
@@ -392,6 +461,38 @@ object WebPlayerProxy {
   }
 
   if (IS_TURBO) {
+    // Hapus frame/outline kuning + pastikan full-bleed hitam
+    (function injectTurboCss(){
+      try{
+        var s=document.createElement("style");
+        s.setAttribute("data-webunime-turbo-css","1");
+        s.textContent=[
+          "html,body{margin:0!important;padding:0!important;background:#000!important;overflow:hidden!important;}",
+          "html,body,*,*:before,*:after{outline:none!important;outline-color:transparent!important;}",
+          "#video_player,.jwplayer,.jw-wrapper,.jw-aspect,.jw-media,.jw-preview,video,",
+          ".player,.vjs-tech,#player,.container,#container{border:0!important;box-shadow:none!important;",
+          "outline:0!important;background:#000!important;}",
+          ".jwplayer.jw-flag-focus,.jw-flag-focus,.jwplayer:focus,*:focus{",
+          "outline:0!important;border-color:transparent!important;box-shadow:none!important;}",
+          /* frame kuning sering muncul sebagai border kuning / outline kuning */
+          "[style*='yellow'],[style*='#ff0'],[style*='#FF0'],[style*='rgb(255, 255, 0)']{",
+          "border:0!important;outline:0!important;box-shadow:none!important;}"
+        ].join("");
+        (document.head||document.documentElement).appendChild(s);
+      }catch(e){}
+    })();
+    // Auto-hide chrome JWPlayer saat playing; muncul lagi saat gesture singkat
+    window.__wuShowPlayerUi=function(){
+      try{ var jp=__wuJwAny(); if(jp&&typeof jp.setControls==="function") jp.setControls(true); }catch(e){}
+      try{ document.querySelectorAll(".jw-controls,.jw-controlbar").forEach(function(el){ el.style.removeProperty("display"); el.style.removeProperty("opacity"); }); }catch(e){}
+      clearTimeout(window.__wuHideUiT);
+      window.__wuHideUiT=setTimeout(function(){ try{window.__wuHidePlayerUi();}catch(e){} }, 3500);
+    };
+    window.__wuHidePlayerUi=function(){
+      if(window.__wuUserPaused) return;
+      try{ var jp=__wuJwAny(); if(jp&&typeof jp.setControls==="function") jp.setControls(false); }catch(e){}
+      try{ document.querySelectorAll(".jw-controls,.jw-controlbar,.jw-display").forEach(function(el){ el.style.setProperty("display","none","important"); }); }catch(e){}
+    };
     var tt=0; var tiv=setInterval(function(){ tt++; try {
       if(typeof enablePlay!=="undefined") enablePlay="yes";
       if(typeof checkDomain!=="undefined") checkDomain=true;
@@ -399,9 +500,23 @@ object WebPlayerProxy {
       var pre=document.querySelector(".preloader"); var ready=false;
       try { if(typeof jwplayer==="function"){ var jp=jwplayer("video_player"); if(jp&&typeof jp.getState==="function"){ var st=jp.getState(); if(st&&st!=="idle") ready=true; } } } catch(e){}
       if(!ready && !window.__wuUserPaused && typeof loadPlayer==="function" && typeof urlPlay==="string" && urlPlay){ try{loadPlayer(urlPlay);}catch(e){} if(pre){ try{pre.style.display="none";}catch(e){} } }
-      if(ready || (document.querySelector("video") && document.querySelector("video").readyState>=2)){ if(pre) pre.style.display="none"; if(!window.__wuUserPaused){ try{ if(typeof jwplayer==="function") jwplayer("video_player").play(); }catch(e){} } clearInterval(tiv); return; }
+      if(ready || (document.querySelector("video") && document.querySelector("video").readyState>=2)){ if(pre) pre.style.display="none"; if(!window.__wuUserPaused){ try{ if(typeof jwplayer==="function") jwplayer("video_player").play(); }catch(e){} setTimeout(function(){try{window.__wuHidePlayerUi();}catch(e){}}, 2000); } clearInterval(tiv); return; }
       if(typeof play==="function" && tt>6 && !window.__wuUserPaused){ try{play();}catch(e){} }
     } catch(e){} if(tt>40) clearInterval(tiv); }, 500);
+  }
+
+  // Auto-hide kontrol JWPlayer juga untuk Hydrax saat playing
+  if (IS_ABYSS) {
+    window.__wuHidePlayerUi=function(){
+      if(window.__wuUserPaused) return;
+      try{ var jp=__wuJwAny(); if(jp&&typeof jp.setControls==="function") jp.setControls(false); }catch(e){}
+      try{ document.querySelectorAll(".jw-controls,.jw-controlbar,.jw-display").forEach(function(el){ el.style.setProperty("display","none","important"); }); }catch(e){}
+    };
+    window.__wuShowPlayerUi=function(){
+      try{ var jp=__wuJwAny(); if(jp&&typeof jp.setControls==="function") jp.setControls(true); }catch(e){}
+      clearTimeout(window.__wuHideUiT);
+      window.__wuHideUiT=setTimeout(function(){ try{window.__wuHidePlayerUi();}catch(e){} }, 3500);
+    };
   }
 })();
 </script>

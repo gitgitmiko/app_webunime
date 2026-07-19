@@ -1,6 +1,7 @@
 package com.webunime.tv.ui.player
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.Handler
@@ -30,6 +31,7 @@ import com.webunime.tv.data.EmbedResolver
 import com.webunime.tv.data.PlayerRouter
 import com.webunime.tv.data.WebPlayerProxy
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 class PlayerActivity : AppCompatActivity() {
 
@@ -61,8 +63,23 @@ class PlayerActivity : AppCompatActivity() {
      */
     private var isAbyssWrapper = false
 
+    /** Digunakan agar toast "kualitas tidak tersedia" tidak muncul bila dialog sukses. */
+    @Volatile
+    private var qualityDialogShown = false
+
+    /** Debounce: cegah dialog kualitas muncul 2x dari jalur ganda (postMessage + bridge). */
+    private var lastQualityDialogAt = 0L
+
+    private var qualityDialog: AlertDialog? = null
+
     private val hideHandler = Handler(Looper.getMainLooper())
     private val hideTitleRunnable = Runnable { titleBar.visibility = View.GONE }
+    private val qualityTimeoutRunnable = Runnable {
+        if (!qualityDialogShown) {
+            Toast.makeText(this, "Kualitas tidak tersedia untuk server ini", Toast.LENGTH_SHORT).show()
+        }
+        qualityDialogShown = false
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -217,6 +234,12 @@ class PlayerActivity : AppCompatActivity() {
 
         @android.webkit.JavascriptInterface
         fun onPause() = setTitleBarVisible(true)
+
+        /** Daftar kualitas dari JWPlayer (via shim / postMessage wrapper). */
+        @android.webkit.JavascriptInterface
+        fun onQualities(json: String) {
+            runOnUiThread { showQualityDialog(json) }
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -385,6 +408,15 @@ class PlayerActivity : AppCompatActivity() {
             finish()
             return true
         }
+        // Hotkey kualitas: UP / MENU / INFO → dialog native (bisa dinavigasi D-pad)
+        if (webView.visibility == View.VISIBLE &&
+            event.action == KeyEvent.ACTION_UP &&
+            isQualityKey(event.keyCode) &&
+            (webVideoActive || isAbyssWrapper)
+        ) {
+            requestQualityPicker()
+            return true
+        }
         // Mode WebView (embed lintas-origin): tekan tombol remote (selain OK) →
         // judul muncul sebentar lalu hilang lagi otomatis.
         if (webView.visibility == View.VISIBLE &&
@@ -393,6 +425,8 @@ class PlayerActivity : AppCompatActivity() {
             !isOkKey(event.keyCode)
         ) {
             showTitleThenAutoHide()
+            // Turbo/Hydrax: tampilkan chrome player sebentar
+            peekPlayerChrome()
         }
         // Tombol OK di WebView:
         // - Bila video sudah aktif → toggle play/pause via API player (JWPlayer/
@@ -424,6 +458,14 @@ class PlayerActivity : AppCompatActivity() {
             keyCode == KeyEvent.KEYCODE_BUTTON_A ||
             keyCode == KeyEvent.KEYCODE_BUTTON_SELECT
 
+    /** UP / MENU / INFO membuka panel kualitas native. */
+    private fun isQualityKey(keyCode: Int): Boolean =
+        keyCode == KeyEvent.KEYCODE_DPAD_UP ||
+            keyCode == KeyEvent.KEYCODE_MENU ||
+            keyCode == KeyEvent.KEYCODE_INFO ||
+            keyCode == KeyEvent.KEYCODE_GUIDE ||
+            keyCode == KeyEvent.KEYCODE_MEDIA_AUDIO_TRACK
+
     /**
      * Toggle play/pause di WebView. Untuk Cast/TurboVIP (dokumen top) langsung
      * memanggil `window.__wuToggle()`; untuk Hydrax (di dalam iframe) perintah
@@ -443,6 +485,101 @@ class PlayerActivity : AppCompatActivity() {
         webView.evaluateJavascript(js, null)
     }
 
+    /** Minta daftar kualitas dari JWPlayer (top-level atau via bridge iframe). */
+    private fun requestQualityPicker() {
+        qualityDialogShown = false
+        hideHandler.removeCallbacks(qualityTimeoutRunnable)
+        val js = """
+            (function(){
+              try{
+                if(typeof window.__wuRequestQualities==="function"){ window.__wuRequestQualities(); return; }
+                if(typeof window.__wuReportQualities==="function"){ window.__wuReportQualities(); return; }
+                var f=document.querySelector("iframe");
+                if(f&&f.contentWindow){ f.contentWindow.postMessage("__wuGetQualities","*"); }
+              }catch(e){}
+            })();
+        """.trimIndent()
+        webView.evaluateJavascript(js, null)
+        hideHandler.postDelayed(qualityTimeoutRunnable, 1800)
+    }
+
+    private fun showQualityDialog(rawJson: String) {
+        val now = android.os.SystemClock.uptimeMillis()
+        if (now - lastQualityDialogAt < 800) return
+        if (qualityDialog?.isShowing == true) return
+        lastQualityDialogAt = now
+        qualityDialogShown = true
+        hideHandler.removeCallbacks(qualityTimeoutRunnable)
+        val parsed = runCatching {
+            val cleaned = when {
+                rawJson.startsWith("\"") ->
+                    org.json.JSONTokener(rawJson).nextValue()?.toString() ?: rawJson
+                else -> rawJson
+            }
+            JSONObject(cleaned)
+        }.getOrNull() ?: run {
+            Toast.makeText(this, "Gagal memuat daftar kualitas", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val levels = parsed.optJSONArray("levels")
+        if (levels == null || levels.length() == 0) {
+            Toast.makeText(this, "Tidak ada pilihan resolusi", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val labels = Array(levels.length()) { i ->
+            val o = levels.getJSONObject(i)
+            val label = o.optString("label", "Quality ${i + 1}")
+            if (o.optBoolean("active")) "● $label" else label
+        }
+        val indices = IntArray(levels.length()) { i ->
+            levels.getJSONObject(i).optInt("i", i)
+        }
+
+        qualityDialog?.dismiss()
+        qualityDialog = AlertDialog.Builder(this)
+            .setTitle("Pilih kualitas")
+            .setItems(labels) { _, which ->
+                applyQuality(indices[which])
+                Toast.makeText(
+                    this,
+                    "Kualitas: ${labels[which].removePrefix("● ").trim()}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .setOnDismissListener { qualityDialog = null }
+            .show()
+    }
+
+    private fun applyQuality(index: Int) {
+        val js = """
+            (function(){
+              try{
+                if(typeof window.__wuSetQuality==="function"){ window.__wuSetQuality($index); return; }
+                var f=document.querySelector("iframe");
+                if(f&&f.contentWindow){ f.contentWindow.postMessage({type:"__wuSetQuality",index:$index},"*"); }
+              }catch(e){}
+            })();
+        """.trimIndent()
+        webView.evaluateJavascript(js, null)
+    }
+
+    /** Tampilkan chrome JWPlayer sebentar (Turbo/Hydrax). */
+    private fun peekPlayerChrome() {
+        val js = """
+            (function(){
+              try{
+                if(typeof window.__wuShowPlayerUi==="function"){ window.__wuShowPlayerUi(); return; }
+                var f=document.querySelector("iframe");
+                if(f&&f.contentWindow){ f.contentWindow.postMessage("__wuShowUi","*"); }
+              }catch(e){}
+            })();
+        """.trimIndent()
+        webView.evaluateJavascript(js, null)
+    }
+
     override fun onStop() {
         super.onStop()
         exoPlayer?.playWhenReady = false
@@ -450,6 +587,9 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         hideHandler.removeCallbacks(hideTitleRunnable)
+        hideHandler.removeCallbacks(qualityTimeoutRunnable)
+        qualityDialog?.dismiss()
+        qualityDialog = null
         if (this::webView.isInitialized) {
             webView.loadUrl("about:blank")
             webView.destroy()
