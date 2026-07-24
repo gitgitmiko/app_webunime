@@ -11,6 +11,9 @@ data class CatalogItem(
     val judul: String? = null,
     val tahun: String? = null,
     val thumbnail: String? = null,
+    /** Cadangan bila [thumbnail] gagal load (mis. poster 404 → screenshot episode). Tidak dari JSON. */
+    @Json(ignore = true)
+    val thumbnailAlt: String? = null,
     val rating: String? = null,
     val durasi: String? = null,
     val genre: List<String>? = null,

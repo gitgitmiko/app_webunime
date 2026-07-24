@@ -2,7 +2,8 @@ package com.webunime.tv.data
 
 object PlayerRouter {
 
-    private val filmPrefer = listOf("turbovip", "cast", "hydrax")
+    /** Film / series / horor: Hydrax → TurboVIP → Cast → P2P (terakhir). */
+    private val filmPrefer = listOf("hydrax", "turbovip", "cast")
 
     fun preferredPlayers(item: CatalogItem, episode: Episode? = null): List<PlayerServer> {
         val raw = when {
@@ -27,41 +28,65 @@ object PlayerRouter {
         }
 
         val ranked = filmPrefer.mapNotNull { key ->
-            raw.firstOrNull { p ->
-                val s = (p.server ?: "").lowercase()
-                val l = (p.label ?: "").lowercase()
-                s.contains(key) || l.contains(key)
-            }
+            raw.firstOrNull { p -> matchesFilmKey(p, key) }
         }
-        val rest = raw.filter { p -> ranked.none { it.url == p.url } }
-            .filter { (it.server ?: "").lowercase() != "p2p" }
-        val p2p = raw.filter { (it.server ?: "").lowercase() == "p2p" }
+        val rest = raw.filter { p ->
+            ranked.none { it.url == p.url } && !isP2p(p)
+        }
+        val p2p = raw.filter { isP2p(it) }
         return (ranked + rest + p2p).distinctBy { it.url }
     }
 
+    private fun matchesFilmKey(p: PlayerServer, key: String): Boolean {
+        val s = (p.server ?: "").lowercase()
+        val l = (p.label ?: "").lowercase()
+        val u = (p.url ?: "").lowercase()
+        return s.contains(key) || l.contains(key) || u.contains(key) ||
+            (key == "hydrax" && (u.contains("abyss") || u.contains("gn1r5n")))
+    }
+
+    private fun isP2p(p: PlayerServer): Boolean =
+        (p.server ?: "").lowercase().contains("p2p") ||
+            (p.label ?: "").lowercase().contains("p2p")
+
+    /**
+     * Anime: Mega 1080 → 720 → 480 → Wibufile 1080 → 720 → 480 → Blogspot → lainnya.
+     */
     private fun rankAnime(raw: List<PlayerServer>): List<PlayerServer> {
         fun score(p: PlayerServer): Int {
             val u = (p.url ?: "").lowercase()
             val l = (p.label ?: "").lowercase()
             val s = (p.server ?: "").lowercase()
-            // User: Blogspot & Mega paling lancar; Wibufile/Premium sering buffering
+            val res = resolutionRank(l, u)
+
+            val isMega = u.contains("mega.nz") || s.contains("mega") || l.contains("mega")
+            val isWibu = u.contains("wibufile") || s.contains("wibu") || s.contains("premium") ||
+                l.contains("wibufile") || l.contains("premium")
+            val isBlog = u.contains("blogger.com") || s.contains("blogspot") || l.contains("blogspot") ||
+                l.contains("blogger")
+
             return when {
-                u.contains("blogger.com") || s.contains("blogspot") || l.contains("blogspot") -> 0
-                u.contains("mega.nz") && (l.contains("720") || l.contains("480")) -> 5
-                u.contains("mega.nz") -> 8
-                // Nakama via Pixeldrain API
-                u.contains("pixeldrain") && (l.contains("720") || l.contains("480")) -> 15
-                u.contains("pixeldrain") || s.contains("nakama") -> 18
-                // Wibufile/Premium MP4 — cadangan
-                u.contains("wibufile.com/video") && (u.contains("mp4hd") || l.contains("720")) -> 25
-                u.contains("wibufile.com/video") || (u.contains(".mp4") && (u.contains("wibufile") || s.contains("premium"))) -> 28
-                u.contains("api.wibufile.com/embed") || u.contains("login.wibufile.com") -> 35
-                // Pucuk/VIP Filedon — sering R2 besar / MKV
-                u.contains("filedon") || s.contains("pucuk") || s.contains("vip") || l.contains("vip") -> 45
-                else -> 50
+                isMega -> 10 + res
+                isWibu && (u.contains("wibufile.com/video") || u.contains(".mp4")) -> 40 + res
+                isWibu -> 50 + res
+                isBlog -> 70
+                u.contains("pixeldrain") || s.contains("nakama") -> 80 + res
+                u.contains("filedon") || s.contains("pucuk") || s.contains("vip") -> 90
+                else -> 100
             }
         }
         return raw.sortedBy { score(it) }.distinctBy { it.url }
+    }
+
+    /** 0=1080/HD, 1=720, 2=480, 3=lain. */
+    private fun resolutionRank(label: String, url: String): Int {
+        val t = "$label $url"
+        return when {
+            t.contains("1080") || t.contains("mp4hd") || Regex("\\bhd\\b").containsMatchIn(t) -> 0
+            t.contains("720") -> 1
+            t.contains("480") || t.contains("360") -> 2
+            else -> 3
+        }
     }
 
     fun pickDefault(item: CatalogItem, episode: Episode? = null): PlayerServer? =

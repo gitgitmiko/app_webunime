@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.view.KeyEvent
 import android.view.View
 import android.webkit.WebChromeClient
@@ -27,8 +28,11 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import com.webunime.tv.R
+import com.webunime.tv.WebunimeApp
 import com.webunime.tv.data.EmbedResolver
 import com.webunime.tv.data.PlayerRouter
+import com.webunime.tv.data.WatchSession
+import com.webunime.tv.data.WatchSessionStore
 import com.webunime.tv.data.WebPlayerProxy
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -46,30 +50,25 @@ class PlayerActivity : AppCompatActivity() {
     private var serverLabel: String = ""
     private var exoFallbackUsed = false
 
-    /**
-     * True setelah pemutaran WebView benar-benar dimulai (event `play` pertama).
-     * Selama false — termasuk saat masih ada gerbang/dialog seperti verifikasi
-     * Cast ("click to verify you're a human") atau "Resume watching?" — tombol OK
-     * diteruskan ke WebView agar mengklik tombol yang sedang fokus. Setelah play
-     * dimulai, OK berpindah jadi toggle play/pause.
-     */
+    private var serverUrls: List<String> = emptyList()
+    private var serverLabels: List<String> = emptyList()
+    private var serverIndex: Int = 0
+    private var contentSlug: String = ""
+    private var contentEpisode: Int? = null
+    private var contentThumb: String? = null
+    private var resumePositionMs: Long = 0L
+    private var failoverInProgress = false
+    private var playJobGeneration = 0
+
     @Volatile
     private var webVideoActive = false
 
-    /**
-     * True bila WebView memuat Hydrax/abyss di dalam iframe wrapper. Untuk kasus
-     * ini tombol OK SELALU toggle play/pause (via postMessage ke iframe), karena
-     * wrapper tidak punya elemen fokus yang perlu diklik.
-     */
     private var isAbyssWrapper = false
 
-    /** Digunakan agar toast "kualitas tidak tersedia" tidak muncul bila dialog sukses. */
     @Volatile
     private var qualityDialogShown = false
 
-    /** Debounce: cegah dialog kualitas muncul 2x dari jalur ganda (postMessage + bridge). */
     private var lastQualityDialogAt = 0L
-
     private var qualityDialog: AlertDialog? = null
 
     private val hideHandler = Handler(Looper.getMainLooper())
@@ -79,6 +78,17 @@ class PlayerActivity : AppCompatActivity() {
             Toast.makeText(this, "Kualitas tidak tersedia untuk server ini", Toast.LENGTH_SHORT).show()
         }
         qualityDialogShown = false
+    }
+    private val webFailTimeoutRunnable = Runnable {
+        if (!webVideoActive && !isAbyssWrapper) {
+            tryFailover("timeout")
+        }
+    }
+    private val progressTicker = object : Runnable {
+        override fun run() {
+            persistProgress()
+            hideHandler.postDelayed(this, PROGRESS_TICK_MS)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -95,33 +105,75 @@ class PlayerActivity : AppCompatActivity() {
             this,
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
+                    persistProgress()
                     finish()
                 }
             }
         )
 
-        sourceUrl = intent.getStringExtra(EXTRA_URL).orEmpty()
         val title = intent.getStringExtra(EXTRA_TITLE).orEmpty()
-        serverLabel = intent.getStringExtra(EXTRA_SERVER).orEmpty()
         titleView.text = title
-        modeView.text = serverLabel
 
-        if (sourceUrl.isBlank()) {
+        contentSlug = intent.getStringExtra(EXTRA_SLUG).orEmpty()
+        contentEpisode = intent.getIntExtra(EXTRA_EPISODE, -1).takeIf { it > 0 }
+        contentThumb = intent.getStringExtra(EXTRA_THUMBNAIL)
+        resumePositionMs = intent.getLongExtra(EXTRA_RESUME_MS, 0L).coerceAtLeast(0L)
+
+        serverUrls = intent.getStringArrayExtra(EXTRA_SERVER_URLS)?.toList().orEmpty()
+            .filter { it.isNotBlank() }
+        serverLabels = intent.getStringArrayExtra(EXTRA_SERVER_LABELS)?.toList().orEmpty()
+
+        val initialUrl = intent.getStringExtra(EXTRA_URL).orEmpty()
+        val initialLabel = intent.getStringExtra(EXTRA_SERVER).orEmpty()
+        if (serverUrls.isEmpty() && initialUrl.isNotBlank()) {
+            serverUrls = listOf(initialUrl)
+            serverLabels = listOf(initialLabel.ifBlank { "Server" })
+        }
+        if (serverLabels.size < serverUrls.size) {
+            serverLabels = serverUrls.indices.map { i ->
+                serverLabels.getOrNull(i)?.takeIf { it.isNotBlank() } ?: "Server ${i + 1}"
+            }
+        }
+
+        if (serverUrls.isEmpty()) {
             Toast.makeText(this, R.string.error_play, Toast.LENGTH_SHORT).show()
             finish()
             return
         }
 
+        if (resumePositionMs <= 0L && contentSlug.isNotBlank()) {
+            val saved = (application as WebunimeApp).watchSessions.get(contentSlug, contentEpisode)
+            if (saved != null && !saved.isFinished() && saved.positionMs >= WatchSessionStore.MIN_RESUME_MS) {
+                resumePositionMs = saved.positionMs
+            }
+        }
+
+        serverIndex = 0
+        playCurrentServer()
+    }
+
+    private fun playCurrentServer() {
+        if (serverIndex !in serverUrls.indices) {
+            Toast.makeText(this, R.string.error_play, Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+        failoverInProgress = false
+        exoFallbackUsed = false
+        webVideoActive = false
+        hideHandler.removeCallbacks(webFailTimeoutRunnable)
+
+        sourceUrl = serverUrls[serverIndex]
+        serverLabel = serverLabels.getOrElse(serverIndex) { "Server" }
+        modeView.text = serverLabel
+
+        val generation = ++playJobGeneration
         lifecycleScope.launch {
             modeView.text = "$serverLabel · memuat…"
             val resolved = EmbedResolver.resolve(sourceUrl)
+            if (generation != playJobGeneration) return@launch
             if (resolved.unsupported) {
-                Toast.makeText(
-                    this@PlayerActivity,
-                    resolved.message ?: getString(R.string.error_play),
-                    Toast.LENGTH_LONG
-                ).show()
-                finish()
+                tryFailover(resolved.message ?: "unsupported")
                 return@launch
             }
             val playUrl = resolved.url
@@ -134,6 +186,31 @@ class PlayerActivity : AppCompatActivity() {
                 startWeb(webUrl, serverLabel)
             }
         }
+    }
+
+    private fun tryFailover(reason: String) {
+        if (failoverInProgress) return
+        if (serverIndex >= serverUrls.lastIndex) {
+            Toast.makeText(this, R.string.error_play, Toast.LENGTH_LONG).show()
+            return
+        }
+        failoverInProgress = true
+        hideHandler.removeCallbacks(webFailTimeoutRunnable)
+        hideHandler.removeCallbacks(progressTicker)
+        playJobGeneration++
+        exoPlayer?.release()
+        exoPlayer = null
+        if (this::webView.isInitialized) {
+            runCatching { webView.stopLoading() }
+        }
+        serverIndex++
+        val next = serverLabels.getOrElse(serverIndex) { "Server" }
+        Toast.makeText(
+            this,
+            getString(R.string.failover_server, next),
+            Toast.LENGTH_SHORT
+        ).show()
+        playCurrentServer()
     }
 
     private fun startExo(url: String, server: String) {
@@ -159,12 +236,7 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         val loadControl = DefaultLoadControl.Builder()
-            .setBufferDurationsMs(
-                /* minBufferMs */ 50_000,
-                /* maxBufferMs */ 180_000,
-                /* bufferForPlaybackMs */ 5_000,
-                /* bufferForPlaybackAfterRebufferMs */ 8_000
-            )
+            .setBufferDurationsMs(50_000, 180_000, 5_000, 8_000)
             .setPrioritizeTimeOverSizeThresholds(true)
             .build()
 
@@ -177,14 +249,27 @@ class PlayerActivity : AppCompatActivity() {
         playerView.player = player
         player.setMediaItem(MediaItem.fromUri(url))
         player.prepare()
+        if (resumePositionMs > 0L) {
+            player.seekTo(resumePositionMs)
+            resumePositionMs = 0L
+        }
         player.playWhenReady = true
         player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 setTitleBarVisible(!isPlaying)
+                if (isPlaying) {
+                    hideHandler.removeCallbacks(progressTicker)
+                    hideHandler.post(progressTicker)
+                }
+            }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_ENDED && contentSlug.isNotBlank()) {
+                    (application as WebunimeApp).watchSessions.remove(contentSlug, contentEpisode)
+                }
             }
 
             override fun onPlayerError(error: PlaybackException) {
-                // Pixeldrain API gagal → fallback embed bersih
                 val embed = EmbedResolver.pixeldrainEmbedUrl(sourceUrl)
                 if (!exoFallbackUsed && embed != null) {
                     exoFallbackUsed = true
@@ -193,17 +278,12 @@ class PlayerActivity : AppCompatActivity() {
                     startWeb(embed, server)
                     return
                 }
-                Toast.makeText(
-                    this@PlayerActivity,
-                    getString(R.string.error_play) + ": " + (error.message ?: ""),
-                    Toast.LENGTH_LONG
-                ).show()
+                tryFailover(error.message ?: "exo")
             }
         })
         playerView.requestFocus()
     }
 
-    /** Sembunyikan bar judul saat sedang play, tampilkan lagi saat pause. */
     private fun setTitleBarVisible(visible: Boolean) {
         runOnUiThread {
             hideHandler.removeCallbacks(hideTitleRunnable)
@@ -211,11 +291,6 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Tampilkan judul lalu sembunyikan otomatis setelah beberapa detik.
-     * Dipakai untuk embed iframe lintas-origin yang status play/pause-nya
-     * tidak bisa dibaca — judul muncul saat ada interaksi tombol, lalu hilang.
-     */
     private fun showTitleThenAutoHide() {
         runOnUiThread {
             titleBar.visibility = View.VISIBLE
@@ -224,21 +299,38 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
-    /** Bridge dari <video> di WebView (same-origin, mis. Pixeldrain) → toggle judul. */
     private inner class PlaybackBridge {
         @android.webkit.JavascriptInterface
         fun onPlay() {
             webVideoActive = true
+            hideHandler.removeCallbacks(webFailTimeoutRunnable)
             setTitleBarVisible(false)
         }
 
         @android.webkit.JavascriptInterface
         fun onPause() = setTitleBarVisible(true)
 
-        /** Daftar kualitas dari JWPlayer (via shim / postMessage wrapper). */
         @android.webkit.JavascriptInterface
         fun onQualities(json: String) {
             runOnUiThread { showQualityDialog(json) }
+        }
+
+        @android.webkit.JavascriptInterface
+        fun onProgress(positionSec: Double, durationSec: Double) {
+            if (contentSlug.isBlank()) return
+            val pos = (positionSec * 1000.0).toLong()
+            val dur = (durationSec * 1000.0).toLong()
+            if (pos < WatchSessionStore.MIN_SAVE_MS) return
+            (application as WebunimeApp).watchSessions.save(
+                WatchSession(
+                    slug = contentSlug,
+                    episode = contentEpisode,
+                    title = titleView.text?.toString().orEmpty(),
+                    thumbnail = contentThumb,
+                    positionMs = pos,
+                    durationMs = dur.coerceAtLeast(0L),
+                )
+            )
         }
     }
 
@@ -250,6 +342,7 @@ class PlayerActivity : AppCompatActivity() {
         webVideoActive = false
         isAbyssWrapper = WebPlayerProxy.isAbyss(url)
 
+        webView.removeJavascriptInterface("WebunimePlayback")
         webView.addJavascriptInterface(PlaybackBridge(), "WebunimePlayback")
 
         webView.settings.apply {
@@ -273,6 +366,7 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         val isPixeldrain = url.contains("pixeldrain", ignoreCase = true)
+        val seekMs = resumePositionMs
         webView.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(
                 view: WebView,
@@ -291,22 +385,25 @@ class PlayerActivity : AppCompatActivity() {
                 return handleNav(view, url)
             }
 
+            override fun onReceivedError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                error: android.webkit.WebResourceError?
+            ) {
+                if (request?.isForMainFrame == true) {
+                    tryFailover("webview")
+                }
+            }
+
             override fun onPageStarted(view: WebView?, pageUrl: String?, favicon: Bitmap?) {
                 val u = pageUrl.orEmpty()
                 if (EmbedResolver.isBlockedNavigation(u)) {
                     view?.stopLoading()
-                    Toast.makeText(
-                        this@PlayerActivity,
-                        "Redirect ke situs sumber diblokir — coba server lain",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    tryFailover("blocked")
                 }
             }
 
             override fun onPageFinished(view: WebView?, pageUrl: String?) {
-                // Hook play/pause dari elemen <video> same-origin agar judul ikut
-                // hilang saat diputar dan muncul lagi saat dijeda. Iframe lintas-origin
-                // tidak bisa diakses, judul tetap tampil (aman, tidak error).
                 view?.evaluateJavascript(
                     """
                     (function(){
@@ -317,7 +414,22 @@ class PlayerActivity : AppCompatActivity() {
                         v.addEventListener('playing',function(){try{WebunimePlayback.onPlay();}catch(e){}});
                         v.addEventListener('pause',function(){try{WebunimePlayback.onPause();}catch(e){}});
                         v.addEventListener('ended',function(){try{WebunimePlayback.onPause();}catch(e){}});
+                        v.addEventListener('timeupdate',function(){
+                          try{
+                            if(v.currentTime>15){
+                              WebunimePlayback.onProgress(v.currentTime, v.duration||0);
+                            }
+                          }catch(e){}
+                        });
                         if(!v.paused){try{WebunimePlayback.onPlay();}catch(e){}}
+                        var seek=$seekMs;
+                        if(seek>0){
+                          var apply=function(){
+                            try{ v.currentTime=seek/1000; }catch(e){}
+                          };
+                          v.addEventListener('loadedmetadata',apply,{once:true});
+                          setTimeout(apply,1200);
+                        }
                       }
                       document.querySelectorAll('video').forEach(hook);
                       var mo=new MutationObserver(function(){
@@ -328,8 +440,8 @@ class PlayerActivity : AppCompatActivity() {
                     """.trimIndent(),
                     null
                 )
+                if (seekMs > 0) resumePositionMs = 0L
                 if (isPixeldrain) {
-                    // Sembunyikan chrome Pixeldrain; fokus ke video
                     view?.evaluateJavascript(
                         """
                         (function(){
@@ -354,14 +466,11 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         if (EmbedResolver.isBlockedNavigation(url)) {
-            Toast.makeText(this, R.string.error_play, Toast.LENGTH_SHORT).show()
-            finish()
+            tryFailover("blocked")
             return
         }
 
         if (WebPlayerProxy.isAbyss(url)) {
-            // Hydrax/abyss harus berjalan di dalam iframe (anti-direct-access),
-            // seolah di-embed dari playeriframe.sbs.
             webView.loadDataWithBaseURL(
                 WebPlayerProxy.ABYSS_WRAPPER_BASE,
                 WebPlayerProxy.abyssWrapperHtml(url),
@@ -377,15 +486,33 @@ class PlayerActivity : AppCompatActivity() {
             } else {
                 webView.loadUrl(url, headers)
             }
+            hideHandler.removeCallbacks(webFailTimeoutRunnable)
+            hideHandler.postDelayed(webFailTimeoutRunnable, WEB_FAIL_TIMEOUT_MS)
         }
         webView.requestFocus()
-        // Embed dianggap langsung memutar → judul tampil sebentar lalu hilang.
         showTitleThenAutoHide()
+    }
+
+    private fun persistProgress() {
+        if (contentSlug.isBlank()) return
+        val player = exoPlayer ?: return
+        val pos = player.currentPosition
+        val dur = player.duration.takeIf { it > 0 } ?: 0L
+        if (pos < WatchSessionStore.MIN_SAVE_MS) return
+        (application as WebunimeApp).watchSessions.save(
+            WatchSession(
+                slug = contentSlug,
+                episode = contentEpisode,
+                title = titleView.text?.toString().orEmpty(),
+                thumbnail = contentThumb,
+                positionMs = pos,
+                durationMs = dur,
+            )
+        )
     }
 
     private fun handleNav(view: WebView, next: String): Boolean {
         if (next.isBlank() || next.startsWith("about:")) return false
-        // Iklan / pop-under: blokir tanpa keluar dari player
         if (WebPlayerProxy.isAdRequest(next)) return true
         if (EmbedResolver.isBlockedNavigation(next)) {
             Toast.makeText(this, "Link situs sumber diblokir", Toast.LENGTH_SHORT).show()
@@ -399,16 +526,14 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_UP && isBackLike(event.keyCode)) {
-            // Jika WebView sempat terlempar ke halaman lain (iklan), back kembali
-            // ke player dulu — bukan langsung keluar ke pemilihan server.
             if (webView.visibility == View.VISIBLE && webView.canGoBack()) {
                 webView.goBack()
                 return true
             }
+            persistProgress()
             finish()
             return true
         }
-        // Hotkey kualitas: UP / MENU / INFO → dialog native (bisa dinavigasi D-pad)
         if (webView.visibility == View.VISIBLE &&
             event.action == KeyEvent.ACTION_UP &&
             isQualityKey(event.keyCode) &&
@@ -417,24 +542,15 @@ class PlayerActivity : AppCompatActivity() {
             requestQualityPicker()
             return true
         }
-        // Mode WebView (embed lintas-origin): tekan tombol remote (selain OK) →
-        // judul muncul sebentar lalu hilang lagi otomatis.
         if (webView.visibility == View.VISIBLE &&
             event.action == KeyEvent.ACTION_DOWN &&
             !isBackLike(event.keyCode) &&
             !isOkKey(event.keyCode)
         ) {
             showTitleThenAutoHide()
-            // Turbo/Hydrax: tampilkan chrome player sebentar
             peekPlayerChrome()
         }
-        // Tombol OK di WebView:
-        // - Bila video sudah aktif → toggle play/pause via API player (JWPlayer/
-        //   <video>), bukan tap. Konsumsi kedua ACTION agar tidak double-toggle.
-        // - Bila belum ada video (mis. gerbang verifikasi Cast) → TERUSKAN ke
-        //   WebView agar tombol yang sedang fokus menerima klik asli (tepercaya).
         if (webView.visibility == View.VISIBLE && isOkKey(event.keyCode)) {
-            // Hydrax (iframe) selalu toggle; embed lain toggle setelah play dimulai.
             if (webVideoActive || isAbyssWrapper) {
                 if (event.action == KeyEvent.ACTION_UP) togglePlayback()
                 return true
@@ -458,7 +574,6 @@ class PlayerActivity : AppCompatActivity() {
             keyCode == KeyEvent.KEYCODE_BUTTON_A ||
             keyCode == KeyEvent.KEYCODE_BUTTON_SELECT
 
-    /** UP / MENU / INFO membuka panel kualitas native. */
     private fun isQualityKey(keyCode: Int): Boolean =
         keyCode == KeyEvent.KEYCODE_DPAD_UP ||
             keyCode == KeyEvent.KEYCODE_MENU ||
@@ -466,12 +581,6 @@ class PlayerActivity : AppCompatActivity() {
             keyCode == KeyEvent.KEYCODE_GUIDE ||
             keyCode == KeyEvent.KEYCODE_MEDIA_AUDIO_TRACK
 
-    /**
-     * Toggle play/pause di WebView. Untuk Cast/TurboVIP (dokumen top) langsung
-     * memanggil `window.__wuToggle()`; untuk Hydrax (di dalam iframe) perintah
-     * dikirim ke iframe lewat postMessage. Fungsi __wuToggle didefinisikan di
-     * shim (WebPlayerProxy.clientShim).
-     */
     private fun togglePlayback() {
         val js = """
             (function(){
@@ -485,7 +594,6 @@ class PlayerActivity : AppCompatActivity() {
         webView.evaluateJavascript(js, null)
     }
 
-    /** Minta daftar kualitas dari JWPlayer (top-level atau via bridge iframe). */
     private fun requestQualityPicker() {
         qualityDialogShown = false
         hideHandler.removeCallbacks(qualityTimeoutRunnable)
@@ -504,7 +612,7 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun showQualityDialog(rawJson: String) {
-        val now = android.os.SystemClock.uptimeMillis()
+        val now = SystemClock.uptimeMillis()
         if (now - lastQualityDialogAt < 800) return
         if (qualityDialog?.isShowing == true) return
         lastQualityDialogAt = now
@@ -566,7 +674,6 @@ class PlayerActivity : AppCompatActivity() {
         webView.evaluateJavascript(js, null)
     }
 
-    /** Tampilkan chrome JWPlayer sebentar (Turbo/Hydrax). */
     private fun peekPlayerChrome() {
         val js = """
             (function(){
@@ -580,7 +687,13 @@ class PlayerActivity : AppCompatActivity() {
         webView.evaluateJavascript(js, null)
     }
 
+    override fun onPause() {
+        persistProgress()
+        super.onPause()
+    }
+
     override fun onStop() {
+        persistProgress()
         super.onStop()
         exoPlayer?.playWhenReady = false
     }
@@ -588,6 +701,8 @@ class PlayerActivity : AppCompatActivity() {
     override fun onDestroy() {
         hideHandler.removeCallbacks(hideTitleRunnable)
         hideHandler.removeCallbacks(qualityTimeoutRunnable)
+        hideHandler.removeCallbacks(webFailTimeoutRunnable)
+        hideHandler.removeCallbacks(progressTicker)
         qualityDialog?.dismiss()
         qualityDialog = null
         if (this::webView.isInitialized) {
@@ -603,6 +718,14 @@ class PlayerActivity : AppCompatActivity() {
         const val EXTRA_URL = "url"
         const val EXTRA_TITLE = "title"
         const val EXTRA_SERVER = "server"
+        const val EXTRA_SERVER_URLS = "server_urls"
+        const val EXTRA_SERVER_LABELS = "server_labels"
+        const val EXTRA_SLUG = "slug"
+        const val EXTRA_EPISODE = "episode"
+        const val EXTRA_THUMBNAIL = "thumbnail"
+        const val EXTRA_RESUME_MS = "resume_ms"
         private const val TITLE_AUTO_HIDE_MS = 4_000L
+        private const val WEB_FAIL_TIMEOUT_MS = 32_000L
+        private const val PROGRESS_TICK_MS = 10_000L
     }
 }

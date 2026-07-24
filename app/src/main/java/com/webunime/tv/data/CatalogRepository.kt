@@ -33,13 +33,15 @@ class CatalogRepository(private val context: Context) {
         private set
 
     suspend fun loadInitial(): CatalogSnapshot = withContext(Dispatchers.IO) {
-        snapshot = CatalogSnapshot(
-            movies = readList("movies.json"),
-            series = readList("series.json"),
-            horror = readList("horror.json"),
-            anime = readList("anime.json"),
-            animeMovies = readList("anime-movies.json"),
-            animeLatest = readList("anime-latest.json"),
+        snapshot = enrichThumbnails(
+            CatalogSnapshot(
+                movies = readList("movies.json"),
+                series = readList("series.json"),
+                horror = readList("horror.json"),
+                anime = readList("anime.json"),
+                animeMovies = readList("anime-movies.json"),
+                animeLatest = readList("anime-latest.json"),
+            )
         )
         snapshot
     }
@@ -57,6 +59,43 @@ class CatalogRepository(private val context: Context) {
             runCatching { downloadAndCache(name) }
         }
         loadInitial()
+    }
+
+    /**
+     * Anime Terbaru = feed per episode → thumbnail episode tetap primary.
+     * Poster katalog hanya cadangan jika screenshot episode gagal load (404/SSL).
+     */
+    private fun enrichThumbnails(snap: CatalogSnapshot): CatalogSnapshot {
+        val animeBySlug = HashMap<String, CatalogItem>(snap.anime.size * 2)
+        for (item in snap.anime) {
+            item.slug?.takeIf { it.isNotBlank() }?.let { animeBySlug[it] = item }
+        }
+
+        val feedThumbBySlug = HashMap<String, String>(snap.animeLatest.size)
+        for (feed in snap.animeLatest) {
+            val slug = feed.anime_slug?.takeIf { it.isNotBlank() } ?: continue
+            val thumb = feed.thumbnail?.takeIf { it.isNotBlank() } ?: continue
+            feedThumbBySlug.putIfAbsent(slug, thumb)
+        }
+
+        val enrichedLatest = snap.animeLatest.map { feed ->
+            val parentThumb = feed.anime_slug
+                ?.let { animeBySlug[it]?.thumbnail }
+                ?.takeIf { it.isNotBlank() }
+            val feedThumb = feed.thumbnail?.takeIf { it.isNotBlank() }
+            feed.copy(
+                thumbnail = feedThumb ?: parentThumb,
+                thumbnailAlt = parentThumb?.takeIf { it != feedThumb },
+            )
+        }
+
+        val enrichedAnime = snap.anime.map { item ->
+            val slug = item.slug?.takeIf { it.isNotBlank() } ?: return@map item
+            val alt = feedThumbBySlug[slug]?.takeIf { it != item.thumbnail } ?: return@map item
+            item.copy(thumbnailAlt = alt)
+        }
+
+        return snap.copy(anime = enrichedAnime, animeLatest = enrichedLatest)
     }
 
     private fun readList(fileName: String): List<CatalogItem> {

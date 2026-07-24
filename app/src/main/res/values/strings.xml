@@ -10,7 +10,10 @@
     <string name="row_anime">Anime</string>
     <string name="row_anime_movies">Anime Movie</string>
     <string name="row_search_results">Hasil pencarian</string>
+    <string name="row_continue">Lanjutkan menonton</string>
     <string name="play">▶  Putar</string>
+    <string name="resume_play">▶  Lanjutkan</string>
+    <string name="failover_server">Server bermasalah · coba %1$s</string>
     <string name="episodes">Episode</string>
     <string name="servers">Audio &amp; Server</string>
     <string name="loading">Memuat katalog…</string>

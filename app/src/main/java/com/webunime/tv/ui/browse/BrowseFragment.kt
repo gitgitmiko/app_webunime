@@ -39,6 +39,7 @@ class BrowseFragment : BrowseSupportFragment() {
 
     private lateinit var rowsAdapter: ArrayObjectAdapter
     private val cardPresenter = CardPresenter()
+    private val rowPaging = mutableMapOf<Long, RowPagingState>()
 
     private var backgroundManager: BackgroundManager? = null
     private val bgHandler = Handler(Looper.getMainLooper())
@@ -91,15 +92,23 @@ class BrowseFragment : BrowseSupportFragment() {
 
         onItemViewClickedListener = OnItemViewClickedListener { _, item, _, _ ->
             val catalog = item as? CatalogItem ?: return@OnItemViewClickedListener
+            if (catalog.type == TYPE_CONTINUE) {
+                (activity as? MainActivity)?.openContinueWatch(catalog)
+                return@OnItemViewClickedListener
+            }
             val slug = catalog.slug?.takeIf { it.isNotBlank() }
                 ?: catalog.anime_slug?.takeIf { it.isNotBlank() }
                 ?: return@OnItemViewClickedListener
             (activity as? MainActivity)?.openDetail(slug, catalog.episode)
         }
 
-        onItemViewSelectedListener = OnItemViewSelectedListener { _, item, _, _ ->
+        onItemViewSelectedListener = OnItemViewSelectedListener { _, item, rowViewHolder, row ->
             val catalog = item as? CatalogItem
             scheduleBackground(catalog?.thumbnail)
+            val listRow = row as? ListRow ?: return@OnItemViewSelectedListener
+            val selectedIndex =
+                (rowViewHolder as? ListRowPresenter.ViewHolder)?.selectedPosition ?: -1
+            maybeLoadMore(listRow.headerItem.id, selectedIndex)
         }
 
         reloadRows()
@@ -107,6 +116,7 @@ class BrowseFragment : BrowseSupportFragment() {
 
     override fun onResume() {
         super.onResume()
+        reloadRows()
         restoreRowFocus()
     }
 
@@ -199,14 +209,18 @@ class BrowseFragment : BrowseSupportFragment() {
         val snap = (requireActivity().application as WebunimeApp).catalogRepository.snapshot
         val previous = selectedPosition
         rowsAdapter.clear()
+        rowPaging.clear()
 
         fun addRow(title: String, items: List<CatalogItem>) {
             if (items.isEmpty()) return
             val list = ArrayObjectAdapter(cardPresenter)
-            items.take(40).forEach { list.add(it) }
-            rowsAdapter.add(
-                ListRow(HeaderItem(rowsAdapter.size().toLong(), title), list)
-            )
+            val rowId = rowsAdapter.size().toLong()
+            val initialCount = items.size.coerceAtMost(PAGE_SIZE)
+            for (i in 0 until initialCount) {
+                list.add(items[i])
+            }
+            rowPaging[rowId] = RowPagingState(allItems = items, adapter = list, loadedCount = initialCount)
+            rowsAdapter.add(ListRow(HeaderItem(rowId, title), list))
         }
 
         fun addRow(titleRes: Int, items: List<CatalogItem>) =
@@ -215,16 +229,31 @@ class BrowseFragment : BrowseSupportFragment() {
         // Tahun berjalan (mengikuti jam perangkat), bukan angka hardcode.
         val currentYear = Calendar.getInstance().get(Calendar.YEAR)
 
+        val continueItems = (requireActivity().application as WebunimeApp)
+            .watchSessions
+            .continueWatching()
+            .map { session ->
+                CatalogItem(
+                    type = TYPE_CONTINUE,
+                    judul = session.title,
+                    thumbnail = session.thumbnail,
+                    slug = session.slug,
+                    episode = session.episode,
+                    durasi = formatContinueMeta(session.positionMs, session.durationMs),
+                )
+            }
+        addRow(R.string.row_continue, continueItems)
+
         addRow(R.string.row_movies, snap.movies)
         addRow(
             getString(R.string.row_movies_year, currentYear),
             snap.movies.filter { it.tahun == currentYear.toString() }
         )
         addRow(R.string.row_series, snap.series)
+        addRow(R.string.row_horror, snap.horror)
         addRow(R.string.row_anime_latest, snap.animeLatest)
         addRow(R.string.row_anime, snap.anime)
         addRow(R.string.row_anime_movies, snap.animeMovies)
-        addRow(R.string.row_horror, snap.horror)
 
         if (rowsAdapter.size() > 0) {
             val target = previous.coerceIn(0, rowsAdapter.size() - 1)
@@ -233,7 +262,49 @@ class BrowseFragment : BrowseSupportFragment() {
         }
     }
 
+    /** Append halaman berikutnya saat fokus mendekati ujung baris. */
+    private fun maybeLoadMore(rowId: Long, selectedIndex: Int) {
+        if (selectedIndex < 0) return
+        val state = rowPaging[rowId] ?: return
+        if (state.loadedCount >= state.allItems.size) return
+        if (selectedIndex < state.loadedCount - PREFETCH_THRESHOLD) return
+        appendNextPage(state)
+    }
+
+    private fun appendNextPage(state: RowPagingState) {
+        val nextEnd = (state.loadedCount + PAGE_SIZE).coerceAtMost(state.allItems.size)
+        if (nextEnd <= state.loadedCount) return
+        for (i in state.loadedCount until nextEnd) {
+            state.adapter.add(state.allItems[i])
+        }
+        state.loadedCount = nextEnd
+    }
+
+    private class RowPagingState(
+        val allItems: List<CatalogItem>,
+        val adapter: ArrayObjectAdapter,
+        var loadedCount: Int,
+    )
+
     companion object {
         private const val BACKGROUND_DELAY_MS = 350L
+        private const val PAGE_SIZE = 10
+        /** Load halaman berikutnya sebelum user sampai item terakhir. */
+        private const val PREFETCH_THRESHOLD = 3
+        const val TYPE_CONTINUE = "continue"
+
+        private fun formatContinueMeta(positionMs: Long, durationMs: Long): String {
+            fun mmss(ms: Long): String {
+                val totalSec = (ms / 1000).coerceAtLeast(0)
+                val m = totalSec / 60
+                val s = totalSec % 60
+                return "%d:%02d".format(m, s)
+            }
+            return if (durationMs > 0) {
+                "${mmss(positionMs)} / ${mmss(durationMs)}"
+            } else {
+                "Lanjut ${mmss(positionMs)}"
+            }
+        }
     }
 }

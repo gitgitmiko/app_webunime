@@ -55,8 +55,16 @@ class DetailActivity : AppCompatActivity() {
         title.text = item.displayTitle()
         meta.text = item.displayMeta()
         synopsis.text = item.sinopsis ?: ""
-        Glide.with(this).load(item.thumbnail).centerCrop().into(poster)
-        Glide.with(this).load(item.thumbnail).centerCrop().into(backdrop)
+        val thumb = item.thumbnail
+        val thumbAlt = item.thumbnailAlt
+        val posterReq = Glide.with(this).load(thumb).centerCrop()
+        val backdropReq = Glide.with(this).load(thumb).centerCrop()
+        if (!thumbAlt.isNullOrBlank() && thumbAlt != thumb) {
+            posterReq.error(Glide.with(this).load(thumbAlt).centerCrop())
+            backdropReq.error(Glide.with(this).load(thumbAlt).centerCrop())
+        }
+        posterReq.into(poster)
+        backdropReq.into(backdrop)
 
         selectedEpisode = when {
             preferEpisode != null ->
@@ -66,9 +74,22 @@ class DetailActivity : AppCompatActivity() {
         }
         bindEpisodes()
         bindServers()
+        updatePlayButtonLabel()
 
         playButton.setOnClickListener { startPlayback() }
         playButton.requestFocus()
+    }
+
+    private fun updatePlayButtonLabel() {
+        val slug = item.slug?.takeIf { it.isNotBlank() }
+            ?: item.anime_slug?.takeIf { it.isNotBlank() }
+            ?: return
+        val session = (application as WebunimeApp).watchSessions.get(slug, selectedEpisode?.episode)
+        playButton.text = if (session != null && !session.isFinished() && session.positionMs >= 30_000L) {
+            getString(R.string.resume_play)
+        } else {
+            getString(R.string.play)
+        }
     }
 
     /** Emulator Esc + remote TCL OK (ENTER/A). */
@@ -122,6 +143,7 @@ class DetailActivity : AppCompatActivity() {
                     selectedEpisode = ep
                     bindEpisodes()
                     bindServers()
+                    updatePlayButtonLabel()
                 }
                 if (selectedEpisode?.slug == ep.slug && selectedEpisode?.episode == ep.episode) {
                     setBackgroundColor(getColor(R.color.wu_accent))
@@ -174,21 +196,43 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun startPlayback() {
-        val player = selectedPlayer ?: PlayerRouter.pickDefault(item, selectedEpisode)
+        val players = PlayerRouter.preferredPlayers(item, selectedEpisode)
+        val player = selectedPlayer?.takeIf { p -> players.any { it.url == p.url } }
+            ?: players.firstOrNull()
         val url = player?.url
-        if (url.isNullOrBlank()) {
+        if (url.isNullOrBlank() || players.isEmpty()) {
             Toast.makeText(this, R.string.error_no_players, Toast.LENGTH_SHORT).show()
             return
         }
+        val slug = item.slug?.takeIf { it.isNotBlank() }
+            ?: item.anime_slug?.takeIf { it.isNotBlank() }
+            ?: ""
+        val episodeNum = selectedEpisode?.episode
         val title = buildString {
             append(item.displayTitle())
             selectedEpisode?.let { append(" · ").append(it.displayTitle()) }
+        }
+        val resume = (application as WebunimeApp).watchSessions
+            .get(slug, episodeNum)
+            ?.takeIf { !it.isFinished() }
+            ?.positionMs
+            ?: 0L
+        // Urutkan agar server terpilih (jika user ganti manual) tetap dicoba dulu.
+        val ordered = buildList {
+            add(player!!)
+            players.filter { it.url != player.url }.forEach { add(it) }
         }
         startActivity(
             Intent(this, PlayerActivity::class.java)
                 .putExtra(PlayerActivity.EXTRA_URL, url)
                 .putExtra(PlayerActivity.EXTRA_TITLE, title)
-                .putExtra(PlayerActivity.EXTRA_SERVER, player?.displayName().orEmpty())
+                .putExtra(PlayerActivity.EXTRA_SERVER, player.displayName())
+                .putExtra(PlayerActivity.EXTRA_SERVER_URLS, ordered.mapNotNull { it.url }.toTypedArray())
+                .putExtra(PlayerActivity.EXTRA_SERVER_LABELS, ordered.map { it.displayName() }.toTypedArray())
+                .putExtra(PlayerActivity.EXTRA_SLUG, slug)
+                .putExtra(PlayerActivity.EXTRA_EPISODE, episodeNum ?: -1)
+                .putExtra(PlayerActivity.EXTRA_THUMBNAIL, item.thumbnail)
+                .putExtra(PlayerActivity.EXTRA_RESUME_MS, resume)
         )
     }
 
