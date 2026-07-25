@@ -93,7 +93,7 @@ class BrowseFragment : BrowseSupportFragment() {
             startActivity(Intent(requireActivity(), SearchActivity::class.java))
         }
 
-        val rowPresenter = ListRowPresenter(FocusHighlight.ZOOM_FACTOR_MEDIUM).apply {
+        val rowPresenter = ListRowPresenter(FocusHighlight.ZOOM_FACTOR_SMALL).apply {
             shadowEnabled = true
             selectEffectEnabled = true
         }
