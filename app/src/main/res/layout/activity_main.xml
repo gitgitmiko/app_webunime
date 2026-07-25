@@ -1,6 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/main_browse_fragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/transparent" />
+    android:background="@color/wu_bg">
+
+    <FrameLayout
+        android:id="@+id/main_browse_fragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent" />
+
+    <LinearLayout
+        android:id="@+id/catalogLoading"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/wu_bg"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="visible">
+
+        <ProgressBar
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:indeterminate="true" />
+
+        <TextView
+            android:id="@+id/catalogLoadingText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/updating"
+            android:textColor="@color/wu_text"
+            android:textSize="18sp" />
+    </LinearLayout>
+</FrameLayout>

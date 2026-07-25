@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat
 import androidx.leanback.widget.ImageCardView
 import androidx.leanback.widget.Presenter
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
@@ -21,7 +22,10 @@ import com.webunime.tv.data.CatalogItem
 /**
  * Kartu browse/search:
  * - Film / series / horor → landscape 16:9
- * - Anime (termasuk Anime Terbaru & anime movie) → portrait 2:3 seperti semula
+ * - Anime → portrait 2:3
+ *
+ * Marquee judul hanya aktif di kartu yang fokus, setelah jeda singkat,
+ * agar geser D-pad tetap ringan.
  */
 class CardPresenter : Presenter() {
 
@@ -30,7 +34,6 @@ class CardPresenter : Presenter() {
             isFocusable = true
             isFocusableInTouchMode = true
             isClickable = true
-            // Default landscape; diganti di onBind sesuai jenis item.
             setMainImageDimensions(LANDSCAPE_WIDTH, LANDSCAPE_HEIGHT)
             cardType = ImageCardView.CARD_TYPE_INFO_UNDER
             setBackgroundColor(ContextCompat.getColor(context, R.color.wu_bg))
@@ -49,8 +52,16 @@ class CardPresenter : Presenter() {
             ep != null && ep > 0 && movie.anime_slug != null -> "Episode $ep"
             else -> movie.displayMeta().ifBlank { movie.type?.replace('-', ' ')?.uppercase().orEmpty() }
         }
-        // Pastikan judul panjang bisa marquee saat kartu fokus.
-        card.titleTextView()?.isSelected = card.hasFocus()
+
+        val titleView = card.titleTextView()
+        titleView?.let { tv ->
+            (tv.getTag(R.id.tag_marquee_run) as? Runnable)?.let { tv.removeCallbacks(it) }
+            tv.ellipsize = TextUtils.TruncateAt.END
+            tv.isSelected = false
+            if (card.hasFocus()) {
+                scheduleMarquee(card, tv)
+            }
+        }
 
         val portrait = isAnimeStyle(movie)
         val width = if (portrait) PORTRAIT_WIDTH else LANDSCAPE_WIDTH
@@ -63,16 +74,22 @@ class CardPresenter : Presenter() {
         val urls = listOfNotNull(primary, alt)
 
         card.setTag(R.id.tag_thumb_url, urls.firstOrNull())
-        Glide.with(card).clear(card)
-        card.mainImage = placeholder
-
-        if (urls.isEmpty()) return
-
-        val options = RequestOptions()
-            .dontAnimate()
-            .transform(CenterCrop(), RoundedCorners(12))
-
-        loadIntoCard(card, urls, 0, options, placeholder, width, height)
+        // Jangan clear Glide tiap bind bila URL sama — hemat saat scroll balik.
+        val imageView = card.mainImageView
+        val prevUrl = imageView.getTag(R.id.tag_thumb_url) as? String
+        val nextUrl = urls.firstOrNull()
+        if (prevUrl != nextUrl) {
+            imageView.setTag(R.id.tag_thumb_url, nextUrl)
+            Glide.with(card).clear(card)
+            card.mainImage = placeholder
+            if (nextUrl != null) {
+                val options = RequestOptions()
+                    .dontAnimate()
+                    .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                    .transform(CenterCrop(), RoundedCorners(12))
+                loadIntoCard(card, urls, 0, options, placeholder, width, height)
+            }
+        }
     }
 
     private fun loadIntoCard(
@@ -115,8 +132,15 @@ class CardPresenter : Presenter() {
 
     override fun onUnbindViewHolder(viewHolder: ViewHolder) {
         val card = viewHolder.view as ImageCardView
+        val titleView = card.titleTextView()
+        titleView?.let { tv ->
+            (tv.getTag(R.id.tag_marquee_run) as? Runnable)?.let { tv.removeCallbacks(it) }
+            tv.setTag(R.id.tag_marquee_run, null)
+            tv.isSelected = false
+            tv.ellipsize = TextUtils.TruncateAt.END
+        }
         card.setTag(R.id.tag_thumb_url, null)
-        card.titleTextView()?.isSelected = false
+        card.mainImageView.setTag(R.id.tag_thumb_url, null)
         card.badgeImage = null
         Glide.with(card).clear(card)
         card.mainImage = null
@@ -125,9 +149,9 @@ class CardPresenter : Presenter() {
     companion object {
         private const val LANDSCAPE_WIDTH = 280
         private const val LANDSCAPE_HEIGHT = 158
-        // Poster anime ~2:3 (seperti semula)
         private const val PORTRAIT_WIDTH = 200
         private const val PORTRAIT_HEIGHT = 300
+        private const val MARQUEE_DELAY_MS = 480L
 
         fun isAnimeStyle(item: CatalogItem): Boolean {
             if (!item.anime_slug.isNullOrBlank()) return true
@@ -140,15 +164,31 @@ class CardPresenter : Presenter() {
 
         private fun ImageCardView.setupTitleMarquee() {
             val titleView = titleTextView() ?: return
-            titleView.ellipsize = TextUtils.TruncateAt.MARQUEE
+            titleView.ellipsize = TextUtils.TruncateAt.END
             titleView.isSingleLine = true
-            titleView.marqueeRepeatLimit = -1
-            titleView.isHorizontalFadingEdgeEnabled = true
-            titleView.setFadingEdgeLength(24)
-            // Marquee Android hanya jalan jika view "selected".
+            titleView.marqueeRepeatLimit = 2
+            // Tanpa fading edge — lebih ringan di TV stick.
+            titleView.isHorizontalFadingEdgeEnabled = false
             setOnFocusChangeListener { _, hasFocus ->
-                titleTextView()?.isSelected = hasFocus
+                val tv = titleTextView() ?: return@setOnFocusChangeListener
+                (tv.getTag(R.id.tag_marquee_run) as? Runnable)?.let { tv.removeCallbacks(it) }
+                if (hasFocus) {
+                    scheduleMarquee(this, tv)
+                } else {
+                    tv.isSelected = false
+                    tv.ellipsize = TextUtils.TruncateAt.END
+                }
             }
+        }
+
+        private fun scheduleMarquee(card: ImageCardView, titleView: TextView) {
+            val start = Runnable {
+                if (!card.hasFocus()) return@Runnable
+                titleView.ellipsize = TextUtils.TruncateAt.MARQUEE
+                titleView.isSelected = true
+            }
+            titleView.setTag(R.id.tag_marquee_run, start)
+            titleView.postDelayed(start, MARQUEE_DELAY_MS)
         }
     }
 }

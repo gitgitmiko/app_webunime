@@ -18,6 +18,7 @@
     <string name="servers">Audio &amp; Server</string>
     <string name="loading">Memuat katalog…</string>
     <string name="updating">Memperbarui dari GitHub…</string>
+    <string name="loading_local_fallback">GitHub gagal · memuat data lokal…</string>
     <string name="error_no_players">Tidak ada server yang tersedia</string>
     <string name="error_play">Gagal memutar video</string>
     <string name="search_hint">Cari film, series, atau anime…</string>

@@ -3,16 +3,18 @@ package com.webunime.tv.ui.browse
 import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
+import android.view.View
+import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import com.webunime.tv.R
 import com.webunime.tv.WebunimeApp
-import com.webunime.tv.ui.detail.DetailActivity
-import com.webunime.tv.ui.player.PlayerActivity
 import com.webunime.tv.data.CatalogItem
 import com.webunime.tv.data.PlayerRouter
+import com.webunime.tv.ui.detail.DetailActivity
+import com.webunime.tv.ui.player.PlayerActivity
 import kotlinx.coroutines.launch
-import android.widget.Toast
 
 class MainActivity : FragmentActivity() {
 
@@ -27,27 +29,34 @@ class MainActivity : FragmentActivity() {
         }
 
         val repo = (application as WebunimeApp).catalogRepository
+        val loading = findViewById<View>(R.id.catalogLoading)
+        val loadingText = findViewById<TextView>(R.id.catalogLoadingText)
+
         lifecycleScope.launch {
-            repo.loadInitial()
-            browseFragment()?.reloadRows()
-            runCatching { repo.refreshFromGithub() }
+            loading.visibility = View.VISIBLE
+            loadingText.setText(R.string.updating)
+
+            val downloaded = runCatching { repo.refreshFromGithub() }.getOrDefault(0)
+            if (downloaded == 0) {
+                // GitHub gagal total → pakai cache/assets lokal
+                loadingText.setText(R.string.loading_local_fallback)
+                repo.loadInitial()
+            }
+
+            loading.visibility = View.GONE
             browseFragment()?.reloadRows()
         }
     }
 
     override fun onResume() {
         super.onResume()
-        // Fokus ke grid kartu — jangan ke decorView/root (merusak D-pad di TCL)
-        window.decorView.post {
-            browseFragment()?.restoreRowFocus()
-        }
+        // Jangan paksa fokus di sini — bentrok dengan D-pad (atas/bawah “kepencet sendiri”).
+        // BrowseFragment sudah restore posisi sekali setelah kembali dari Detail.
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) {
-            browseFragment()?.restoreRowFocus()
-        }
+        // No-op: merebut fokus di sini memicu bounce atas/bawah di remote TV.
     }
 
     /**
@@ -58,9 +67,8 @@ class MainActivity : FragmentActivity() {
         val code = event.keyCode
         if (isDpadOrOk(code) && event.action == KeyEvent.ACTION_DOWN) {
             val browse = browseFragment()
-            // Hanya pulihkan fokus ke grid bila fokus BENAR-BENAR hilang (null).
-            // Jangan merebut fokus saat tombol search / view lain sedang fokus,
-            // agar OK di tombol search membuka pencarian (bukan malah ke bawah).
+            // User sedang navigasi → batalkan restore tertunda agar tidak “tarik balik”.
+            browse?.cancelPendingRestores()
             val focused = window.decorView.findFocus()
             if (browse != null && focused == null) {
                 browse.restoreRowFocus()

@@ -46,6 +46,18 @@ class BrowseFragment : BrowseSupportFragment() {
     private var pendingThumb: String? = null
     private var lastThumb: String? = null
 
+    /** Posisi browse yang dipertahankan saat kembali dari Detail/Player. */
+    private var lastRowIndex: Int = 0
+    private var lastItemIndex: Int = 0
+    private var continueRowIndex: Int = -1
+    private var rowsBuilt: Boolean = false
+    /** True hanya sekali setelah kembali dari Detail/Player. */
+    private var pendingPositionRestore: Boolean = false
+    private var restoreRetries: Int = 0
+
+    private val restoreSelectionRunnable = Runnable { restoreBrowseSelection() }
+    private val focusGridRunnable = Runnable { focusRowsGrid() }
+
     private val applyBackground = Runnable {
         val url = pendingThumb
         if (url.isNullOrBlank()) {
@@ -59,8 +71,6 @@ class BrowseFragment : BrowseSupportFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        // Jangan buat root focusable — di TV TCL itu “menelan” D-pad
-        // sehingga panah/OK tidak sampai ke kartu Leanback.
         view.isFocusable = false
         view.isFocusableInTouchMode = false
         if (view is ViewGroup) {
@@ -108,19 +118,34 @@ class BrowseFragment : BrowseSupportFragment() {
             val listRow = row as? ListRow ?: return@OnItemViewSelectedListener
             val selectedIndex =
                 (rowViewHolder as? ListRowPresenter.ViewHolder)?.selectedPosition ?: -1
+            if (selectedPosition >= 0) lastRowIndex = selectedPosition
+            if (selectedIndex >= 0) lastItemIndex = selectedIndex
             maybeLoadMore(listRow.headerItem.id, selectedIndex)
         }
 
-        reloadRows()
+        // Katalog diisi MainActivity setelah fetch GitHub — jangan tampilkan lokal dulu.
+    }
+
+    override fun onPause() {
+        // Akan kembali dari Detail/Player → pulihkan posisi sekali di onResume.
+        pendingPositionRestore = true
+        cancelPendingRestores()
+        super.onPause()
     }
 
     override fun onResume() {
         super.onResume()
-        reloadRows()
-        restoreRowFocus()
+        if (!rowsBuilt) return
+        refreshContinueRowOnly()
+        if (pendingPositionRestore) {
+            pendingPositionRestore = false
+            restoreRetries = 0
+            view?.post(restoreSelectionRunnable)
+        }
     }
 
     override fun onDestroy() {
+        cancelPendingRestores()
         bgHandler.removeCallbacks(applyBackground)
         backgroundManager = null
         super.onDestroy()
@@ -128,25 +153,33 @@ class BrowseFragment : BrowseSupportFragment() {
 
     fun rowsGrid(): VerticalGridView? = rowsSupportFragment?.verticalGridView
 
-    /** Pastikan fokus di grid kartu (bukan title/search orb). */
+    /** Batalkan restore tertunda — dipanggil saat user menekan D-pad. */
+    fun cancelPendingRestores() {
+        view?.removeCallbacks(restoreSelectionRunnable)
+        view?.removeCallbacks(focusGridRunnable)
+        restoreRetries = 99
+    }
+
+    /**
+     * Pulihkan fokus ke grid hanya jika fokus benar-benar hilang.
+     * Jangan merebut fokus dari tombol search / navigasi user.
+     */
     fun restoreRowFocus() {
-        view?.post { focusRowsGrid() }
-        view?.postDelayed({ focusRowsGrid() }, 120)
-        view?.postDelayed({ focusRowsGrid() }, 400)
+        view?.removeCallbacks(focusGridRunnable)
+        view?.post(focusGridRunnable)
     }
 
     private fun focusRowsGrid() {
         if (!isAdded) return
+        val act = activity ?: return
+        // Ada fokus valid (kartu / search orb) → jangan ganggu.
+        if (act.window.decorView.findFocus() != null) return
         val grid = rowsGrid() ?: return
         if ((adapter?.size() ?: 0) <= 0) return
-        if (selectedPosition < 0) {
-            selectedPosition = 0
-        }
+        if (selectedPosition < 0) selectedPosition = 0
         grid.isFocusable = true
         grid.isFocusableInTouchMode = true
-        if (!grid.hasFocus()) {
-            grid.requestFocus()
-        }
+        grid.requestFocus()
     }
 
     private fun prepareBackgroundManager() {
@@ -207,29 +240,63 @@ class BrowseFragment : BrowseSupportFragment() {
     fun reloadRows() {
         if (!this::rowsAdapter.isInitialized || !isAdded) return
         val snap = (requireActivity().application as WebunimeApp).catalogRepository.snapshot
-        val previous = selectedPosition
+        val keepRow = lastRowIndex
+        val keepItem = lastItemIndex
         rowsAdapter.clear()
         rowPaging.clear()
+        continueRowIndex = -1
 
-        fun addRow(title: String, items: List<CatalogItem>) {
+        fun addRow(title: String, items: List<CatalogItem>, isContinue: Boolean = false) {
+            if (items.isEmpty() && !isContinue) return
             if (items.isEmpty()) return
             val list = ArrayObjectAdapter(cardPresenter)
             val rowId = rowsAdapter.size().toLong()
-            val initialCount = items.size.coerceAtMost(PAGE_SIZE)
+            // Saat restore ke index jauh, load cukup item sampai posisi itu (+ buffer).
+            val want = if (keepItem > 0 && title != getString(R.string.row_continue)) {
+                (keepItem + PAGE_SIZE).coerceAtMost(items.size)
+            } else {
+                items.size.coerceAtMost(PAGE_SIZE)
+            }.coerceAtLeast(1.coerceAtMost(items.size))
+            val initialCount = want.coerceAtMost(items.size)
             for (i in 0 until initialCount) {
                 list.add(items[i])
             }
             rowPaging[rowId] = RowPagingState(allItems = items, adapter = list, loadedCount = initialCount)
+            if (isContinue) continueRowIndex = rowsAdapter.size()
             rowsAdapter.add(ListRow(HeaderItem(rowId, title), list))
         }
 
-        fun addRow(titleRes: Int, items: List<CatalogItem>) =
-            addRow(getString(titleRes), items)
+        fun addRow(titleRes: Int, items: List<CatalogItem>, isContinue: Boolean = false) =
+            addRow(getString(titleRes), items, isContinue)
 
-        // Tahun berjalan (mengikuti jam perangkat), bukan angka hardcode.
         val currentYear = Calendar.getInstance().get(Calendar.YEAR)
 
-        val continueItems = (requireActivity().application as WebunimeApp)
+        addRow(R.string.row_continue, buildContinueItems(), isContinue = true)
+        addRow(R.string.row_movies, snap.movies)
+        addRow(
+            getString(R.string.row_movies_year, currentYear),
+            snap.movies.filter { it.tahun == currentYear.toString() }
+        )
+        addRow(R.string.row_series, snap.series)
+        addRow(R.string.row_horror, snap.horror)
+        addRow(R.string.row_anime_latest, snap.animeLatest)
+        addRow(R.string.row_anime, snap.anime)
+        addRow(R.string.row_anime_movies, snap.animeMovies)
+
+            rowsBuilt = rowsAdapter.size() > 0
+        if (rowsBuilt) {
+            lastRowIndex = keepRow.coerceIn(0, rowsAdapter.size() - 1)
+            lastItemIndex = keepItem.coerceAtLeast(0)
+            selectedPosition = lastRowIndex
+            // Restore posisi hanya lewat jalur pending (onResume setelah Detail),
+            // atau sekali di sini saat cold rebuild katalog.
+            restoreRetries = 0
+            view?.post(restoreSelectionRunnable)
+        }
+    }
+
+    private fun buildContinueItems(): List<CatalogItem> =
+        (requireActivity().application as WebunimeApp)
             .watchSessions
             .continueWatching()
             .map { session ->
@@ -242,27 +309,63 @@ class BrowseFragment : BrowseSupportFragment() {
                     durasi = formatContinueMeta(session.positionMs, session.durationMs),
                 )
             }
-        addRow(R.string.row_continue, continueItems)
 
-        addRow(R.string.row_movies, snap.movies)
-        addRow(
-            getString(R.string.row_movies_year, currentYear),
-            snap.movies.filter { it.tahun == currentYear.toString() }
-        )
-        addRow(R.string.row_series, snap.series)
-        addRow(R.string.row_horror, snap.horror)
-        addRow(R.string.row_anime_latest, snap.animeLatest)
-        addRow(R.string.row_anime, snap.anime)
-        addRow(R.string.row_anime_movies, snap.animeMovies)
-
-        if (rowsAdapter.size() > 0) {
-            val target = previous.coerceIn(0, rowsAdapter.size() - 1)
-            selectedPosition = target
-            restoreRowFocus()
+    /** Update baris Lanjutkan tanpa mereset scroll baris lain. */
+    private fun refreshContinueRowOnly() {
+        if (!this::rowsAdapter.isInitialized || !isAdded) return
+        val items = buildContinueItems()
+        if (continueRowIndex in 0 until rowsAdapter.size()) {
+            val listRow = rowsAdapter.get(continueRowIndex) as? ListRow ?: return
+            val adapter = listRow.adapter as? ArrayObjectAdapter ?: return
+            adapter.clear()
+            items.forEach { adapter.add(it) }
+            val rowId = listRow.headerItem.id
+            rowPaging[rowId] = RowPagingState(items, adapter, items.size)
+            if (items.isEmpty()) {
+                // Hapus baris kosong — hanya bila perlu; rebuild penuh agar ID konsisten.
+                reloadRows()
+            }
+            return
+        }
+        if (items.isNotEmpty()) {
+            // Baru ada session lanjut → sisipkan baris tanpa kehilangan posisi relatif.
+            reloadRows()
         }
     }
 
-    /** Append halaman berikutnya saat fokus mendekati ujung baris. */
+    private fun restoreBrowseSelection() {
+        if (!isAdded || !this::rowsAdapter.isInitialized) return
+        if (rowsAdapter.size() <= 0) return
+        if (restoreRetries > 5) return
+
+        val rowIndex = lastRowIndex.coerceIn(0, rowsAdapter.size() - 1)
+        selectedPosition = rowIndex
+        val listRow = rowsAdapter.get(rowIndex) as? ListRow ?: return
+        ensureLoadedUntil(listRow.headerItem.id, lastItemIndex)
+        val itemIndex = lastItemIndex.coerceIn(0, (listRow.adapter?.size() ?: 1) - 1)
+
+        val grid = rowsGrid() ?: return
+        grid.setSelectedPosition(rowIndex)
+        val holder = grid.findViewHolderForAdapterPosition(rowIndex) as? ListRowPresenter.ViewHolder
+        val horizontal = holder?.gridView
+        if (horizontal != null) {
+            horizontal.selectedPosition = itemIndex
+            horizontal.requestFocus()
+            restoreRetries = 0
+        } else {
+            restoreRetries++
+            view?.removeCallbacks(restoreSelectionRunnable)
+            view?.postDelayed(restoreSelectionRunnable, 100)
+        }
+    }
+
+    private fun ensureLoadedUntil(rowId: Long, index: Int) {
+        val state = rowPaging[rowId] ?: return
+        while (state.loadedCount <= index && state.loadedCount < state.allItems.size) {
+            appendNextPage(state)
+        }
+    }
+
     private fun maybeLoadMore(rowId: Long, selectedIndex: Int) {
         if (selectedIndex < 0) return
         val state = rowPaging[rowId] ?: return
@@ -289,7 +392,6 @@ class BrowseFragment : BrowseSupportFragment() {
     companion object {
         private const val BACKGROUND_DELAY_MS = 350L
         private const val PAGE_SIZE = 10
-        /** Load halaman berikutnya sebelum user sampai item terakhir. */
         private const val PREFETCH_THRESHOLD = 3
         const val TYPE_CONTINUE = "continue"
 

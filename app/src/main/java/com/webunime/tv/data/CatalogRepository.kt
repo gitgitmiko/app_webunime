@@ -46,7 +46,11 @@ class CatalogRepository(private val context: Context) {
         snapshot
     }
 
-    suspend fun refreshFromGithub(): CatalogSnapshot = withContext(Dispatchers.IO) {
+    /**
+     * Unduh katalog dari GitHub dulu, lalu muat snapshot.
+     * @return jumlah file yang berhasil diunduh (0 = gagal total → pakai lokal).
+     */
+    suspend fun refreshFromGithub(): Int = withContext(Dispatchers.IO) {
         val files = listOf(
             "movies.json",
             "series.json",
@@ -55,10 +59,12 @@ class CatalogRepository(private val context: Context) {
             "anime-movies.json",
             "anime-latest.json",
         )
+        var ok = 0
         for (name in files) {
-            runCatching { downloadAndCache(name) }
+            if (runCatching { downloadAndCache(name) }.isSuccess) ok++
         }
         loadInitial()
+        ok
     }
 
     /**
