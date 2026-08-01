@@ -65,6 +65,9 @@ class PlayerActivity : AppCompatActivity() {
 
     private var isAbyssWrapper = false
 
+    /** Abaikan OK/seek sebentar setelah buka player (sisa key dari tombol Play di Detail). */
+    private var ignoreRemoteUntil = 0L
+
     @Volatile
     private var qualityDialogShown = false
 
@@ -88,6 +91,16 @@ class PlayerActivity : AppCompatActivity() {
         override fun run() {
             persistProgress()
             hideHandler.postDelayed(this, PROGRESS_TICK_MS)
+        }
+    }
+
+    /** Akumulasi seek WebView: tekan cepat digabung jadi 1 seek (hindari stuck Hydrax/JW). */
+    private var pendingSeekSec = 0
+    private var seekHintServerLabel = ""
+    private val applySeekRunnable = Runnable { flushPendingWebSeek() }
+    private val clearSeekHintRunnable = Runnable {
+        if (seekHintServerLabel.isNotEmpty()) {
+            modeView.text = seekHintServerLabel
         }
     }
 
@@ -281,7 +294,13 @@ class PlayerActivity : AppCompatActivity() {
                 tryFailover(error.message ?: "exo")
             }
         })
+        pendingSeekSec = 0
+        seekHintServerLabel = "$server · ExoPlayer"
+        ignoreRemoteUntil = SystemClock.uptimeMillis() + REMOTE_GRACE_MS
+        hideHandler.removeCallbacks(applySeekRunnable)
+        hideHandler.removeCallbacks(clearSeekHintRunnable)
         playerView.requestFocus()
+        showTitleThenAutoHide()
     }
 
     private fun setTitleBarVisible(visible: Boolean) {
@@ -341,6 +360,12 @@ class PlayerActivity : AppCompatActivity() {
         modeView.text = "$server · WebView"
         webVideoActive = false
         isAbyssWrapper = WebPlayerProxy.isAbyss(url)
+        // Sisa ACTION_UP dari tombol Play di Detail sering sampai ke sini dan
+        // memanggil toggle → Hydrax yang baru autoplay langsung ter-pause.
+        ignoreRemoteUntil = SystemClock.uptimeMillis() + REMOTE_GRACE_MS
+        pendingSeekSec = 0
+        hideHandler.removeCallbacks(applySeekRunnable)
+        hideHandler.removeCallbacks(clearSeekHintRunnable)
 
         webView.removeJavascriptInterface("WebunimePlayback")
         webView.addJavascriptInterface(PlaybackBridge(), "WebunimePlayback")
@@ -404,6 +429,8 @@ class PlayerActivity : AppCompatActivity() {
             }
 
             override fun onPageFinished(view: WebView?, pageUrl: String?) {
+                // Seek/play helpers universal: film Cast/Turbo + anime Mega/Blogger/dll.
+                view?.evaluateJavascript(universalPlayerJs, null)
                 view?.evaluateJavascript(
                     """
                     (function(){
@@ -489,6 +516,10 @@ class PlayerActivity : AppCompatActivity() {
             hideHandler.removeCallbacks(webFailTimeoutRunnable)
             hideHandler.postDelayed(webFailTimeoutRunnable, WEB_FAIL_TIMEOUT_MS)
         }
+        pendingSeekSec = 0
+        seekHintServerLabel = "$server · WebView"
+        hideHandler.removeCallbacks(applySeekRunnable)
+        hideHandler.removeCallbacks(clearSeekHintRunnable)
         webView.requestFocus()
         showTitleThenAutoHide()
     }
@@ -542,15 +573,26 @@ class PlayerActivity : AppCompatActivity() {
             requestQualityPicker()
             return true
         }
+        // Seek seragam: semua server WebView (Hydrax/Turbo/Cast/anime embed) + ExoPlayer.
+        if ((webView.visibility == View.VISIBLE || playerView.visibility == View.VISIBLE) &&
+            isSeekKey(event.keyCode) &&
+            qualityDialog?.isShowing != true
+        ) {
+            if (SystemClock.uptimeMillis() < ignoreRemoteUntil) return true
+            return handleSeekKey(event)
+        }
         if (webView.visibility == View.VISIBLE &&
             event.action == KeyEvent.ACTION_DOWN &&
             !isBackLike(event.keyCode) &&
-            !isOkKey(event.keyCode)
+            !isOkKey(event.keyCode) &&
+            !isSeekKey(event.keyCode)
         ) {
             showTitleThenAutoHide()
             peekPlayerChrome()
         }
         if (webView.visibility == View.VISIBLE && isOkKey(event.keyCode)) {
+            // Jangan toggle selama grace: mencegah pause tak sengaja di Hydrax.
+            if (SystemClock.uptimeMillis() < ignoreRemoteUntil) return true
             if (webVideoActive || isAbyssWrapper) {
                 if (event.action == KeyEvent.ACTION_UP) togglePlayback()
                 return true
@@ -558,7 +600,18 @@ class PlayerActivity : AppCompatActivity() {
             showTitleThenAutoHide()
             return super.dispatchKeyEvent(event)
         }
-        if (playerView.visibility == View.VISIBLE && !isBackLike(event.keyCode)) {
+        if (playerView.visibility == View.VISIBLE && isOkKey(event.keyCode)) {
+            if (SystemClock.uptimeMillis() < ignoreRemoteUntil) return true
+            if (event.action == KeyEvent.ACTION_UP) {
+                val p = exoPlayer
+                if (p != null) {
+                    p.playWhenReady = !p.playWhenReady
+                    showTitleThenAutoHide()
+                }
+            }
+            return true
+        }
+        if (playerView.visibility == View.VISIBLE && !isBackLike(event.keyCode) && !isSeekKey(event.keyCode)) {
             if (playerView.dispatchKeyEvent(event)) return true
         }
         return super.dispatchKeyEvent(event)
@@ -580,6 +633,96 @@ class PlayerActivity : AppCompatActivity() {
             keyCode == KeyEvent.KEYCODE_INFO ||
             keyCode == KeyEvent.KEYCODE_GUIDE ||
             keyCode == KeyEvent.KEYCODE_MEDIA_AUDIO_TRACK
+
+    private fun isSeekKey(keyCode: Int): Boolean =
+        keyCode == KeyEvent.KEYCODE_DPAD_LEFT ||
+            keyCode == KeyEvent.KEYCODE_DPAD_RIGHT ||
+            keyCode == KeyEvent.KEYCODE_MEDIA_REWIND ||
+            keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD ||
+            keyCode == KeyEvent.KEYCODE_MEDIA_STEP_BACKWARD ||
+            keyCode == KeyEvent.KEYCODE_MEDIA_STEP_FORWARD
+
+    private fun handleSeekKey(event: KeyEvent): Boolean {
+        // Consume UP juga agar JW / PlayerView tidak ikut seek sendiri.
+        if (event.action != KeyEvent.ACTION_DOWN) return true
+        val dir = when (event.keyCode) {
+            KeyEvent.KEYCODE_DPAD_LEFT,
+            KeyEvent.KEYCODE_MEDIA_REWIND,
+            KeyEvent.KEYCODE_MEDIA_STEP_BACKWARD -> -1
+            else -> 1
+        }
+        val step = when {
+            event.repeatCount >= 12 -> 30
+            event.repeatCount >= 4 -> 15
+            else -> 10
+        }
+        pendingSeekSec = (pendingSeekSec + dir * step).coerceIn(-3600, 3600)
+        showSeekHint(pendingSeekSec)
+        showTitleThenAutoHide()
+        if (webView.visibility == View.VISIBLE) peekPlayerChrome()
+        hideHandler.removeCallbacks(applySeekRunnable)
+        hideHandler.postDelayed(applySeekRunnable, SEEK_DEBOUNCE_MS)
+        return true
+    }
+
+    private fun showSeekHint(pendingSec: Int) {
+        if (seekHintServerLabel.isEmpty()) {
+            seekHintServerLabel = modeView.text?.toString().orEmpty()
+        }
+        val sign = if (pendingSec >= 0) "+" else "-"
+        modeView.text = "$sign${formatSeekDuration(kotlin.math.abs(pendingSec))}"
+        hideHandler.removeCallbacks(clearSeekHintRunnable)
+        hideHandler.postDelayed(clearSeekHintRunnable, 1_600L)
+    }
+
+    /** < 60 dtk → "45 dtk"; ≥ 60 → "2 menit" / "2 menit 10 dtk" */
+    private fun formatSeekDuration(totalSec: Int): String {
+        if (totalSec < 60) return "$totalSec dtk"
+        val m = totalSec / 60
+        val s = totalSec % 60
+        return if (s == 0) "$m menit" else "$m menit $s dtk"
+    }
+
+    private fun flushPendingWebSeek() {
+        val delta = pendingSeekSec
+        pendingSeekSec = 0
+        if (delta == 0) return
+        when {
+            playerView.visibility == View.VISIBLE && exoPlayer != null -> seekExoBy(delta)
+            webView.visibility == View.VISIBLE -> seekWebBy(delta)
+        }
+    }
+
+    private fun seekExoBy(deltaSec: Int) {
+        val player = exoPlayer ?: return
+        val dur = player.duration.takeIf { it > 0 } ?: Long.MAX_VALUE
+        val next = (player.currentPosition + deltaSec * 1000L).coerceIn(0L, (dur - 250L).coerceAtLeast(0L))
+        player.seekTo(next)
+    }
+
+    private fun seekWebBy(deltaSec: Int) {
+        val js = """
+            (function(){
+              try{
+                if(typeof window.__wuSeekBy==="function"){ window.__wuSeekBy($deltaSec); return; }
+                var f=document.querySelector("iframe");
+                if(f&&f.contentWindow){ f.contentWindow.postMessage({type:"__wuSeekBy",delta:$deltaSec},"*"); }
+                var vids=document.querySelectorAll("video");
+                for(var i=0;i<vids.length;i++){
+                  var v=vids[i];
+                  if(!v||v.readyState<1) continue;
+                  var n=v.currentTime+($deltaSec);
+                  var d=v.duration||0;
+                  if(d>0&&isFinite(d)) n=Math.max(0,Math.min(d-0.25,n));
+                  else n=Math.max(0,n);
+                  v.currentTime=n;
+                  return;
+                }
+              }catch(e){}
+            })();
+        """.trimIndent()
+        webView.evaluateJavascript(js, null)
+    }
 
     private fun togglePlayback() {
         val js = """
@@ -703,6 +846,8 @@ class PlayerActivity : AppCompatActivity() {
         hideHandler.removeCallbacks(qualityTimeoutRunnable)
         hideHandler.removeCallbacks(webFailTimeoutRunnable)
         hideHandler.removeCallbacks(progressTicker)
+        hideHandler.removeCallbacks(applySeekRunnable)
+        hideHandler.removeCallbacks(clearSeekHintRunnable)
         qualityDialog?.dismiss()
         qualityDialog = null
         if (this::webView.isInitialized) {
@@ -727,5 +872,79 @@ class PlayerActivity : AppCompatActivity() {
         private const val TITLE_AUTO_HIDE_MS = 4_000L
         private const val WEB_FAIL_TIMEOUT_MS = 32_000L
         private const val PROGRESS_TICK_MS = 10_000L
+        private const val SEEK_DEBOUNCE_MS = 140L
+        private const val REMOTE_GRACE_MS = 1_200L
     }
+
+    /** Inject di setiap halaman WebView (termasuk anime Mega/Blogger yang tidak lewat shim proxy). */
+    private val universalPlayerJs: String = """
+            (function(){
+              if(window.__wuUniversalSeek) return;
+              window.__wuUniversalSeek=true;
+              function __wuVid(){ try{return document.querySelector("video");}catch(e){return null;} }
+              function __wuJw(){
+                try{
+                  if(typeof jwplayer==="function"){
+                    var p=jwplayer();
+                    if(p&&typeof p.getPosition==="function") return p;
+                  }
+                }catch(e){}
+                return null;
+              }
+              if(typeof window.__wuSeekBy!=="function"){
+                window.__wuSeekBy=function(delta){
+                  delta=Number(delta)||0;
+                  if(!delta) return;
+                  try{
+                    var jp=__wuJw();
+                    if(jp&&typeof jp.seek==="function"){
+                      var st=typeof jp.getState==="function"?jp.getState():"";
+                      if(st==="idle"||st==="complete"||st===""){ /* skip */ }
+                      else {
+                        var pos=jp.getPosition()||0;
+                        var dur=typeof jp.getDuration==="function"?jp.getDuration():0;
+                        if(dur>0&&isFinite(dur)){
+                          jp.seek(Math.max(0,Math.min(dur-0.35,pos+delta)));
+                          return;
+                        }
+                      }
+                    }
+                  }catch(e){}
+                  try{
+                    var v=__wuVid();
+                    if(v){
+                      var n=v.currentTime+delta;
+                      var d=v.duration||0;
+                      if(d>0&&isFinite(d)) n=Math.max(0,Math.min(d-0.25,n));
+                      else n=Math.max(0,n);
+                      v.currentTime=n;
+                    }
+                  }catch(e){}
+                };
+              }
+              if(typeof window.__wuToggle!=="function"){
+                window.__wuToggle=function(){
+                  try{
+                    var v=__wuVid();
+                    if(v){ if(v.paused) v.play(); else v.pause(); return; }
+                    var jp=__wuJw();
+                    if(jp){
+                      var s=typeof jp.getState==="function"?jp.getState():"";
+                      if(s==="playing"||s==="buffering") jp.pause(); else jp.play();
+                    }
+                  }catch(e){}
+                };
+              }
+              try{
+                window.addEventListener("message",function(e){
+                  var d=e&&e.data;
+                  if(d&&typeof d==="object"&&d.type==="__wuSeekBy"){
+                    try{ window.__wuSeekBy(d.delta); }catch(ex){}
+                  } else if(d==="__wuToggle"){
+                    try{ window.__wuToggle(); }catch(ex){}
+                  }
+                });
+              }catch(e){}
+            })();
+        """.trimIndent()
 }

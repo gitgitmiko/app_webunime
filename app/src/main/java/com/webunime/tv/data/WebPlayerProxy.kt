@@ -102,6 +102,18 @@ object WebPlayerProxy {
               if (f && f.contentWindow) f.contentWindow.postMessage({type:"__wuSetQuality",index:idx}, "*");
             } catch (ex) {}
           };
+          window.__wuSeekBy = function(delta){
+            try {
+              var f = document.getElementById("wuEmbed");
+              if (f && f.contentWindow) f.contentWindow.postMessage({type:"__wuSeekBy",delta:delta}, "*");
+            } catch (ex) {}
+          };
+          window.__wuToggle = function(){
+            try {
+              var f = document.getElementById("wuEmbed");
+              if (f && f.contentWindow) f.contentWindow.postMessage("__wuToggle", "*");
+            } catch (ex) {}
+          };
         })();
         </script>
         </body></html>
@@ -358,7 +370,37 @@ object WebPlayerProxy {
   window.__wuPlay=function(){ window.__wuUserPaused=false; try{var jp=__wuJw(); if(jp) jp.play();}catch(e){} try{var v=__wuVideo(); if(v){ v.muted=false; v.play(); }}catch(e){} try{WebunimePlayback.onPlay();}catch(e){} try{ if(typeof window.__wuHidePlayerUi==="function") setTimeout(window.__wuHidePlayerUi, 1200); }catch(e){} };
   window.__wuPause=function(){ window.__wuUserPaused=true; try{var jp=__wuJw(); if(jp) jp.pause();}catch(e){} try{var v=__wuVideo(); if(v) v.pause();}catch(e){} try{ if(typeof window.__wuShowPlayerUi==="function") window.__wuShowPlayerUi(); }catch(e){} try{WebunimePlayback.onPause();}catch(e){} };
   window.__wuToggle=function(){ if(__wuIsPlaying()) window.__wuPause(); else window.__wuPlay(); };
-  try{ window.addEventListener("message", function(e){ var d=e&&e.data; if(d==="__wuToggle") window.__wuToggle(); else if(d==="__wuPlay") window.__wuPlay(); else if(d==="__wuPause") window.__wuPause(); else if(d==="__wuGetQualities"){ try{window.__wuReportQualities();}catch(ex){} } else if(d==="__wuShowUi"){ try{ if(typeof window.__wuShowPlayerUi==="function") window.__wuShowPlayerUi(); }catch(ex){} } else if(d&&typeof d==="object"&&d.type==="__wuSetQuality"){ try{window.__wuSetQuality(d.index);}catch(ex){} } }); }catch(e){}
+  // Seek dari remote TV (app ambil alih D-pad). Satu panggilan = satu seek,
+  // menghindari stuck dari keyboard bawaan JW (±5 dtk per event).
+  window.__wuSeekBy=function(delta){
+    delta=Number(delta)||0;
+    if(!delta) return;
+    try{
+      var jp=__wuJw();
+      if(jp&&typeof jp.getPosition==="function"&&typeof jp.seek==="function"){
+        var st=typeof jp.getState==="function"?jp.getState():"";
+        if(st==="idle"||st==="complete"||st==="") return;
+        var pos=jp.getPosition()||0;
+        var dur=typeof jp.getDuration==="function"?jp.getDuration():0;
+        if(!(dur>0) || !isFinite(dur)) return;
+        var next=Math.max(0,Math.min(dur-0.35,pos+delta));
+        jp.seek(next);
+        try{ if(typeof window.__wuShowPlayerUi==="function") window.__wuShowPlayerUi(); }catch(e){}
+        return;
+      }
+    }catch(e){}
+    try{
+      var v=__wuVideo();
+      if(v && v.readyState>=2){
+        var n=v.currentTime+delta;
+        var d=v.duration||0;
+        if(d>0&&isFinite(d)) n=Math.max(0,Math.min(d-0.25,n));
+        else n=Math.max(0,n);
+        v.currentTime=n;
+      }
+    }catch(e){}
+  };
+  try{ window.addEventListener("message", function(e){ var d=e&&e.data; if(d==="__wuToggle") window.__wuToggle(); else if(d==="__wuPlay") window.__wuPlay(); else if(d==="__wuPause") window.__wuPause(); else if(d==="__wuGetQualities"){ try{window.__wuReportQualities();}catch(ex){} } else if(d==="__wuShowUi"){ try{ if(typeof window.__wuShowPlayerUi==="function") window.__wuShowPlayerUi(); }catch(ex){} } else if(d&&typeof d==="object"&&d.type==="__wuSetQuality"){ try{window.__wuSetQuality(d.index);}catch(ex){} } else if(d&&typeof d==="object"&&d.type==="__wuSeekBy"){ try{window.__wuSeekBy(d.delta);}catch(ex){} } }); }catch(e){}
 
   // ---- Kualitas / resolusi (JWPlayer) untuk remote TV ----
   function __wuJwAny(){

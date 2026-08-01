@@ -270,15 +270,18 @@ class BrowseFragment : BrowseSupportFragment() {
             addRow(getString(titleRes), items, isContinue)
 
         val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+        val familyMovies = snap.movies.filter { item ->
+            item.genre.orEmpty().any { it.equals("Family", ignoreCase = true) }
+        }
 
         addRow(R.string.row_continue, buildContinueItems(), isContinue = true)
-        addRow(R.string.row_movies, snap.movies)
         addRow(
             getString(R.string.row_movies_year, currentYear),
             snap.movies.filter { it.tahun == currentYear.toString() }
         )
-        addRow(R.string.row_series, snap.series)
+        addRow(R.string.row_family, familyMovies)
         addRow(R.string.row_horror, snap.horror)
+        addRow(R.string.row_series, snap.series)
         addRow(R.string.row_anime_latest, snap.animeLatest)
         addRow(R.string.row_anime, snap.anime)
         addRow(R.string.row_anime_movies, snap.animeMovies)
