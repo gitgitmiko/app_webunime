@@ -94,7 +94,8 @@ object PlayerRouter {
 
     fun isDirectMedia(url: String): Boolean {
         val u = url.lowercase()
-        if (u.contains("playeriframe") || u.contains("abyssplayer") || u.contains("gn1r5n") ||
+        if (EmbedResolver.isWrapperEmbed(url) ||
+            u.contains("abyssplayer") || u.contains("gn1r5n") ||
             u.contains("turbo") || u.contains("emturbovid") || u.contains("blogger.com") ||
             u.contains("mega.nz") || u.contains("filedon.co/embed") ||
             u.contains("api.wibufile.com/embed") || u.contains("login.wibufile.com") ||

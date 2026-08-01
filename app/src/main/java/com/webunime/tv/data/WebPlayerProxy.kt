@@ -32,7 +32,7 @@ object WebPlayerProxy {
 
     /** Host player / CDN yang kita kelola (spoof header + sanitasi HTML). */
     private val managedHost = Regex(
-        "(playeriframe|turbovid|emturbo|turboviplay|turbosplayer|gn1r5n|hownetwork|" +
+        "(playeriframe|videonode|turbovid|emturbo|turboviplay|turbosplayer|gn1r5n|hownetwork|" +
             "abyss|iamcdn|short\\.icu|abysscdn|morphify|tiktokcdn|sptvp|" +
             "googleusercontent|storage\\.googleapis\\.com|img-place)",
         RegexOption.IGNORE_CASE
@@ -137,7 +137,8 @@ object WebPlayerProxy {
         runCatching { java.net.URI(url).host?.lowercase() }.getOrNull().orEmpty()
 
     private fun pickReferer(host: String): String = when {
-        host.contains("playeriframe") -> "https://tv12.lk21official.cc/"
+        host.contains("playeriframe") || host.contains("videonode") ->
+            "https://tv12.lk21official.cc/"
         host.contains("gn1r5n") -> "https://gn1r5n.org/"
         host.contains("hownetwork") -> "https://playeriframe.sbs/"
         host.contains("abyss") || host.contains("iamcdn") || host.contains("short.icu") ->

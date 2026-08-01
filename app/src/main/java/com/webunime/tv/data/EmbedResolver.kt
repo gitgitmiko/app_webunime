@@ -25,6 +25,14 @@ object EmbedResolver {
     )
     private val absHttp = Pattern.compile("""(?i)https?://[^\s"'<>]+""")
 
+    /**
+     * Wrapper LK21 (playeriframe.sbs dan mirror-nya, mis. videonode.de) memakai pola
+     * path /iframe/<server>/<id>. Nama domain berganti-ganti, jadi deteksi utama
+     * memakai pola path, bukan daftar host.
+     */
+    private val wrapperHostName = Regex("(playeriframe|videonode)", RegexOption.IGNORE_CASE)
+    private val wrapperPath = Regex("""^/iframe/[a-z0-9_-]+/.+""", RegexOption.IGNORE_CASE)
+
     data class ResolveResult(
         val url: String,
         /** true = MKV / tidak bisa Exo — tampilkan pesan */
@@ -45,8 +53,16 @@ object EmbedResolver {
         }
     }
 
-    fun needsPlayeriframeResolve(url: String): Boolean =
-        url.contains("playeriframe", ignoreCase = true)
+    fun needsPlayeriframeResolve(url: String): Boolean = isWrapperEmbed(url)
+
+    fun isWrapperEmbed(url: String): Boolean {
+        if (wrapperHostName.containsMatchIn(url)) return true
+        val uri = runCatching { java.net.URI(url) }.getOrNull() ?: return false
+        val host = uri.host?.lowercase() ?: return false
+        if (isBlockedNavigation(url)) return false
+        if (isKnownPlayerHost(host)) return false
+        return wrapperPath.containsMatchIn(uri.path.orEmpty())
+    }
 
     fun needsWibufileEmbedResolve(url: String): Boolean =
         url.contains("api.wibufile.com/embed", ignoreCase = true) ||
@@ -72,8 +88,11 @@ object EmbedResolver {
 
     fun isAllowedPlayerHost(url: String): Boolean {
         val host = runCatching { java.net.URI(url).host?.lowercase() }.getOrNull() ?: return false
-        return host.contains("playeriframe") ||
-            host.contains("turbo") ||
+        return wrapperHostName.containsMatchIn(host) || isKnownPlayerHost(host)
+    }
+
+    private fun isKnownPlayerHost(host: String): Boolean {
+        return host.contains("turbo") ||
             host.contains("emturbovid") ||
             host.contains("turbovid") ||
             host.contains("gn1r5n") ||
@@ -256,7 +275,7 @@ object EmbedResolver {
             val am = absHttp.matcher(html)
             while (am.find()) {
                 val u = am.group().trimEnd(')', ',', ';', '"', '\'')
-                if (isAllowedPlayerHost(u) && !isBlockedNavigation(u) && !u.contains("playeriframe")) {
+                if (isAllowedPlayerHost(u) && !isBlockedNavigation(u) && !isWrapperEmbed(u)) {
                     candidates += u
                 }
             }
@@ -265,7 +284,7 @@ object EmbedResolver {
         for (key in prefer) {
             candidates.firstOrNull { it.contains(key, ignoreCase = true) }?.let { return it }
         }
-        return candidates.firstOrNull { !it.contains("playeriframe", ignoreCase = true) }
+        return candidates.firstOrNull { !isWrapperEmbed(it) }
             ?: candidates.firstOrNull()
     }
 
