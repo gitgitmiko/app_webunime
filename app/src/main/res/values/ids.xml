@@ -4,4 +4,5 @@
     <item name="tag_marquee_run" type="id" />
     <item name="tag_catalog_item" type="id" />
     <item name="tag_card_size" type="id" />
+    <item name="tag_quality" type="id" />
 </resources>
