@@ -15,6 +15,7 @@ data class CatalogItem(
     @Json(ignore = true)
     val thumbnailAlt: String? = null,
     val rating: String? = null,
+    val quality: String? = null,
     val durasi: String? = null,
     val genre: List<String>? = null,
     val sinopsis: String? = null,
@@ -32,6 +33,7 @@ data class CatalogItem(
     fun displayMeta(): String {
         val parts = mutableListOf<String>()
         tahun?.takeIf { it.isNotBlank() }?.let { parts += it }
+        quality?.takeIf { it.isNotBlank() }?.let { parts += it }
         rating?.takeIf { it.isNotBlank() }?.let { parts += "★ $it" }
         durasi?.takeIf { it.isNotBlank() }?.let { parts += it }
         return parts.joinToString(" · ")
