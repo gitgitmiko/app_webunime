@@ -80,6 +80,14 @@ class DetailActivity : AppCompatActivity() {
         playButton.requestFocus()
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (::item.isInitialized && ::episodeContainer.isInitialized) {
+            bindEpisodes()
+            updatePlayButtonLabel()
+        }
+    }
+
     private fun updatePlayButtonLabel() {
         val slug = item.slug?.takeIf { it.isNotBlank() }
             ?: item.anime_slug?.takeIf { it.isNotBlank() }
@@ -134,11 +142,23 @@ class DetailActivity : AppCompatActivity() {
         }
         episodeLabel.visibility = View.VISIBLE
         episodeScroll.visibility = View.VISIBLE
+        val slug = item.slug?.takeIf { it.isNotBlank() }
+            ?: item.anime_slug?.takeIf { it.isNotBlank() }
+            ?: ""
+        val sessions = (application as WebunimeApp).watchSessions
         episodes.forEach { ep ->
+            val watched = slug.isNotBlank() && sessions.isWatched(slug, ep.episode)
             val btn = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                text = ep.displayTitle()
+                text = if (watched) {
+                    getString(R.string.episode_watched, ep.displayTitle())
+                } else {
+                    ep.displayTitle()
+                }
                 isFocusable = true
                 isAllCaps = false
+                if (watched) {
+                    setTextColor(getColor(R.color.wu_text_dim))
+                }
                 setOnClickListener {
                     selectedEpisode = ep
                     bindEpisodes()
@@ -147,6 +167,7 @@ class DetailActivity : AppCompatActivity() {
                 }
                 if (selectedEpisode?.slug == ep.slug && selectedEpisode?.episode == ep.episode) {
                     setBackgroundColor(getColor(R.color.wu_accent))
+                    setTextColor(getColor(R.color.wu_text))
                 }
             }
             episodeContainer.addView(btn)

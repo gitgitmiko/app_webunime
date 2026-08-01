@@ -445,7 +445,7 @@ object WebPlayerProxy {
   // Selain event, status paused juga di-POLL agar terlaporkan walau video sudah
   // terlanjur diputar sebelum listener terpasang (kasus Cast auto-resume).
   (function(){ var n=0; var last=null; var sv=setInterval(function(){ n++; var v=__wuVideo();
-    if(v && !v.__wuTB){ v.__wuTB=true; try{ v.addEventListener("play",function(){try{WebunimePlayback.onPlay();}catch(e){}}); v.addEventListener("playing",function(){try{WebunimePlayback.onPlay();}catch(e){}}); v.addEventListener("pause",function(){try{WebunimePlayback.onPause();}catch(e){}}); }catch(e){} }
+    if(v && !v.__wuTB){ v.__wuTB=true; try{ v.addEventListener("play",function(){try{WebunimePlayback.onPlay();}catch(e){}}); v.addEventListener("playing",function(){try{WebunimePlayback.onPlay();}catch(e){}}); v.addEventListener("pause",function(){try{WebunimePlayback.onPause();}catch(e){}}); v.addEventListener("ended",function(){try{WebunimePlayback.onEnded();}catch(e){}}); }catch(e){} }
     if(v){ var p=v.paused; if(last!==p){ last=p; try{ if(p) WebunimePlayback.onPause(); else WebunimePlayback.onPlay(); }catch(e){} } }
     if(n>240) clearInterval(sv); }, 500); })();
   // TV: sembunyikan tombol play besar / poster JWPlayer yang menutupi layar

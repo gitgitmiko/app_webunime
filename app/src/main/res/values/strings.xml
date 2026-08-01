@@ -16,6 +16,7 @@
     <string name="resume_play">▶  Lanjutkan</string>
     <string name="failover_server">Server bermasalah · coba %1$s</string>
     <string name="episodes">Episode</string>
+    <string name="episode_watched">✓  %1$s</string>
     <string name="servers">Audio &amp; Server</string>
     <string name="loading">Memuat katalog…</string>
     <string name="updating">Memperbarui dari GitHub…</string>

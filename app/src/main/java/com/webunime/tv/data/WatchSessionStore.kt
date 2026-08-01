@@ -75,6 +75,36 @@ class WatchSessionStore(context: Context) {
         prefs.edit().putString(KEY, adapter.toJson(next)).apply()
     }
 
+    /** Episode dianggap sudah ditonton (selesai / hampir selesai). */
+    @Synchronized
+    fun isWatched(slug: String, episode: Int?): Boolean {
+        if (slug.isBlank()) return false
+        return get(slug, episode)?.isFinished() == true
+    }
+
+    /** Tandai episode selesai agar tetap ada penanda di Detail, tanpa muncul di Lanjutkan. */
+    @Synchronized
+    fun markFinished(
+        slug: String,
+        episode: Int?,
+        title: String,
+        thumbnail: String?,
+        durationMs: Long = 0L,
+    ) {
+        if (slug.isBlank()) return
+        val dur = durationMs.coerceAtLeast(1L)
+        save(
+            WatchSession(
+                slug = slug,
+                episode = episode,
+                title = title,
+                thumbnail = thumbnail,
+                positionMs = dur,
+                durationMs = dur,
+            )
+        )
+    }
+
     @Synchronized
     fun remove(slug: String, episode: Int?) {
         val key = WatchSession.sessionKey(slug, episode)
@@ -85,7 +115,8 @@ class WatchSessionStore(context: Context) {
     companion object {
         private const val PREFS = "watch_sessions"
         private const val KEY = "sessions_v1"
-        private const val MAX_SESSIONS = 40
+        /** Cukup untuk banyak episode series/anime + film. */
+        private const val MAX_SESSIONS = 200
         /** Jangan simpan scrub awal yang terlalu pendek. */
         const val MIN_SAVE_MS = 15_000L
         /** Minimal progress agar muncul di "Lanjutkan". */

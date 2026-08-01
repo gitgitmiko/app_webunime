@@ -278,7 +278,15 @@ class PlayerActivity : AppCompatActivity() {
 
             override fun onPlaybackStateChanged(playbackState: Int) {
                 if (playbackState == Player.STATE_ENDED && contentSlug.isNotBlank()) {
-                    (application as WebunimeApp).watchSessions.remove(contentSlug, contentEpisode)
+                    val p = exoPlayer
+                    val dur = p?.duration?.takeIf { it > 0 } ?: p?.currentPosition ?: 0L
+                    (application as WebunimeApp).watchSessions.markFinished(
+                        slug = contentSlug,
+                        episode = contentEpisode,
+                        title = titleView.text?.toString().orEmpty(),
+                        thumbnail = contentThumb,
+                        durationMs = dur,
+                    )
                 }
             }
 
@@ -328,6 +336,18 @@ class PlayerActivity : AppCompatActivity() {
 
         @android.webkit.JavascriptInterface
         fun onPause() = setTitleBarVisible(true)
+
+        @android.webkit.JavascriptInterface
+        fun onEnded() {
+            if (contentSlug.isBlank()) return
+            (application as WebunimeApp).watchSessions.markFinished(
+                slug = contentSlug,
+                episode = contentEpisode,
+                title = titleView.text?.toString().orEmpty(),
+                thumbnail = contentThumb,
+            )
+            setTitleBarVisible(true)
+        }
 
         @android.webkit.JavascriptInterface
         fun onQualities(json: String) {
@@ -440,7 +460,7 @@ class PlayerActivity : AppCompatActivity() {
                         v.addEventListener('play',function(){try{WebunimePlayback.onPlay();}catch(e){}});
                         v.addEventListener('playing',function(){try{WebunimePlayback.onPlay();}catch(e){}});
                         v.addEventListener('pause',function(){try{WebunimePlayback.onPause();}catch(e){}});
-                        v.addEventListener('ended',function(){try{WebunimePlayback.onPause();}catch(e){}});
+                        v.addEventListener('ended',function(){try{WebunimePlayback.onEnded();}catch(e){}});
                         v.addEventListener('timeupdate',function(){
                           try{
                             if(v.currentTime>15){
