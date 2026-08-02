@@ -185,7 +185,8 @@ class CatalogRepository(private val context: Context) {
         }.getOrDefault(emptyList())
     }
 
-    /** CDN poster.showcdnx.com sering NXDOMAIN — mirror path di poster.lk21official.cc. */
+    /** CDN poster/image.showcdnx.com sering NXDOMAIN — mirror path di poster.lk21official.cc.
+     * cover.showcdnx.com masih hidup: jangan di-rewrite (mirror cover.lk21 sering 404). */
     private fun normalizePosterUrls(item: CatalogItem): CatalogItem {
         val thumb = rewriteDeadPosterHost(item.thumbnail)
         val land = rewriteDeadPosterHost(item.thumbnail_landscape)
@@ -203,10 +204,6 @@ class CatalogRepository(private val context: Context) {
             .replace(
                 Regex("""(?i)https?://image\.showcdnx\.com"""),
                 "https://poster.lk21official.cc",
-            )
-            .replace(
-                Regex("""(?i)https?://cover\.showcdnx\.com"""),
-                "https://cover.lk21official.cc",
             )
     }
 

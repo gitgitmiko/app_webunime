@@ -178,11 +178,12 @@ class CardPresenter : Presenter() {
             val portrait = movie.thumbnail?.takeIf { it.isNotBlank() }
             val landscape = movie.thumbnail_landscape?.takeIf { it.isNotBlank() }
             val alt = movie.thumbnailAlt?.takeIf { it.isNotBlank() && it != portrait }
-            // Fokus: landscape bila ada, lalu portrait (+ alt). Unfocus: portrait saja.
+            // Fokus: landscape bila ada, lalu portrait (+ alt).
+            // Unfocus: portrait dulu; landscape cadangan jika poster gagal/kosong.
             val urls = if (focused) {
                 listOfNotNull(landscape, portrait, alt).distinct()
             } else {
-                listOfNotNull(portrait, alt).distinct()
+                listOfNotNull(portrait, alt, landscape).distinct()
             }
             val nextUrl = urls.firstOrNull()
             val prevUrl = card.mainImageView.getTag(R.id.tag_thumb_url) as? String
