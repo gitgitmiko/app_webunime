@@ -14,6 +14,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -29,7 +30,10 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import com.webunime.tv.R
 import com.webunime.tv.WebunimeApp
+import com.webunime.tv.data.AniSkipClient
+import com.webunime.tv.data.CatalogItem
 import com.webunime.tv.data.EmbedResolver
+import com.webunime.tv.data.Episode
 import com.webunime.tv.data.PlayerRouter
 import com.webunime.tv.data.WatchSession
 import com.webunime.tv.data.WatchSessionStore
@@ -45,6 +49,7 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var titleBar: View
     private lateinit var titleView: TextView
     private lateinit var modeView: TextView
+    private lateinit var skipActionButton: Button
 
     private var sourceUrl: String = ""
     private var serverLabel: String = ""
@@ -59,6 +64,21 @@ class PlayerActivity : AppCompatActivity() {
     private var resumePositionMs: Long = 0L
     private var failoverInProgress = false
     private var playJobGeneration = 0
+
+    private var catalogItem: CatalogItem? = null
+    private var episodeList: List<Episode> = emptyList()
+    private var episodeIndex: Int = -1
+
+    /** Skip opening / next-episode prompts (anime). */
+    private var skipTimes: AniSkipClient.SkipTimes? = null
+    private var skipPromptKind: SkipPromptKind = SkipPromptKind.NONE
+    private var skipOpDismissed = false
+    private var skipOpUsed = false
+    /** Timer auto-next setelah tombol "Episode Berikutnya" muncul di ED. */
+    private var endingAutoNextArmed = false
+    private var lastKnownPosSec = 0.0
+    private var lastKnownDurSec = 0.0
+    private var lastWebProgressSaveAt = 0L
 
     @Volatile
     private var webVideoActive = false
@@ -103,6 +123,23 @@ class PlayerActivity : AppCompatActivity() {
             modeView.text = seekHintServerLabel
         }
     }
+    private val autoNextEpisodeRunnable = Runnable {
+        switchEpisode(1, auto = true)
+    }
+    private val hideSkipOpRunnable = Runnable {
+        if (skipPromptKind == SkipPromptKind.SKIP_OP) {
+            skipOpDismissed = true
+            hideSkipPrompt()
+        }
+    }
+    private val skipPromptTicker = object : Runnable {
+        override fun run() {
+            pollPlaybackPositionForSkip()
+            hideHandler.postDelayed(this, SKIP_TICK_MS)
+        }
+    }
+
+    private enum class SkipPromptKind { NONE, SKIP_OP, NEXT_EP }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -113,6 +150,8 @@ class PlayerActivity : AppCompatActivity() {
         titleBar = findViewById(R.id.playerTitleBar)
         titleView = findViewById(R.id.playerTitle)
         modeView = findViewById(R.id.playerMode)
+        skipActionButton = findViewById(R.id.skipActionButton)
+        skipActionButton.setOnClickListener { activateSkipPrompt() }
 
         onBackPressedDispatcher.addCallback(
             this,
@@ -162,7 +201,284 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         serverIndex = 0
+        loadEpisodeContext()
+        prepareAnimeSkipTimes()
         playCurrentServer()
+    }
+
+    private fun loadEpisodeContext() {
+        if (contentSlug.isBlank()) {
+            catalogItem = null
+            episodeList = emptyList()
+            episodeIndex = -1
+            return
+        }
+        val item = (application as WebunimeApp).catalogRepository.snapshot.findBySlug(contentSlug)
+        catalogItem = item
+        episodeList = item?.episodes.orEmpty()
+            .sortedWith(compareBy({ it.season ?: 0 }, { it.episode ?: 0 }))
+        episodeIndex = resolveEpisodeIndex(contentEpisode, selectedEpisodeSlug = null)
+    }
+
+    /** Cocokkan episode aktif (angka + season bila ada) agar series multi-season aman. */
+    private fun resolveEpisodeIndex(episodeNum: Int?, selectedEpisodeSlug: String?): Int {
+        if (episodeList.isEmpty()) return -1
+        if (!selectedEpisodeSlug.isNullOrBlank()) {
+            val bySlug = episodeList.indexOfFirst { it.slug == selectedEpisodeSlug }
+            if (bySlug >= 0) return bySlug
+        }
+        if (episodeNum == null) {
+            return if (episodeList.size == 1) 0 else -1
+        }
+        // Prefer episode yang sama + season terdekat dari posisi sekarang.
+        val currentSeason = episodeList.getOrNull(episodeIndex)?.season
+        if (currentSeason != null) {
+            val sameSeason = episodeList.indexOfFirst {
+                it.episode == episodeNum && (it.season ?: currentSeason) == currentSeason
+            }
+            if (sameSeason >= 0) return sameSeason
+        }
+        val byNum = episodeList.indexOfFirst { it.episode == episodeNum }
+        if (byNum >= 0) return byNum
+        return if (episodeList.size == 1) 0 else -1
+    }
+
+    private fun isAnimeSkipEligible(): Boolean {
+        val item = catalogItem ?: return false
+        return item.type == "anime" || item.type == "anime-movie" || item.anime_slug != null
+    }
+
+    private fun prepareAnimeSkipTimes() {
+        skipTimes = null
+        skipOpDismissed = false
+        skipOpUsed = false
+        endingAutoNextArmed = false
+        cancelAutoNextEpisode()
+        lastKnownPosSec = 0.0
+        lastKnownDurSec = 0.0
+        hideSkipPrompt()
+        hideHandler.removeCallbacks(skipPromptTicker)
+
+        val anime = isAnimeSkipEligible()
+        if (anime) {
+            // Utamakan data scrape AniSkip di JSON episode; fallback heuristik 90 dtk.
+            val epSkip = episodeList.getOrNull(episodeIndex)?.skip
+                ?: episodeList.firstOrNull { it.episode == contentEpisode }?.skip
+            val fromJson = epSkip?.let { info ->
+                AniSkipClient.SkipTimes(
+                    opening = info.op?.takeIf { it.isValid() }?.let {
+                        AniSkipClient.Interval(it.start!!, it.end!!)
+                    },
+                    ending = info.ed?.takeIf { it.isValid() }?.let {
+                        AniSkipClient.Interval(it.start!!, it.end!!)
+                    },
+                )
+            }
+            val heur = AniSkipClient.heuristic(null)
+            skipTimes = AniSkipClient.SkipTimes(
+                opening = fromJson?.opening ?: heur.opening,
+                ending = fromJson?.ending,
+            )
+        }
+        // Anime (skip OP/ED) atau series (near-end next) butuh poll posisi.
+        if (anime || hasEpisodeNav()) {
+            hideHandler.post(skipPromptTicker)
+        }
+    }
+
+    private fun refreshEndingHeuristic(durationSec: Double) {
+        if (!isAnimeSkipEligible() || durationSec < 120) return
+        val current = skipTimes ?: return
+        // Jangan timpa ED hasil scrape AniSkip.
+        if (current.ending != null) return
+        val heur = AniSkipClient.heuristic(durationSec)
+        skipTimes = AniSkipClient.SkipTimes(
+            opening = current.opening ?: heur.opening,
+            ending = heur.ending,
+        )
+    }
+
+    private fun pollPlaybackPositionForSkip() {
+        if (!isAnimeSkipEligible() && !hasEpisodeNav()) return
+        // Jangan evaluateJavascript di WebView (berat & sering picu OOM di TV).
+        if (playerView.visibility == View.VISIBLE && exoPlayer != null) {
+            val p = exoPlayer ?: return
+            val pos = (p.currentPosition / 1000.0).coerceAtLeast(0.0)
+            val dur = p.duration.takeIf { it > 0 }?.div(1000.0) ?: 0.0
+            onPlaybackClock(pos, dur)
+        }
+    }
+
+    private fun onPlaybackClock(posSec: Double, durSec: Double) {
+        if (posSec.isFinite() && posSec >= 0) lastKnownPosSec = posSec
+        if (durSec.isFinite() && durSec > 30) {
+            if (kotlin.math.abs(durSec - lastKnownDurSec) > 1.0) {
+                lastKnownDurSec = durSec
+                refreshEndingHeuristic(durSec)
+            } else {
+                lastKnownDurSec = durSec
+            }
+        }
+        updateSkipPrompt(lastKnownPosSec, lastKnownDurSec)
+    }
+
+    private fun updateSkipPrompt(posSec: Double, durSec: Double) {
+        // Anime: Skip OP / Next di interval AniSkip (atau heuristik ED).
+        if (isAnimeSkipEligible()) {
+            updateAnimeSkipPrompt(posSec, durSec)
+            return
+        }
+        // Series (dan konten ber-episode lain): near end → Next + auto-next.
+        updateSeriesNearEndPrompt(posSec, durSec)
+    }
+
+    private fun updateAnimeSkipPrompt(posSec: Double, durSec: Double) {
+        val times = skipTimes
+        if (times == null) {
+            hideSkipPrompt()
+            return
+        }
+        val op = times.opening
+        val ed = times.ending
+
+        val inEnding = ed != null &&
+            hasEpisodeNav() &&
+            episodeIndex < episodeList.lastIndex &&
+            posSec >= ed.startSec &&
+            (durSec <= 0 || posSec < durSec - 0.35)
+
+        if (inEnding) {
+            hideHandler.removeCallbacks(hideSkipOpRunnable)
+            showSkipPrompt(SkipPromptKind.NEXT_EP)
+            armEndingAutoNext()
+            return
+        }
+
+        val inOpening = op != null &&
+            !skipOpDismissed &&
+            !skipOpUsed &&
+            posSec >= op.startSec &&
+            posSec < (op.endSec - 1.5)
+
+        if (inOpening) {
+            if (skipPromptKind != SkipPromptKind.SKIP_OP) {
+                showSkipPrompt(SkipPromptKind.SKIP_OP)
+                hideHandler.removeCallbacks(hideSkipOpRunnable)
+                hideHandler.postDelayed(hideSkipOpRunnable, SKIP_OP_VISIBLE_MS)
+            }
+            return
+        }
+
+        when (skipPromptKind) {
+            SkipPromptKind.NEXT_EP -> hideSkipPrompt()
+            SkipPromptKind.SKIP_OP -> {
+                hideHandler.removeCallbacks(hideSkipOpRunnable)
+                hideSkipPrompt()
+            }
+            SkipPromptKind.NONE -> Unit
+        }
+    }
+
+    /**
+     * Series tanpa AniSkip: di ~45 dtk terakhir (atau 95% durasi) tampilkan Next
+     * dan arm auto-next. Tetap ada fallback onEnded (~2 dtk).
+     */
+    private fun updateSeriesNearEndPrompt(posSec: Double, durSec: Double) {
+        if (!hasEpisodeNav() || episodeIndex >= episodeList.lastIndex) {
+            if (skipPromptKind == SkipPromptKind.NEXT_EP) hideSkipPrompt()
+            return
+        }
+        if (durSec < 90 || posSec < 30) {
+            if (skipPromptKind == SkipPromptKind.NEXT_EP) hideSkipPrompt()
+            return
+        }
+        val threshold = maxOf(durSec - SERIES_NEAR_END_SEC, durSec * 0.95)
+        val nearEnd = posSec >= threshold && posSec < durSec - 0.35
+        if (nearEnd) {
+            showSkipPrompt(SkipPromptKind.NEXT_EP)
+            armEndingAutoNext()
+        } else if (skipPromptKind == SkipPromptKind.NEXT_EP) {
+            hideSkipPrompt()
+        }
+    }
+
+    private fun armEndingAutoNext() {
+        if (endingAutoNextArmed) return
+        endingAutoNextArmed = true
+        scheduleAutoNextEpisode(AUTO_NEXT_FROM_ED_MS)
+    }
+
+    private fun showSkipPrompt(kind: SkipPromptKind) {
+        if (skipPromptKind == kind && skipActionButton.visibility == View.VISIBLE) return
+        skipPromptKind = kind
+        skipActionButton.text = when (kind) {
+            SkipPromptKind.SKIP_OP -> getString(R.string.skip_opening)
+            SkipPromptKind.NEXT_EP -> getString(R.string.skip_next_episode)
+            SkipPromptKind.NONE -> ""
+        }
+        skipActionButton.visibility = View.VISIBLE
+        // Jangan requestFocus — merebut fokus dari WebView sering bikin player TV goyang/crash.
+        skipActionButton.isFocusable = false
+        showTitleThenAutoHide()
+    }
+
+    private fun hideSkipPrompt() {
+        hideHandler.removeCallbacks(hideSkipOpRunnable)
+        skipPromptKind = SkipPromptKind.NONE
+        if (this::skipActionButton.isInitialized) {
+            skipActionButton.visibility = View.GONE
+        }
+    }
+
+    private fun activateSkipPrompt() {
+        when (skipPromptKind) {
+            SkipPromptKind.SKIP_OP -> {
+                val end = skipTimes?.opening?.endSec ?: AniSkipClient.DEFAULT_OP_END_SEC
+                skipOpUsed = true
+                skipOpDismissed = true
+                hideSkipPrompt()
+                seekToAbsoluteSec(end + 0.35)
+            }
+            SkipPromptKind.NEXT_EP -> {
+                hideSkipPrompt()
+                switchEpisode(1)
+            }
+            SkipPromptKind.NONE -> Unit
+        }
+    }
+
+    private fun seekToAbsoluteSec(sec: Double) {
+        val targetMs = (sec.coerceAtLeast(0.0) * 1000.0).toLong()
+        when {
+            playerView.visibility == View.VISIBLE && exoPlayer != null -> {
+                val p = exoPlayer ?: return
+                val dur = p.duration.takeIf { it > 0 } ?: Long.MAX_VALUE
+                p.seekTo(targetMs.coerceIn(0L, (dur - 250L).coerceAtLeast(0L)))
+            }
+            webView.visibility == View.VISIBLE -> {
+                val js = """
+                    (function(){
+                      var t=$sec;
+                      try{
+                        if(typeof window.__wuSeekTo==="function"){ window.__wuSeekTo(t); return; }
+                        var f=document.querySelector("iframe");
+                        if(f&&f.contentWindow){ f.contentWindow.postMessage({type:"__wuSeekTo",time:t},"*"); }
+                        var vids=document.querySelectorAll("video");
+                        for(var i=0;i<vids.length;i++){
+                          var v=vids[i];
+                          if(!v||v.readyState<1) continue;
+                          var d=v.duration||0;
+                          var n=t;
+                          if(d>0&&isFinite(d)) n=Math.max(0,Math.min(d-0.25,t));
+                          v.currentTime=n;
+                          return;
+                        }
+                      }catch(e){}
+                    })();
+                """.trimIndent()
+                webView.evaluateJavascript(js, null)
+            }
+        }
     }
 
     private fun playCurrentServer() {
@@ -193,9 +509,16 @@ class PlayerActivity : AppCompatActivity() {
             if (PlayerRouter.useExoPlayer(playUrl)) {
                 startExo(playUrl, serverLabel)
             } else {
-                val webUrl = EmbedResolver.pixeldrainEmbedUrl(sourceUrl)
-                    ?.takeIf { sourceUrl.contains("pixeldrain", ignoreCase = true) }
-                    ?: playUrl
+                val webUrl = when {
+                    sourceUrl.contains("pixeldrain", ignoreCase = true) ->
+                        EmbedResolver.pixeldrainEmbedUrl(sourceUrl) ?: playUrl
+                    sourceUrl.contains("mega.", ignoreCase = true) ||
+                        playUrl.contains("mega.", ignoreCase = true) ->
+                        EmbedResolver.megaEmbedUrl(playUrl)
+                            ?: EmbedResolver.megaEmbedUrl(sourceUrl)
+                            ?: playUrl
+                    else -> playUrl
+                }
                 startWeb(webUrl, serverLabel)
             }
         }
@@ -287,6 +610,7 @@ class PlayerActivity : AppCompatActivity() {
                         thumbnail = contentThumb,
                         durationMs = dur,
                     )
+                    scheduleAutoNextEpisode()
                 }
             }
 
@@ -347,6 +671,17 @@ class PlayerActivity : AppCompatActivity() {
                 thumbnail = contentThumb,
             )
             setTitleBarVisible(true)
+            runOnUiThread { scheduleAutoNextEpisode() }
+        }
+
+        /** Dipanggil dari JS saat embed (Mega dll) menampilkan error file tidak tersedia. */
+        @android.webkit.JavascriptInterface
+        fun onSourceFailed(reason: String) {
+            if (webVideoActive) return
+            runOnUiThread {
+                if (webVideoActive || failoverInProgress) return@runOnUiThread
+                tryFailover(reason.ifBlank { "source-failed" })
+            }
         }
 
         @android.webkit.JavascriptInterface
@@ -356,10 +691,15 @@ class PlayerActivity : AppCompatActivity() {
 
         @android.webkit.JavascriptInterface
         fun onProgress(positionSec: Double, durationSec: Double) {
+            runOnUiThread { onPlaybackClock(positionSec, durationSec) }
             if (contentSlug.isBlank()) return
             val pos = (positionSec * 1000.0).toLong()
             val dur = (durationSec * 1000.0).toLong()
             if (pos < WatchSessionStore.MIN_SAVE_MS) return
+            val now = SystemClock.uptimeMillis()
+            // Jangan tulis SharedPreferences tiap detik — picu I/O berat di TV.
+            if (now - lastWebProgressSaveAt < PROGRESS_TICK_MS) return
+            lastWebProgressSaveAt = now
             (application as WebunimeApp).watchSessions.save(
                 WatchSession(
                     slug = contentSlug,
@@ -411,6 +751,8 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         val isPixeldrain = url.contains("pixeldrain", ignoreCase = true)
+        val isMega = url.contains("mega.nz", ignoreCase = true) ||
+            url.contains("mega.co.nz", ignoreCase = true)
         val seekMs = resumePositionMs
         webView.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(
@@ -451,6 +793,11 @@ class PlayerActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView?, pageUrl: String?) {
                 // Seek/play helpers universal: film Cast/Turbo + anime Mega/Blogger/dll.
                 view?.evaluateJavascript(universalPlayerJs, null)
+                // Watcher error Mega saja (ringan); jangan MutationObserver di semua halaman.
+                if (isMega) {
+                    view?.evaluateJavascript(sourceFailWatcherJs, null)
+                    view?.evaluateJavascript(megaAutoplayJs, null)
+                }
                 view?.evaluateJavascript(
                     """
                     (function(){
@@ -461,11 +808,13 @@ class PlayerActivity : AppCompatActivity() {
                         v.addEventListener('playing',function(){try{WebunimePlayback.onPlay();}catch(e){}});
                         v.addEventListener('pause',function(){try{WebunimePlayback.onPause();}catch(e){}});
                         v.addEventListener('ended',function(){try{WebunimePlayback.onEnded();}catch(e){}});
+                        var lastReport=0;
                         v.addEventListener('timeupdate',function(){
                           try{
-                            if(v.currentTime>15){
-                              WebunimePlayback.onProgress(v.currentTime, v.duration||0);
-                            }
+                            var now=Date.now();
+                            if(now-lastReport<900) return;
+                            lastReport=now;
+                            WebunimePlayback.onProgress(v.currentTime, v.duration||0);
                           }catch(e){}
                         });
                         if(!v.paused){try{WebunimePlayback.onPlay();}catch(e){}}
@@ -479,10 +828,11 @@ class PlayerActivity : AppCompatActivity() {
                         }
                       }
                       document.querySelectorAll('video').forEach(hook);
-                      var mo=new MutationObserver(function(){
+                      var tries=0;
+                      var iv=setInterval(function(){
                         document.querySelectorAll('video').forEach(hook);
-                      });
-                      mo.observe(document.documentElement,{childList:true,subtree:true});
+                        if(++tries>20) clearInterval(iv);
+                      },1000);
                     })();
                     """.trimIndent(),
                     null
@@ -534,7 +884,16 @@ class PlayerActivity : AppCompatActivity() {
                 webView.loadUrl(url, headers)
             }
             hideHandler.removeCallbacks(webFailTimeoutRunnable)
-            hideHandler.postDelayed(webFailTimeoutRunnable, WEB_FAIL_TIMEOUT_MS)
+            hideHandler.postDelayed(
+                webFailTimeoutRunnable,
+                if (url.contains("mega.nz", ignoreCase = true) ||
+                    url.contains("mega.co.nz", ignoreCase = true)
+                ) {
+                    MEGA_FAIL_TIMEOUT_MS
+                } else {
+                    WEB_FAIL_TIMEOUT_MS
+                }
+            )
         }
         pendingSeekSec = 0
         seekHintServerLabel = "$server · WebView"
@@ -575,6 +934,87 @@ class PlayerActivity : AppCompatActivity() {
         return false
     }
 
+    private fun hasEpisodeNav(): Boolean = episodeList.size > 1 && episodeIndex >= 0
+
+    private fun scheduleAutoNextEpisode(delayMs: Long = AUTO_NEXT_EPISODE_MS) {
+        if (!hasEpisodeNav() || episodeIndex >= episodeList.lastIndex) return
+        hideHandler.removeCallbacks(autoNextEpisodeRunnable)
+        hideHandler.postDelayed(autoNextEpisodeRunnable, delayMs)
+    }
+
+    private fun cancelAutoNextEpisode() {
+        hideHandler.removeCallbacks(autoNextEpisodeRunnable)
+    }
+
+    /**
+     * Ganti episode tanpa keluar player.
+     * @param delta +1 next / -1 previous
+     */
+    private fun switchEpisode(delta: Int, auto: Boolean = false) {
+        cancelAutoNextEpisode()
+        if (!hasEpisodeNav()) return
+        val nextIdx = episodeIndex + delta
+        if (nextIdx !in episodeList.indices) {
+            val msg = if (delta > 0) R.string.episode_no_next else R.string.episode_no_prev
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val item = catalogItem ?: return
+        val ep = episodeList[nextIdx]
+        val players = PlayerRouter.preferredPlayers(item, ep)
+        if (players.isEmpty()) {
+            Toast.makeText(this, R.string.error_no_players, Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        persistProgress()
+        playJobGeneration++
+        hideHandler.removeCallbacks(webFailTimeoutRunnable)
+        hideHandler.removeCallbacks(progressTicker)
+        exoPlayer?.release()
+        exoPlayer = null
+        if (this::webView.isInitialized) {
+            runCatching {
+                webView.stopLoading()
+                webView.loadUrl("about:blank")
+            }
+        }
+
+        episodeIndex = nextIdx
+        contentEpisode = ep.episode
+        contentThumb = item.thumbnail ?: contentThumb
+        titleView.text = buildString {
+            append(item.displayTitle())
+            append(" · ")
+            append(ep.displayTitle())
+        }
+        serverUrls = players.mapNotNull { it.url }
+        serverLabels = players.map { it.displayName() }
+        serverIndex = 0
+        failoverInProgress = false
+        exoFallbackUsed = false
+        webVideoActive = false
+        pendingSeekSec = 0
+
+        val saved = (application as WebunimeApp).watchSessions.get(contentSlug, contentEpisode)
+        resumePositionMs = if (!auto && saved != null && !saved.isFinished() &&
+            saved.positionMs >= WatchSessionStore.MIN_RESUME_MS
+        ) {
+            saved.positionMs
+        } else {
+            0L
+        }
+
+        val toastRes = when {
+            auto -> R.string.episode_auto_next
+            delta > 0 -> R.string.episode_next
+            else -> R.string.episode_prev
+        }
+        Toast.makeText(this, getString(toastRes, ep.displayTitle()), Toast.LENGTH_SHORT).show()
+        prepareAnimeSkipTimes()
+        playCurrentServer()
+    }
+
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_UP && isBackLike(event.keyCode)) {
             if (webView.visibility == View.VISIBLE && webView.canGoBack()) {
@@ -583,6 +1023,21 @@ class PlayerActivity : AppCompatActivity() {
             }
             persistProgress()
             finish()
+            return true
+        }
+        // Skip Opening / Next Episode: OK mengaktifkan popup
+        if (skipPromptKind != SkipPromptKind.NONE && isOkKey(event.keyCode)) {
+            if (SystemClock.uptimeMillis() < ignoreRemoteUntil) return true
+            if (event.action == KeyEvent.ACTION_UP) activateSkipPrompt()
+            return true
+        }
+        // Series / anime: Channel±, Next/Prev, atau Atas/Bawah → ganti episode
+        if (isEpisodeNavKey(event.keyCode) && hasEpisodeNav()) {
+            if (SystemClock.uptimeMillis() < ignoreRemoteUntil) return true
+            if (event.action == KeyEvent.ACTION_UP) {
+                val delta = if (isNextEpisodeKey(event.keyCode)) 1 else -1
+                switchEpisode(delta)
+            }
             return true
         }
         if (webView.visibility == View.VISIBLE &&
@@ -617,6 +1072,11 @@ class PlayerActivity : AppCompatActivity() {
                 if (event.action == KeyEvent.ACTION_UP) togglePlayback()
                 return true
             }
+            // Mega belum play: OK = klik tombol play (bukan navigasi D-pad di halaman).
+            if (event.action == KeyEvent.ACTION_UP && isMegaPlayerUrl()) {
+                tryMegaPlayClick()
+                return true
+            }
             showTitleThenAutoHide()
             return super.dispatchKeyEvent(event)
         }
@@ -647,12 +1107,35 @@ class PlayerActivity : AppCompatActivity() {
             keyCode == KeyEvent.KEYCODE_BUTTON_A ||
             keyCode == KeyEvent.KEYCODE_BUTTON_SELECT
 
-    private fun isQualityKey(keyCode: Int): Boolean =
-        keyCode == KeyEvent.KEYCODE_DPAD_UP ||
+    private fun isQualityKey(keyCode: Int): Boolean {
+        // Saat series/anime: Atas/Bawah dipakai ganti episode; kualitas lewat Menu/Info.
+        if (hasEpisodeNav() &&
+            (keyCode == KeyEvent.KEYCODE_DPAD_UP || keyCode == KeyEvent.KEYCODE_DPAD_DOWN)
+        ) {
+            return false
+        }
+        return keyCode == KeyEvent.KEYCODE_DPAD_UP ||
             keyCode == KeyEvent.KEYCODE_MENU ||
             keyCode == KeyEvent.KEYCODE_INFO ||
             keyCode == KeyEvent.KEYCODE_GUIDE ||
             keyCode == KeyEvent.KEYCODE_MEDIA_AUDIO_TRACK
+    }
+
+    private fun isEpisodeNavKey(keyCode: Int): Boolean =
+        keyCode == KeyEvent.KEYCODE_CHANNEL_UP ||
+            keyCode == KeyEvent.KEYCODE_CHANNEL_DOWN ||
+            keyCode == KeyEvent.KEYCODE_MEDIA_NEXT ||
+            keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS ||
+            keyCode == KeyEvent.KEYCODE_MEDIA_SKIP_FORWARD ||
+            keyCode == KeyEvent.KEYCODE_MEDIA_SKIP_BACKWARD ||
+            keyCode == KeyEvent.KEYCODE_DPAD_UP ||
+            keyCode == KeyEvent.KEYCODE_DPAD_DOWN
+
+    private fun isNextEpisodeKey(keyCode: Int): Boolean =
+        keyCode == KeyEvent.KEYCODE_CHANNEL_UP ||
+            keyCode == KeyEvent.KEYCODE_MEDIA_NEXT ||
+            keyCode == KeyEvent.KEYCODE_MEDIA_SKIP_FORWARD ||
+            keyCode == KeyEvent.KEYCODE_DPAD_DOWN
 
     private fun isSeekKey(keyCode: Int): Boolean =
         keyCode == KeyEvent.KEYCODE_DPAD_LEFT ||
@@ -665,6 +1148,7 @@ class PlayerActivity : AppCompatActivity() {
     private fun handleSeekKey(event: KeyEvent): Boolean {
         // Consume UP juga agar JW / PlayerView tidak ikut seek sendiri.
         if (event.action != KeyEvent.ACTION_DOWN) return true
+        cancelAutoNextEpisode()
         val dir = when (event.keyCode) {
             KeyEvent.KEYCODE_DPAD_LEFT,
             KeyEvent.KEYCODE_MEDIA_REWIND,
@@ -742,6 +1226,40 @@ class PlayerActivity : AppCompatActivity() {
             })();
         """.trimIndent()
         webView.evaluateJavascript(js, null)
+    }
+
+    private fun isMegaPlayerUrl(): Boolean {
+        val u = sourceUrl
+        return u.contains("mega.nz", ignoreCase = true) ||
+            u.contains("mega.co.nz", ignoreCase = true) ||
+            (this::webView.isInitialized &&
+                webView.url.orEmpty().contains("mega.", ignoreCase = true))
+    }
+
+    private fun tryMegaPlayClick() {
+        if (!this::webView.isInitialized) return
+        webView.evaluateJavascript(
+            """
+            (function(){
+              try{
+                if(typeof window.__wuMegaPlay==="function"){ window.__wuMegaPlay(); return; }
+                var sels=[
+                  "button.play-video-button",".play-video-button","button[class*='play']",
+                  "[class*='play-button']","[aria-label*='Play' i]","[aria-label*='play' i]",
+                  ".viewer-play-button",".video-wrapper button",".play-button"
+                ];
+                for(var i=0;i<sels.length;i++){
+                  var el=document.querySelector(sels[i]);
+                  if(el){ try{el.focus();}catch(e){} try{el.click(); return;}catch(e){} }
+                }
+                var v=document.querySelector("video");
+                if(v){ try{v.muted=false; v.play();}catch(e){} }
+              }catch(e){}
+            })();
+            """.trimIndent(),
+            null
+        )
+        showTitleThenAutoHide()
     }
 
     private fun togglePlayback() {
@@ -868,6 +1386,9 @@ class PlayerActivity : AppCompatActivity() {
         hideHandler.removeCallbacks(progressTicker)
         hideHandler.removeCallbacks(applySeekRunnable)
         hideHandler.removeCallbacks(clearSeekHintRunnable)
+        hideHandler.removeCallbacks(autoNextEpisodeRunnable)
+        hideHandler.removeCallbacks(hideSkipOpRunnable)
+        hideHandler.removeCallbacks(skipPromptTicker)
         qualityDialog?.dismiss()
         qualityDialog = null
         if (this::webView.isInitialized) {
@@ -891,10 +1412,141 @@ class PlayerActivity : AppCompatActivity() {
         const val EXTRA_RESUME_MS = "resume_ms"
         private const val TITLE_AUTO_HIDE_MS = 4_000L
         private const val WEB_FAIL_TIMEOUT_MS = 32_000L
+        /** Mega error page biasanya cepat; jangan tunggu 32 dtk. */
+        private const val MEGA_FAIL_TIMEOUT_MS = 14_000L
         private const val PROGRESS_TICK_MS = 10_000L
         private const val SEEK_DEBOUNCE_MS = 140L
         private const val REMOTE_GRACE_MS = 1_200L
+        /** Setelah video ended. */
+        private const val AUTO_NEXT_EPISODE_MS = 2_000L
+        /** Saat tombol Next muncul di ending — beri waktu tekan OK dulu. */
+        private const val AUTO_NEXT_FROM_ED_MS = 8_000L
+        /** Series: detik sebelum akhir untuk tombol Next + arm auto-next. */
+        private const val SERIES_NEAR_END_SEC = 45.0
+        private const val SKIP_OP_VISIBLE_MS = 10_000L
+        private const val SKIP_TICK_MS = 1_000L
     }
+
+    /**
+     * Deteksi halaman error Mega / embed mati ("file no longer available/accessible")
+     * lalu minta app failover ke server berikutnya (mis. Wibufile).
+     */
+    private val sourceFailWatcherJs: String = """
+            (function(){
+              if(window.__wuSourceFailWatch) return;
+              window.__wuSourceFailWatch=true;
+              var reported=false;
+              function textOf(){
+                try{
+                  var parts=[];
+                  if(document.title) parts.push(document.title);
+                  if(document.body) parts.push(document.body.innerText||document.body.textContent||"");
+                  var err=document.querySelector(
+                    ".error-message,.error,.fm-dialog-body,.download.error,"+
+                    "[class*='error'],[class*='unavailable'],#error"
+                  );
+                  if(err) parts.push(err.innerText||err.textContent||"");
+                  return parts.join(" ").toLowerCase();
+                }catch(e){ return ""; }
+              }
+              function match(t){
+                if(!t) return null;
+                var keys=[
+                  "no longer available","no longer accessible","file is unavailable",
+                  "file you are trying to download is no longer",
+                  "the file you are trying to download is no longer",
+                  "link you have clicked is not available",
+                  "invalid or expired link","invalid link","expired link",
+                  "this link is no longer available","temporarily unavailable",
+                  "etooman","over quota","bandwidth limit","transfer quota"
+                ];
+                for(var i=0;i<keys.length;i++){
+                  if(t.indexOf(keys[i])>=0) return keys[i];
+                }
+                return null;
+              }
+              function check(){
+                if(reported) return true;
+                try{
+                  var v=document.querySelector("video");
+                  if(v && !v.paused && v.readyState>=2 && v.currentTime>0.2) return false;
+                }catch(e){}
+                var hit=match(textOf());
+                if(!hit) return false;
+                reported=true;
+                try{ WebunimePlayback.onSourceFailed(hit); }catch(e){}
+                return true;
+              }
+              setTimeout(function(){
+                if(check()) return;
+                var n=0;
+                var iv=setInterval(function(){
+                  n++;
+                  if(check()||n>30) clearInterval(iv);
+                },800);
+              },1500);
+            })();
+        """.trimIndent()
+
+    /**
+     * Mega: otomatis klik tombol Play (halaman file/embed sering menunggu interaksi).
+     * Juga expose __wuMegaPlay untuk tombol OK remote.
+     */
+    private val megaAutoplayJs: String = """
+            (function(){
+              if(window.__wuMegaAuto) return;
+              window.__wuMegaAuto=true;
+              function clickPlay(){
+                try{
+                  var sels=[
+                    "button.play-video-button",".play-video-button",
+                    "button.viewer-play-button",".viewer-play-button",
+                    ".play-video",".video-theatre-play",
+                    "button[class*='play']","[class*='play-button']",
+                    "[aria-label*='Play' i]","[aria-label*='play' i]",
+                    "[title*='Play' i]",".play-button","button.mega-button.positive",
+                    ".media-viewer button",".video-wrapper button"
+                  ];
+                  for(var i=0;i<sels.length;i++){
+                    var nodes=document.querySelectorAll(sels[i]);
+                    for(var j=0;j<nodes.length;j++){
+                      var el=nodes[j];
+                      if(!el) continue;
+                      var t=(el.innerText||el.textContent||el.getAttribute("aria-label")||"").toLowerCase();
+                      var cls=(el.className||"").toString().toLowerCase();
+                      if(t.indexOf("download")>=0||cls.indexOf("download")>=0) continue;
+                      try{ el.focus(); }catch(e){}
+                      try{ el.click(); return true; }catch(e){}
+                    }
+                  }
+                  var v=document.querySelector("video");
+                  if(v){
+                    try{ v.muted=false; v.controls=true; }catch(e){}
+                    try{ v.play(); return true; }catch(e){}
+                  }
+                }catch(e){}
+                return false;
+              }
+              window.__wuMegaPlay=function(){ clickPlay(); };
+              var n=0;
+              var iv=setInterval(function(){
+                n++;
+                try{
+                  var v=document.querySelector("video");
+                  if(v && !v.paused && v.readyState>=2){
+                    clearInterval(iv);
+                    try{ WebunimePlayback.onPlay(); }catch(e){}
+                    return;
+                  }
+                }catch(e){}
+                clickPlay();
+                if(n>40) clearInterval(iv);
+              },500);
+              setTimeout(clickPlay, 800);
+              setTimeout(clickPlay, 1800);
+              setTimeout(clickPlay, 3200);
+            })();
+        """.trimIndent()
 
     /** Inject di setiap halaman WebView (termasuk anime Mega/Blogger yang tidak lewat shim proxy). */
     private val universalPlayerJs: String = """
@@ -942,6 +1594,42 @@ class PlayerActivity : AppCompatActivity() {
                   }catch(e){}
                 };
               }
+              window.__wuSeekTo=function(t){
+                t=Number(t);
+                if(!isFinite(t)||t<0) return;
+                try{
+                  var jp=__wuJw();
+                  if(jp&&typeof jp.seek==="function"){
+                    var dur=typeof jp.getDuration==="function"?jp.getDuration():0;
+                    var n=t;
+                    if(dur>0&&isFinite(dur)) n=Math.max(0,Math.min(dur-0.35,t));
+                    jp.seek(n);
+                    return;
+                  }
+                }catch(e){}
+                try{
+                  var v=__wuVid();
+                  if(v){
+                    var d=v.duration||0;
+                    var n=t;
+                    if(d>0&&isFinite(d)) n=Math.max(0,Math.min(d-0.25,t));
+                    v.currentTime=n;
+                  }
+                }catch(e){}
+              };
+              window.__wuGetClock=function(){
+                try{
+                  var jp=__wuJw();
+                  if(jp&&typeof jp.getPosition==="function"){
+                    return {p:jp.getPosition()||0,d:(typeof jp.getDuration==="function"?jp.getDuration():0)||0};
+                  }
+                }catch(e){}
+                try{
+                  var v=__wuVid();
+                  if(v) return {p:v.currentTime||0,d:v.duration||0};
+                }catch(e){}
+                return {p:0,d:0};
+              };
               if(typeof window.__wuToggle!=="function"){
                 window.__wuToggle=function(){
                   try{
@@ -960,6 +1648,8 @@ class PlayerActivity : AppCompatActivity() {
                   var d=e&&e.data;
                   if(d&&typeof d==="object"&&d.type==="__wuSeekBy"){
                     try{ window.__wuSeekBy(d.delta); }catch(ex){}
+                  } else if(d&&typeof d==="object"&&d.type==="__wuSeekTo"){
+                    try{ window.__wuSeekTo(d.time); }catch(ex){}
                   } else if(d==="__wuToggle"){
                     try{ window.__wuToggle(); }catch(ex){}
                   }

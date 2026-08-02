@@ -29,7 +29,7 @@ import com.webunime.tv.data.CatalogItem
  * Kartu browse/search ala Netflix:
  * Semua kategori (film / series / horor / anime):
  * tidak fokus = poster portrait; fokus = landscape 16:9.
- * Badge kualitas digambar di pojok kanan atas poster bila ada di JSON.
+ * Badge di pojok kanan atas: kualitas (film/horor) atau total EPS (series/anime).
  */
 class CardPresenter : Presenter() {
 
@@ -116,13 +116,13 @@ class CardPresenter : Presenter() {
             (card.parent as? ViewGroup)?.requestLayout()
         }
 
-        /** Gambar badge kualitas di pojok kanan atas bitmap poster. */
-        private fun withQualityOverlay(
+        /** Gambar badge (kualitas / total EPS) di pojok kanan atas bitmap poster. */
+        private fun withPosterBadge(
             src: Bitmap,
             context: Context,
-            quality: String?,
+            badge: String?,
         ): Bitmap {
-            val label = quality?.trim()?.takeIf { it.isNotBlank() }?.uppercase() ?: return src
+            val label = badge?.trim()?.takeIf { it.isNotBlank() } ?: return src
             val out = src.copy(Bitmap.Config.ARGB_8888, true) ?: return src
             val canvas = Canvas(out)
             val density = context.resources.displayMetrics.density
@@ -149,7 +149,7 @@ class CardPresenter : Presenter() {
             val bottom = top + badgeH
 
             val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = qualityBadgeColor(label)
+                color = posterBadgeColor(label)
             }
             canvas.drawRoundRect(left, top, right, bottom, radius, radius, bgPaint)
             val textX = left + padH
@@ -158,7 +158,9 @@ class CardPresenter : Presenter() {
             return out
         }
 
-        private fun qualityBadgeColor(label: String): Int = when {
+        private fun posterBadgeColor(label: String): Int = when {
+            label.endsWith("EPS") ->
+                Color.argb(0xE6, 0x0D, 0x47, 0x6B)
             label.contains("CAM") || label.contains("TS") || label.contains("TC") ->
                 Color.argb(0xE6, 0xB2, 0x5B, 0x00)
             label.contains("4K") || label.contains("UHD") || label.contains("BLU") ->
@@ -171,20 +173,20 @@ class CardPresenter : Presenter() {
         private fun bindPoster(card: ImageCardView, movie: CatalogItem, force: Boolean) {
             val (width, height) = cardSizeFor(card.hasFocus())
             val sizeKey = "${width}x$height"
-            val quality = movie.quality?.trim().orEmpty()
+            val badge = movie.posterBadgeLabel().orEmpty()
             val primary = movie.thumbnail?.takeIf { it.isNotBlank() }
             val alt = movie.thumbnailAlt?.takeIf { it.isNotBlank() && it != primary }
             val urls = listOfNotNull(primary, alt)
             val nextUrl = urls.firstOrNull()
             val prevUrl = card.mainImageView.getTag(R.id.tag_thumb_url) as? String
             val prevSize = card.getTag(R.id.tag_card_size) as? String
-            val prevQuality = card.getTag(R.id.tag_quality) as? String
+            val prevBadge = card.getTag(R.id.tag_quality) as? String
 
-            if (!force && prevUrl == nextUrl && prevSize == sizeKey && prevQuality == quality) return
+            if (!force && prevUrl == nextUrl && prevSize == sizeKey && prevBadge == badge) return
 
             card.setTag(R.id.tag_thumb_url, nextUrl)
             card.setTag(R.id.tag_card_size, sizeKey)
-            card.setTag(R.id.tag_quality, quality)
+            card.setTag(R.id.tag_quality, badge)
             card.mainImageView.setTag(R.id.tag_thumb_url, nextUrl)
 
             val placeholder = ColorDrawable(ContextCompat.getColor(card.context, R.color.wu_bg))
@@ -196,7 +198,7 @@ class CardPresenter : Presenter() {
                 .dontAnimate()
                 .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                 .transform(CenterCrop(), RoundedCorners(12))
-            loadIntoCard(card, urls, 0, options, placeholder, width, height, quality)
+            loadIntoCard(card, urls, 0, options, placeholder, width, height, badge)
         }
 
         private fun loadIntoCard(
@@ -207,7 +209,7 @@ class CardPresenter : Presenter() {
             placeholder: Drawable,
             width: Int,
             height: Int,
-            quality: String,
+            badge: String,
         ) {
             if (index >= urls.size) {
                 card.mainImage = placeholder
@@ -224,7 +226,7 @@ class CardPresenter : Presenter() {
                         transition: Transition<in Bitmap>?,
                     ) {
                         if (card.getTag(R.id.tag_thumb_url) != urls.firstOrNull()) return
-                        val stamped = withQualityOverlay(resource, card.context, quality)
+                        val stamped = withPosterBadge(resource, card.context, badge)
                         card.mainImage = BitmapDrawable(card.resources, stamped)
                     }
 
@@ -234,7 +236,7 @@ class CardPresenter : Presenter() {
 
                     override fun onLoadFailed(errorDrawable: Drawable?) {
                         if (card.getTag(R.id.tag_thumb_url) != urls.firstOrNull()) return
-                        loadIntoCard(card, urls, index + 1, options, placeholder, width, height, quality)
+                        loadIntoCard(card, urls, index + 1, options, placeholder, width, height, badge)
                     }
                 })
         }

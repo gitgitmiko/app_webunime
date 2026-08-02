@@ -74,6 +74,35 @@ object EmbedResolver {
     fun needsPixeldrainResolve(url: String): Boolean =
         url.contains("pixeldrain.com", ignoreCase = true)
 
+    /**
+     * Mega file share → embed player (UI lebih bersih, tombol play lebih mudah di-otomasi).
+     * Contoh: /file/ID#KEY → /embed/ID#KEY
+     */
+    fun megaEmbedUrl(sourceUrl: String): String? {
+        if (!sourceUrl.contains("mega.nz", ignoreCase = true) &&
+            !sourceUrl.contains("mega.co.nz", ignoreCase = true)
+        ) {
+            return null
+        }
+        if (sourceUrl.contains("/embed/", ignoreCase = true)) return sourceUrl
+        // Modern: https://mega.nz/file/ID#KEY
+        Regex(
+            """(?i)https?://(?:www\.)?mega\.(?:nz|co\.nz)/file/([^#?/\s]+)(?:#([^\s?#]+))?"""
+        ).find(sourceUrl)?.let { m ->
+            val id = m.groupValues[1]
+            val key = m.groupValues.getOrNull(2).orEmpty()
+            return if (key.isNotBlank()) "https://mega.nz/embed/$id#$key"
+            else "https://mega.nz/embed/$id"
+        }
+        // Legacy: https://mega.nz/#!ID!KEY
+        Regex(
+            """(?i)https?://(?:www\.)?mega\.(?:nz|co\.nz)/#!([^!#?\s]+)!([^\s?#]+)"""
+        ).find(sourceUrl)?.let { m ->
+            return "https://mega.nz/embed/${m.groupValues[1]}#${m.groupValues[2]}"
+        }
+        return null
+    }
+
     fun isBlockedNavigation(url: String): Boolean {
         val host = runCatching { java.net.URI(url).host?.lowercase() }.getOrNull() ?: return false
         return host.contains("lk21") ||

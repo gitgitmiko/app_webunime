@@ -5,11 +5,14 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 class CatalogRepository(private val context: Context) {
 
@@ -21,29 +24,99 @@ class CatalogRepository(private val context: Context) {
     private val listAdapter = moshi.adapter<List<CatalogItem>>(listType)
 
     private val client = OkHttpClient.Builder()
-        .connectTimeout(20, TimeUnit.SECONDS)
-        .readTimeout(45, TimeUnit.SECONDS)
+        .connectTimeout(12, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .callTimeout(40, TimeUnit.SECONDS)
         .build()
 
     private val cacheDir: File
         get() = File(context.filesDir, "catalog").also { if (!it.exists()) it.mkdirs() }
 
+    private val refreshMutex = Mutex()
+    private val githubRefreshDone = AtomicBoolean(false)
+
     @Volatile
     var snapshot: CatalogSnapshot = CatalogSnapshot()
         private set
 
-    suspend fun loadInitial(): CatalogSnapshot = withContext(Dispatchers.IO) {
+    fun isSnapshotReady(): Boolean =
+        snapshot.movies.isNotEmpty() ||
+            snapshot.series.isNotEmpty() ||
+            snapshot.horror.isNotEmpty() ||
+            snapshot.anime.isNotEmpty() ||
+            snapshot.animeMovies.isNotEmpty() ||
+            snapshot.animeLatest.isNotEmpty()
+
+    /** Ada cache lokal atau assets bawaan — boleh tampil browse tanpa tunggu GitHub. */
+    fun hasLocalCatalog(): Boolean {
+        return CATALOG_FILES.any { name ->
+            val cached = File(cacheDir, name)
+            if (cached.exists() && cached.length() > 2) return@any true
+            runCatching {
+                context.assets.open("data/$name").use { it.available() > 2 }
+            }.getOrDefault(false)
+        }
+    }
+
+    suspend fun loadInitial(): CatalogSnapshot {
+        loadBrowseFirst()
+        return loadHeavyCatalog()
+    }
+
+    /** Film / horror / anime terbaru — cepat, cukup untuk isi layar pertama. */
+    suspend fun loadBrowseFirst(): CatalogSnapshot = withContext(Dispatchers.IO) {
+        if (snapshot.movies.isNotEmpty() || snapshot.horror.isNotEmpty() ||
+            snapshot.animeMovies.isNotEmpty() || snapshot.animeLatest.isNotEmpty()
+        ) {
+            return@withContext snapshot
+        }
+        val movies = readList("movies.json")
+        val horror = readList("horror.json")
+        val animeMovies = readList("anime-movies.json")
+        val animeLatest = readList("anime-latest.json")
         snapshot = enrichThumbnails(
-            CatalogSnapshot(
-                movies = readList("movies.json"),
-                series = readList("series.json"),
-                horror = readList("horror.json"),
-                anime = readList("anime.json"),
-                animeMovies = readList("anime-movies.json"),
-                animeLatest = readList("anime-latest.json"),
+            snapshot.copy(
+                movies = movies,
+                horror = horror,
+                animeMovies = animeMovies,
+                animeLatest = animeLatest,
             )
         )
         snapshot
+    }
+
+    /** Series + anime penuh (~20MB) — setelah browse sudah tampil. */
+    suspend fun loadHeavyCatalog(): CatalogSnapshot = withContext(Dispatchers.IO) {
+        if (snapshot.series.isNotEmpty() && snapshot.anime.isNotEmpty()) {
+            return@withContext snapshot
+        }
+        val series = if (snapshot.series.isEmpty()) readList("series.json") else snapshot.series
+        val anime = if (snapshot.anime.isEmpty()) readList("anime.json") else snapshot.anime
+        snapshot = enrichThumbnails(snapshot.copy(series = series, anime = anime))
+        snapshot
+    }
+
+    /**
+     * Pastikan snapshot terisi dari cache/assets (cepat).
+     * Tidak mengunduh GitHub.
+     */
+    suspend fun ensureLocalLoaded(): CatalogSnapshot {
+        if (isSnapshotReady()) return snapshot
+        return loadInitial()
+    }
+
+    /**
+     * Unduh katalog dari GitHub paling banyak sekali per proses app.
+     * @return jumlah file OK; -1 = sudah pernah sync di proses ini; 0 = gagal total.
+     */
+    suspend fun refreshFromGithubOnce(): Int {
+        if (githubRefreshDone.get()) return -1
+        return refreshMutex.withLock {
+            if (githubRefreshDone.get()) return@withLock -1
+            val ok = refreshFromGithub()
+            githubRefreshDone.set(true)
+            ok
+        }
     }
 
     /**
@@ -51,16 +124,8 @@ class CatalogRepository(private val context: Context) {
      * @return jumlah file yang berhasil diunduh (0 = gagal total → pakai lokal).
      */
     suspend fun refreshFromGithub(): Int = withContext(Dispatchers.IO) {
-        val files = listOf(
-            "movies.json",
-            "series.json",
-            "horror.json",
-            "anime.json",
-            "anime-movies.json",
-            "anime-latest.json",
-        )
         var ok = 0
-        for (name in files) {
+        for (name in CATALOG_FILES) {
             if (runCatching { downloadAndCache(name) }.isSuccess) ok++
         }
         loadInitial()
@@ -126,8 +191,10 @@ class CatalogRepository(private val context: Context) {
             if (!response.isSuccessful) error("HTTP ${response.code} for $fileName")
             val body = response.body?.string().orEmpty()
             if (body.length < 2) error("Empty body $fileName")
-            // Validate JSON parses before overwriting cache
-            listAdapter.fromJson(body) ?: error("Invalid JSON $fileName")
+            // Validasi ringan saja — jangan parse penuh di sini (anime/series ~10MB,
+            // double-parse di emulator membuat UI stuck hitam lama).
+            val trimmed = body.trimStart()
+            if (!trimmed.startsWith("[")) error("Invalid JSON root $fileName")
             File(cacheDir, fileName).writeText(body, Charsets.UTF_8)
         }
     }
@@ -135,5 +202,14 @@ class CatalogRepository(private val context: Context) {
     companion object {
         const val GITHUB_RAW_BASE =
             "https://raw.githubusercontent.com/gitgitmiko/WEBUNIME/main/public/data/"
+
+        private val CATALOG_FILES = listOf(
+            "movies.json",
+            "series.json",
+            "horror.json",
+            "anime.json",
+            "anime-movies.json",
+            "anime-latest.json",
+        )
     }
 }

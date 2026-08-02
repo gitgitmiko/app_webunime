@@ -27,6 +27,8 @@ data class CatalogItem(
     val anime_slug: String? = null,
     val episode: Int? = null,
     val episode_source: String? = null,
+    /** MyAnimeList id (hasil enrich AniSkip di WEBUNIME). */
+    val mal_id: Int? = null,
 ) {
     fun displayTitle(): String = judul?.takeIf { it.isNotBlank() } ?: nama ?: slug ?: "Tanpa judul"
 
@@ -41,6 +43,28 @@ data class CatalogItem(
 
     fun isSeriesLike(): Boolean =
         type == "series" || type == "anime" || type == "anime-movie" || !episodes.isNullOrEmpty()
+
+    /** Jumlah episode yang tersedia di katalog (utamakan daftar scraped). */
+    fun totalEpisodes(): Int? {
+        episodes?.size?.takeIf { it > 0 }?.let { return it }
+        return episodes_count?.takeIf { it > 0 }
+    }
+
+    /** Badge "N EPS" untuk baris Series / Anime (bukan feed Anime Terbaru per-episode). */
+    fun showsEpisodeCountBadge(): Boolean {
+        if (anime_slug != null && episode != null && episodes.isNullOrEmpty()) return false
+        if (type == "series" || type == "anime") return totalEpisodes() != null
+        return !episodes.isNullOrEmpty() && (totalEpisodes() ?: 0) > 1
+    }
+
+    /** Label badge pojok kanan atas: total EPS untuk series/anime, kualitas untuk film. */
+    fun posterBadgeLabel(): String? {
+        if (showsEpisodeCountBadge()) {
+            val n = totalEpisodes() ?: return null
+            return "$n EPS"
+        }
+        return quality?.trim()?.takeIf { it.isNotBlank() }?.uppercase()
+    }
 }
 
 @JsonClass(generateAdapter = false)
@@ -62,6 +86,25 @@ data class PlayerServer(
 }
 
 @JsonClass(generateAdapter = false)
+data class SkipSegment(
+    val start: Double? = null,
+    val end: Double? = null,
+) {
+    fun isValid(): Boolean {
+        val s = start ?: return false
+        val e = end ?: return false
+        return e > s && s >= 0
+    }
+}
+
+@JsonClass(generateAdapter = false)
+data class EpisodeSkip(
+    val op: SkipSegment? = null,
+    val ed: SkipSegment? = null,
+    val source: String? = null,
+)
+
+@JsonClass(generateAdapter = false)
 data class Episode(
     val season: Int? = null,
     val episode: Int? = null,
@@ -70,6 +113,8 @@ data class Episode(
     val source: String? = null,
     val date: String? = null,
     val players: List<PlayerServer>? = null,
+    /** Interval OP/ED dari AniSkip (hasil enrich di WEBUNIME). */
+    val skip: EpisodeSkip? = null,
 ) {
     fun displayTitle(): String {
         val ep = episode ?: return title ?: "Episode"

@@ -33,18 +33,20 @@ class MainActivity : FragmentActivity() {
         val loadingText = findViewById<TextView>(R.id.catalogLoadingText)
 
         lifecycleScope.launch {
+            // Langsung GitHub → tampilkan. Tidak load lokal di depan (hindari 2× proses).
             loading.visibility = View.VISIBLE
             loadingText.setText(R.string.updating)
 
-            val downloaded = runCatching { repo.refreshFromGithub() }.getOrDefault(0)
-            if (downloaded == 0) {
-                // GitHub gagal total → pakai cache/assets lokal
+            runCatching { repo.refreshFromGithubOnce() }
+            if (!repo.isSnapshotReady()) {
                 loadingText.setText(R.string.loading_local_fallback)
                 repo.loadInitial()
             }
 
             loading.visibility = View.GONE
-            browseFragment()?.reloadRows()
+            if (!isFinishing) {
+                browseFragment()?.reloadRows()
+            }
         }
     }
 

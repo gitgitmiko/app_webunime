@@ -17,6 +17,13 @@
     <string name="failover_server">Server bermasalah · coba %1$s</string>
     <string name="episodes">Episode</string>
     <string name="episode_watched">✓  %1$s</string>
+    <string name="episode_next">Episode berikutnya · %1$s</string>
+    <string name="episode_prev">Episode sebelumnya · %1$s</string>
+    <string name="episode_no_next">Sudah episode terakhir</string>
+    <string name="episode_no_prev">Sudah episode pertama</string>
+    <string name="episode_auto_next">Otomatis lanjut · %1$s</string>
+    <string name="skip_opening">OK  ·  Lewati Opening</string>
+    <string name="skip_next_episode">OK  ·  Episode Berikutnya (otomatis)</string>
     <string name="servers">Audio &amp; Server</string>
     <string name="loading">Memuat katalog…</string>
     <string name="updating">Memperbarui dari GitHub…</string>

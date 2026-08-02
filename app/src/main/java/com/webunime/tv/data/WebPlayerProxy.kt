@@ -108,6 +108,15 @@ object WebPlayerProxy {
               if (f && f.contentWindow) f.contentWindow.postMessage({type:"__wuSeekBy",delta:delta}, "*");
             } catch (ex) {}
           };
+          window.__wuSeekTo = function(t){
+            try {
+              var f = document.getElementById("wuEmbed");
+              if (f && f.contentWindow) f.contentWindow.postMessage({type:"__wuSeekTo",time:t}, "*");
+            } catch (ex) {}
+          };
+          window.__wuGetClock = function(){
+            return {p:0,d:0};
+          };
           window.__wuToggle = function(){
             try {
               var f = document.getElementById("wuEmbed");
@@ -401,7 +410,44 @@ object WebPlayerProxy {
       }
     }catch(e){}
   };
-  try{ window.addEventListener("message", function(e){ var d=e&&e.data; if(d==="__wuToggle") window.__wuToggle(); else if(d==="__wuPlay") window.__wuPlay(); else if(d==="__wuPause") window.__wuPause(); else if(d==="__wuGetQualities"){ try{window.__wuReportQualities();}catch(ex){} } else if(d==="__wuShowUi"){ try{ if(typeof window.__wuShowPlayerUi==="function") window.__wuShowPlayerUi(); }catch(ex){} } else if(d&&typeof d==="object"&&d.type==="__wuSetQuality"){ try{window.__wuSetQuality(d.index);}catch(ex){} } else if(d&&typeof d==="object"&&d.type==="__wuSeekBy"){ try{window.__wuSeekBy(d.delta);}catch(ex){} } }); }catch(e){}
+  window.__wuSeekTo=function(t){
+    t=Number(t);
+    if(!isFinite(t)||t<0) return;
+    try{
+      var jp=__wuJw();
+      if(jp&&typeof jp.seek==="function"){
+        var dur=typeof jp.getDuration==="function"?jp.getDuration():0;
+        var n=t;
+        if(dur>0&&isFinite(dur)) n=Math.max(0,Math.min(dur-0.35,t));
+        jp.seek(n);
+        try{ if(typeof window.__wuShowPlayerUi==="function") window.__wuShowPlayerUi(); }catch(e){}
+        return;
+      }
+    }catch(e){}
+    try{
+      var v=__wuVideo();
+      if(v){
+        var d=v.duration||0;
+        var n=t;
+        if(d>0&&isFinite(d)) n=Math.max(0,Math.min(d-0.25,t));
+        v.currentTime=n;
+      }
+    }catch(e){}
+  };
+  window.__wuGetClock=function(){
+    try{
+      var jp=__wuJw();
+      if(jp&&typeof jp.getPosition==="function"){
+        return {p:jp.getPosition()||0,d:(typeof jp.getDuration==="function"?jp.getDuration():0)||0};
+      }
+    }catch(e){}
+    try{
+      var v=__wuVideo();
+      if(v) return {p:v.currentTime||0,d:v.duration||0};
+    }catch(e){}
+    return {p:0,d:0};
+  };
+  try{ window.addEventListener("message", function(e){ var d=e&&e.data; if(d==="__wuToggle") window.__wuToggle(); else if(d==="__wuPlay") window.__wuPlay(); else if(d==="__wuPause") window.__wuPause(); else if(d==="__wuGetQualities"){ try{window.__wuReportQualities();}catch(ex){} } else if(d==="__wuShowUi"){ try{ if(typeof window.__wuShowPlayerUi==="function") window.__wuShowPlayerUi(); }catch(ex){} } else if(d&&typeof d==="object"&&d.type==="__wuSetQuality"){ try{window.__wuSetQuality(d.index);}catch(ex){} } else if(d&&typeof d==="object"&&d.type==="__wuSeekBy"){ try{window.__wuSeekBy(d.delta);}catch(ex){} } else if(d&&typeof d==="object"&&d.type==="__wuSeekTo"){ try{window.__wuSeekTo(d.time);}catch(ex){} } }); }catch(e){}
 
   // ---- Kualitas / resolusi (JWPlayer) untuk remote TV ----
   function __wuJwAny(){
