@@ -1,5 +1,6 @@
 package com.webunime.tv.ui.browse
 
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
@@ -10,13 +11,23 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import com.webunime.tv.R
 import com.webunime.tv.WebunimeApp
+import com.webunime.tv.data.AppUpdateChecker
+import com.webunime.tv.data.AppUpdateInfo
 import com.webunime.tv.data.CatalogItem
 import com.webunime.tv.data.PlayerRouter
 import com.webunime.tv.ui.detail.DetailActivity
 import com.webunime.tv.ui.player.PlayerActivity
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
 
 class MainActivity : FragmentActivity() {
+
+    private val updateChecker by lazy { AppUpdateChecker(this) }
+    private var updateDialogShown = false
+    private var pendingUpdateInfo: AppUpdateInfo? = null
+    private var pendingApkFile: File? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,13 +58,27 @@ class MainActivity : FragmentActivity() {
             if (!isFinishing) {
                 browseFragment()?.reloadRows()
             }
+            checkForAppUpdate()
         }
     }
 
     override fun onResume() {
         super.onResume()
-        // Jangan paksa fokus di sini — bentrok dengan D-pad (atas/bawah “kepencet sendiri”).
-        // BrowseFragment sudah restore posisi sekali setelah kembali dari Detail.
+        // Setelah user izinkan "Install unknown apps", lanjutkan install.
+        val apk = pendingApkFile
+        if (apk != null && apk.exists() && updateChecker.canInstallPackages()) {
+            pendingApkFile = null
+            pendingUpdateInfo = null
+            Toast.makeText(this, R.string.update_installing, Toast.LENGTH_SHORT).show()
+            runCatching { updateChecker.installApk(this, apk) }
+                .onFailure {
+                    Toast.makeText(
+                        this,
+                        getString(R.string.update_failed, it.message ?: "install"),
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+        }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -79,6 +104,70 @@ class MainActivity : FragmentActivity() {
 
         val normalized = normalizeOkKey(event) ?: event
         return super.dispatchKeyEvent(normalized)
+    }
+
+    private fun checkForAppUpdate() {
+        if (updateDialogShown || isFinishing) return
+        lifecycleScope.launch {
+            val info = runCatching { updateChecker.fetchAvailableUpdate() }.getOrNull()
+                ?: return@launch
+            if (isFinishing || updateDialogShown) return@launch
+            showUpdateDialog(info)
+        }
+    }
+
+    private fun showUpdateDialog(info: AppUpdateInfo) {
+        updateDialogShown = true
+        val notes = info.changelog?.takeIf { it.isNotBlank() }.orEmpty()
+        AlertDialog.Builder(this)
+            .setTitle(R.string.update_title)
+            .setMessage(getString(R.string.update_message, info.versionName, notes))
+            .setPositiveButton(R.string.update_now) { _, _ -> startUpdateDownload(info) }
+            .setNegativeButton(R.string.update_later, null)
+            .setCancelable(true)
+            .show()
+    }
+
+    private fun startUpdateDownload(info: AppUpdateInfo) {
+        pendingUpdateInfo = info
+        lifecycleScope.launch {
+            val progressToast = Toast.makeText(this@MainActivity, "", Toast.LENGTH_SHORT)
+            val apk = runCatching {
+                updateChecker.downloadApk(info) { pct ->
+                    runOnUiThread {
+                        progressToast.setText(getString(R.string.update_downloading, pct))
+                        progressToast.show()
+                    }
+                }
+            }.getOrElse { err ->
+                Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.update_failed, err.message ?: "download"),
+                    Toast.LENGTH_LONG,
+                ).show()
+                return@launch
+            }
+
+            if (isFinishing) return@launch
+            if (!updateChecker.canInstallPackages()) {
+                pendingApkFile = apk
+                Toast.makeText(this@MainActivity, R.string.update_need_permission, Toast.LENGTH_LONG).show()
+                updateChecker.openInstallPermissionSettings(this@MainActivity)
+                return@launch
+            }
+
+            withContext(Dispatchers.Main) {
+                Toast.makeText(this@MainActivity, R.string.update_installing, Toast.LENGTH_SHORT).show()
+                runCatching { updateChecker.installApk(this@MainActivity, apk) }
+                    .onFailure {
+                        Toast.makeText(
+                            this@MainActivity,
+                            getString(R.string.update_failed, it.message ?: "install"),
+                            Toast.LENGTH_LONG,
+                        ).show()
+                    }
+            }
+        }
     }
 
     private fun isDpadOrOk(keyCode: Int): Boolean =

@@ -28,6 +28,14 @@
     <string name="loading">Memuat katalog…</string>
     <string name="updating">Memperbarui dari GitHub…</string>
     <string name="loading_local_fallback">GitHub gagal · memuat data lokal…</string>
+    <string name="update_title">Update tersedia</string>
+    <string name="update_message">Versi %1$s siap diunduh.\n%2$s</string>
+    <string name="update_now">Update</string>
+    <string name="update_later">Nanti</string>
+    <string name="update_downloading">Mengunduh update… %1$d%%</string>
+    <string name="update_installing">Membuka pemasang APK…</string>
+    <string name="update_need_permission">Izinkan install dari sumber ini di pengaturan, lalu kembali ke app.</string>
+    <string name="update_failed">Gagal update: %1$s</string>
     <string name="error_no_players">Tidak ada server yang tersedia</string>
     <string name="error_play">Gagal memutar video</string>
     <string name="search_hint">Cari film, series, atau anime…</string>
