@@ -1,19 +1,15 @@
 package com.webunime.tv.ui.browse
 
 import android.content.Intent
-import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
-import android.graphics.drawable.Drawable
-import android.graphics.drawable.LayerDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.core.content.ContextCompat
-import androidx.leanback.app.BackgroundManager
 import androidx.leanback.app.BrowseSupportFragment
 import androidx.leanback.widget.ArrayObjectAdapter
 import androidx.leanback.widget.FocusHighlight
@@ -24,8 +20,6 @@ import androidx.leanback.widget.OnItemViewClickedListener
 import androidx.leanback.widget.OnItemViewSelectedListener
 import androidx.leanback.widget.VerticalGridView
 import com.bumptech.glide.Glide
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
 import com.webunime.tv.R
 import com.webunime.tv.WebunimeApp
 import com.webunime.tv.data.CatalogItem
@@ -33,7 +27,7 @@ import com.webunime.tv.ui.search.SearchActivity
 import java.util.Calendar
 
 /**
- * Browse Netflix-style: background berubah mengikuti poster item yang sedang difokus.
+ * Browse Netflix-style: backdrop ImageView di MainActivity berubah mengikuti item fokus.
  */
 class BrowseFragment : BrowseSupportFragment() {
 
@@ -41,7 +35,7 @@ class BrowseFragment : BrowseSupportFragment() {
     private val cardPresenter = CardPresenter()
     private val rowPaging = mutableMapOf<Long, RowPagingState>()
 
-    private var backgroundManager: BackgroundManager? = null
+    private var backdropView: ImageView? = null
     private val bgHandler = Handler(Looper.getMainLooper())
     private var pendingThumb: String? = null
     private var lastThumb: String? = null
@@ -76,7 +70,9 @@ class BrowseFragment : BrowseSupportFragment() {
         if (view is ViewGroup) {
             view.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
         }
-        view.setBackgroundColor(Color.TRANSPARENT)
+        // Wajib transparan agar ImageView backdrop di Activity terlihat.
+        clearOpaqueBackgrounds(view)
+        view.post { clearOpaqueBackgrounds(view) }
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -84,10 +80,12 @@ class BrowseFragment : BrowseSupportFragment() {
         title = getString(R.string.browse_title)
         headersState = HEADERS_DISABLED
         isHeadersTransitionOnBackEnabled = false
-        brandColor = ContextCompat.getColor(requireContext(), R.color.wu_bg)
+        // Jangan cat penuh brandColor gelap — tutup backdrop.
+        brandColor = Color.TRANSPARENT
         searchAffordanceColor = ContextCompat.getColor(requireContext(), R.color.wu_accent)
 
-        prepareBackgroundManager()
+        backdropView = activity?.findViewById(R.id.browseBackdrop)
+        setDefaultBackground()
 
         setOnSearchClickedListener {
             startActivity(Intent(requireActivity(), SearchActivity::class.java))
@@ -150,7 +148,8 @@ class BrowseFragment : BrowseSupportFragment() {
     override fun onDestroy() {
         cancelPendingRestores()
         bgHandler.removeCallbacks(applyBackground)
-        backgroundManager = null
+        backdropView?.let { runCatching { Glide.with(it).clear(it) } }
+        backdropView = null
         super.onDestroy()
     }
 
@@ -185,15 +184,24 @@ class BrowseFragment : BrowseSupportFragment() {
         grid.requestFocus()
     }
 
-    private fun prepareBackgroundManager() {
-        val act = requireActivity()
-        val mgr = BackgroundManager.getInstance(act).also { backgroundManager = it }
-        if (!mgr.isAttached) {
-            mgr.attach(act.window)
+    private fun clearOpaqueBackgrounds(root: View) {
+        root.background = null
+        root.setBackgroundColor(Color.TRANSPARENT)
+        rowsSupportFragment?.view?.let {
+            it.background = null
+            it.setBackgroundColor(Color.TRANSPARENT)
         }
-        // Biarkan BackgroundManager terlihat di belakang konten browse.
-        act.window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        setDefaultBackground()
+        rowsSupportFragment?.verticalGridView?.setBackgroundColor(Color.TRANSPARENT)
+        // Leanback sering punya container penuh di child pertama.
+        if (root is ViewGroup) {
+            for (i in 0 until root.childCount) {
+                val child = root.getChildAt(i)
+                if (child is ViewGroup) {
+                    child.background = null
+                    child.setBackgroundColor(Color.TRANSPARENT)
+                }
+            }
+        }
     }
 
     private fun scheduleBackground(thumbUrl: String?) {
@@ -204,48 +212,24 @@ class BrowseFragment : BrowseSupportFragment() {
 
     private fun setDefaultBackground() {
         lastThumb = null
-        val color = ContextCompat.getColor(requireContext(), R.color.wu_bg)
-        backgroundManager?.drawable = ColorDrawable(color)
-        backgroundManager?.color = color
+        val iv = backdropView ?: activity?.findViewById(R.id.browseBackdrop)
+        backdropView = iv
+        if (iv != null) {
+            runCatching { Glide.with(iv).clear(iv) }
+            iv.setImageDrawable(ColorDrawable(ContextCompat.getColor(requireContext(), R.color.wu_bg)))
+        }
     }
 
     private fun loadBackground(url: String) {
         if (!isAdded) return
-        val mgr = backgroundManager ?: return
-        if (!mgr.isAttached) {
-            activity?.window?.let { mgr.attach(it) }
-        }
-        val metrics = resources.displayMetrics
-        val w = metrics.widthPixels.coerceAtLeast(1280)
-        val h = metrics.heightPixels.coerceAtLeast(720)
-
-        Glide.with(this)
-            .asBitmap()
+        val iv = backdropView ?: activity?.findViewById(R.id.browseBackdrop) ?: return
+        backdropView = iv
+        Glide.with(iv)
             .load(url)
             .centerCrop()
-            .into(object : CustomTarget<Bitmap>(w, h) {
-                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                    if (!isAdded || pendingThumb != url) return
-                    backgroundManager?.drawable = dimmedBackground(resource)
-                }
-
-                override fun onLoadCleared(placeholder: Drawable?) {
-                    /* no-op */
-                }
-
-                override fun onLoadFailed(errorDrawable: Drawable?) {
-                    if (pendingThumb == url) setDefaultBackground()
-                }
-            })
-    }
-
-    private fun dimmedBackground(bitmap: Bitmap): Drawable {
-        return LayerDrawable(
-            arrayOf(
-                BitmapDrawable(resources, bitmap),
-                ColorDrawable(0x99000000.toInt()),
-            )
-        )
+            .placeholder(ColorDrawable(ContextCompat.getColor(requireContext(), R.color.wu_bg)))
+            .error(ColorDrawable(ContextCompat.getColor(requireContext(), R.color.wu_bg)))
+            .into(iv)
     }
 
     fun reloadRows() {
@@ -302,6 +286,7 @@ class BrowseFragment : BrowseSupportFragment() {
             lastRowIndex = keepRow.coerceIn(0, rowsAdapter.size() - 1)
             lastItemIndex = keepItem.coerceAtLeast(0)
             selectedPosition = lastRowIndex
+            view?.let { clearOpaqueBackgrounds(it) }
             // Restore posisi hanya lewat jalur pending (onResume setelah Detail),
             // atau sekali di sini saat cold rebuild katalog.
             restoreRetries = 0

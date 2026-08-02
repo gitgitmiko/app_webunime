@@ -2,7 +2,23 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/transparent">
+    android:background="@color/wu_bg">
+
+    <!-- Backdrop fokus (landscape) — di belakang konten browse -->
+    <ImageView
+        android:id="@+id/browseBackdrop"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop"
+        android:importantForAccessibility="no" />
+
+    <View
+        android:id="@+id/browseBackdropDim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#99000000"
+        android:importantForAccessibility="no" />
 
     <FrameLayout
         android:id="@+id/main_browse_fragment"

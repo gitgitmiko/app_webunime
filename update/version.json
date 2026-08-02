@@ -1,6 +1,6 @@
 {
-  "versionCode": 197,
-  "versionName": "1.9.7",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.9.7/WEBUNIME-TV-v1.9.7.apk",
-  "changelog": "Perbaiki background browse: backdrop mengikuti thumbnail landscape saat fokus kartu"
+  "versionCode": 198,
+  "versionName": "1.9.8",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.9.8/WEBUNIME-TV-v1.9.8.apk",
+  "changelog": "Backdrop fokus pakai ImageView (bukan BackgroundManager) agar background ikut berubah di TV"
 }
