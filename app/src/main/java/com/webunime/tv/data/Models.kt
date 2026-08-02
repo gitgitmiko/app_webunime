@@ -11,6 +11,11 @@ data class CatalogItem(
     val judul: String? = null,
     val tahun: String? = null,
     val thumbnail: String? = null,
+    /**
+     * Backdrop 16:9 untuk kartu fokus / background browse.
+     * Diisi scraper (TMDB → situs); kosong = app fallback crop portrait.
+     */
+    val thumbnail_landscape: String? = null,
     /** Cadangan bila [thumbnail] gagal load (mis. poster 404 → screenshot episode). Tidak dari JSON. */
     @Json(ignore = true)
     val thumbnailAlt: String? = null,

@@ -171,12 +171,19 @@ class CardPresenter : Presenter() {
         }
 
         private fun bindPoster(card: ImageCardView, movie: CatalogItem, force: Boolean) {
-            val (width, height) = cardSizeFor(card.hasFocus())
+            val focused = card.hasFocus()
+            val (width, height) = cardSizeFor(focused)
             val sizeKey = "${width}x$height"
             val badge = movie.posterBadgeLabel().orEmpty()
-            val primary = movie.thumbnail?.takeIf { it.isNotBlank() }
-            val alt = movie.thumbnailAlt?.takeIf { it.isNotBlank() && it != primary }
-            val urls = listOfNotNull(primary, alt)
+            val portrait = movie.thumbnail?.takeIf { it.isNotBlank() }
+            val landscape = movie.thumbnail_landscape?.takeIf { it.isNotBlank() }
+            val alt = movie.thumbnailAlt?.takeIf { it.isNotBlank() && it != portrait }
+            // Fokus: landscape bila ada, lalu portrait (+ alt). Unfocus: portrait saja.
+            val urls = if (focused) {
+                listOfNotNull(landscape, portrait, alt).distinct()
+            } else {
+                listOfNotNull(portrait, alt).distinct()
+            }
             val nextUrl = urls.firstOrNull()
             val prevUrl = card.mainImageView.getTag(R.id.tag_thumb_url) as? String
             val prevSize = card.getTag(R.id.tag_card_size) as? String

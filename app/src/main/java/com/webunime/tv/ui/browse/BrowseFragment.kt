@@ -114,7 +114,10 @@ class BrowseFragment : BrowseSupportFragment() {
 
         onItemViewSelectedListener = OnItemViewSelectedListener { _, item, rowViewHolder, row ->
             val catalog = item as? CatalogItem
-            scheduleBackground(catalog?.thumbnail)
+            scheduleBackground(
+                catalog?.thumbnail_landscape?.takeIf { it.isNotBlank() }
+                    ?: catalog?.thumbnail
+            )
             val listRow = row as? ListRow ?: return@OnItemViewSelectedListener
             val selectedIndex =
                 (rowViewHolder as? ListRowPresenter.ViewHolder)?.selectedPosition ?: -1

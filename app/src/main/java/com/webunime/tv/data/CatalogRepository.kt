@@ -150,13 +150,15 @@ class CatalogRepository(private val context: Context) {
         }
 
         val enrichedLatest = snap.animeLatest.map { feed ->
-            val parentThumb = feed.anime_slug
-                ?.let { animeBySlug[it]?.thumbnail }
-                ?.takeIf { it.isNotBlank() }
+            val parent = feed.anime_slug?.let { animeBySlug[it] }
+            val parentThumb = parent?.thumbnail?.takeIf { it.isNotBlank() }
+            val parentLand = parent?.thumbnail_landscape?.takeIf { it.isNotBlank() }
             val feedThumb = feed.thumbnail?.takeIf { it.isNotBlank() }
             feed.copy(
                 thumbnail = feedThumb ?: parentThumb,
                 thumbnailAlt = parentThumb?.takeIf { it != feedThumb },
+                thumbnail_landscape = feed.thumbnail_landscape?.takeIf { it.isNotBlank() }
+                    ?: parentLand,
             )
         }
 
@@ -186,8 +188,9 @@ class CatalogRepository(private val context: Context) {
     /** CDN poster.showcdnx.com sering NXDOMAIN — mirror path di poster.lk21official.cc. */
     private fun normalizePosterUrls(item: CatalogItem): CatalogItem {
         val thumb = rewriteDeadPosterHost(item.thumbnail)
-        if (thumb == item.thumbnail) return item
-        return item.copy(thumbnail = thumb)
+        val land = rewriteDeadPosterHost(item.thumbnail_landscape)
+        if (thumb == item.thumbnail && land == item.thumbnail_landscape) return item
+        return item.copy(thumbnail = thumb, thumbnail_landscape = land)
     }
 
     private fun rewriteDeadPosterHost(url: String?): String? {
@@ -200,6 +203,10 @@ class CatalogRepository(private val context: Context) {
             .replace(
                 Regex("""(?i)https?://image\.showcdnx\.com"""),
                 "https://poster.lk21official.cc",
+            )
+            .replace(
+                Regex("""(?i)https?://cover\.showcdnx\.com"""),
+                "https://cover.lk21official.cc",
             )
     }
 
