@@ -123,6 +123,8 @@ class PlayerActivity : AppCompatActivity() {
             modeView.text = seekHintServerLabel
         }
     }
+    /** Debounce HUD pause: buffering/embed sering fire pause sekejap lalu play lagi. */
+    private val showPauseHudRunnable = Runnable { setTitleBarVisible(true) }
     private val autoNextEpisodeRunnable = Runnable {
         switchEpisode(1, auto = true)
     }
@@ -419,7 +421,7 @@ class PlayerActivity : AppCompatActivity() {
         skipActionButton.visibility = View.VISIBLE
         // Jangan requestFocus — merebut fokus dari WebView sering bikin player TV goyang/crash.
         skipActionButton.isFocusable = false
-        showTitleThenAutoHide()
+        // Jangan tampilkan title bar di sini — mirip “pause HUD” dan mengganggu nonton.
     }
 
     private fun hideSkipPrompt() {
@@ -655,11 +657,16 @@ class PlayerActivity : AppCompatActivity() {
         fun onPlay() {
             webVideoActive = true
             hideHandler.removeCallbacks(webFailTimeoutRunnable)
+            hideHandler.removeCallbacks(showPauseHudRunnable)
             setTitleBarVisible(false)
         }
 
         @android.webkit.JavascriptInterface
-        fun onPause() = setTitleBarVisible(true)
+        fun onPause() {
+            // Jangan langsung tampilkan judul: pause singkat (buffer/seek) sering diikuti play.
+            hideHandler.removeCallbacks(showPauseHudRunnable)
+            hideHandler.postDelayed(showPauseHudRunnable, PAUSE_HUD_DEBOUNCE_MS)
+        }
 
         @android.webkit.JavascriptInterface
         fun onEnded() {
@@ -1060,7 +1067,9 @@ class PlayerActivity : AppCompatActivity() {
             event.action == KeyEvent.ACTION_DOWN &&
             !isBackLike(event.keyCode) &&
             !isOkKey(event.keyCode) &&
-            !isSeekKey(event.keyCode)
+            !isSeekKey(event.keyCode) &&
+            !isEpisodeNavKey(event.keyCode) &&
+            !isQualityKey(event.keyCode)
         ) {
             showTitleThenAutoHide()
             peekPlayerChrome()
@@ -1389,6 +1398,7 @@ class PlayerActivity : AppCompatActivity() {
         hideHandler.removeCallbacks(autoNextEpisodeRunnable)
         hideHandler.removeCallbacks(hideSkipOpRunnable)
         hideHandler.removeCallbacks(skipPromptTicker)
+        hideHandler.removeCallbacks(showPauseHudRunnable)
         qualityDialog?.dismiss()
         qualityDialog = null
         if (this::webView.isInitialized) {
@@ -1425,6 +1435,7 @@ class PlayerActivity : AppCompatActivity() {
         private const val SERIES_NEAR_END_SEC = 45.0
         private const val SKIP_OP_VISIBLE_MS = 10_000L
         private const val SKIP_TICK_MS = 1_000L
+        private const val PAUSE_HUD_DEBOUNCE_MS = 500L
     }
 
     /**
@@ -1496,16 +1507,21 @@ class PlayerActivity : AppCompatActivity() {
             (function(){
               if(window.__wuMegaAuto) return;
               window.__wuMegaAuto=true;
+              function playingVid(){
+                try{
+                  var v=document.querySelector("video");
+                  return v && !v.paused && v.readyState>=2;
+                }catch(e){ return false; }
+              }
               function clickPlay(){
                 try{
+                  if(playingVid()) return true;
                   var sels=[
                     "button.play-video-button",".play-video-button",
                     "button.viewer-play-button",".viewer-play-button",
                     ".play-video",".video-theatre-play",
-                    "button[class*='play']","[class*='play-button']",
-                    "[aria-label*='Play' i]","[aria-label*='play' i]",
-                    "[title*='Play' i]",".play-button","button.mega-button.positive",
-                    ".media-viewer button",".video-wrapper button"
+                    "[aria-label='Play']","[aria-label='play']",
+                    "[title='Play']",".play-button","button.mega-button.positive"
                   ];
                   for(var i=0;i<sels.length;i++){
                     var nodes=document.querySelectorAll(sels[i]);
@@ -1515,12 +1531,13 @@ class PlayerActivity : AppCompatActivity() {
                       var t=(el.innerText||el.textContent||el.getAttribute("aria-label")||"").toLowerCase();
                       var cls=(el.className||"").toString().toLowerCase();
                       if(t.indexOf("download")>=0||cls.indexOf("download")>=0) continue;
+                      if(t.indexOf("pause")>=0||cls.indexOf("pause")>=0) continue;
                       try{ el.focus(); }catch(e){}
                       try{ el.click(); return true; }catch(e){}
                     }
                   }
                   var v=document.querySelector("video");
-                  if(v){
+                  if(v && v.paused){
                     try{ v.muted=false; v.controls=true; }catch(e){}
                     try{ v.play(); return true; }catch(e){}
                   }
@@ -1531,20 +1548,16 @@ class PlayerActivity : AppCompatActivity() {
               var n=0;
               var iv=setInterval(function(){
                 n++;
-                try{
-                  var v=document.querySelector("video");
-                  if(v && !v.paused && v.readyState>=2){
-                    clearInterval(iv);
-                    try{ WebunimePlayback.onPlay(); }catch(e){}
-                    return;
-                  }
-                }catch(e){}
+                if(playingVid()){
+                  clearInterval(iv);
+                  try{ WebunimePlayback.onPlay(); }catch(e){}
+                  return;
+                }
                 clickPlay();
-                if(n>40) clearInterval(iv);
+                if(n>24) clearInterval(iv);
               },500);
               setTimeout(clickPlay, 800);
               setTimeout(clickPlay, 1800);
-              setTimeout(clickPlay, 3200);
             })();
         """.trimIndent()
 

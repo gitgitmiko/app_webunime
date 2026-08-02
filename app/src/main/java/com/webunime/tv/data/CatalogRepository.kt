@@ -178,7 +178,29 @@ class CatalogRepository(private val context: Context) {
             }.getOrNull()
         } ?: return emptyList()
 
-        return runCatching { listAdapter.fromJson(json).orEmpty() }.getOrDefault(emptyList())
+        return runCatching {
+            listAdapter.fromJson(json).orEmpty().map { normalizePosterUrls(it) }
+        }.getOrDefault(emptyList())
+    }
+
+    /** CDN poster.showcdnx.com sering NXDOMAIN — mirror path di poster.lk21official.cc. */
+    private fun normalizePosterUrls(item: CatalogItem): CatalogItem {
+        val thumb = rewriteDeadPosterHost(item.thumbnail)
+        if (thumb == item.thumbnail) return item
+        return item.copy(thumbnail = thumb)
+    }
+
+    private fun rewriteDeadPosterHost(url: String?): String? {
+        if (url.isNullOrBlank()) return url
+        return url
+            .replace(
+                Regex("""(?i)https?://poster\.showcdnx\.com"""),
+                "https://poster.lk21official.cc",
+            )
+            .replace(
+                Regex("""(?i)https?://image\.showcdnx\.com"""),
+                "https://poster.lk21official.cc",
+            )
     }
 
     private fun downloadAndCache(fileName: String) {

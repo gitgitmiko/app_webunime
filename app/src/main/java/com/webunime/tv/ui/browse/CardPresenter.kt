@@ -190,7 +190,7 @@ class CardPresenter : Presenter() {
             card.mainImageView.setTag(R.id.tag_thumb_url, nextUrl)
 
             val placeholder = ColorDrawable(ContextCompat.getColor(card.context, R.color.wu_bg))
-            Glide.with(card).clear(card)
+            Glide.with(card.context).clear(card.mainImageView)
             card.mainImage = placeholder
             if (nextUrl == null) return
 
@@ -216,7 +216,7 @@ class CardPresenter : Presenter() {
                 return
             }
             val url = urls[index]
-            Glide.with(card)
+            Glide.with(card.context)
                 .asBitmap()
                 .load(url)
                 .apply(options)
