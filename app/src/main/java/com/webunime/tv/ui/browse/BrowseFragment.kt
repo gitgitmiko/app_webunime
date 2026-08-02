@@ -191,22 +191,30 @@ class BrowseFragment : BrowseSupportFragment() {
         if (!mgr.isAttached) {
             mgr.attach(act.window)
         }
+        // Biarkan BackgroundManager terlihat di belakang konten browse.
+        act.window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         setDefaultBackground()
     }
 
     private fun scheduleBackground(thumbUrl: String?) {
-        pendingThumb = thumbUrl
+        pendingThumb = thumbUrl?.takeIf { it.isNotBlank() }
         bgHandler.removeCallbacks(applyBackground)
         bgHandler.postDelayed(applyBackground, BACKGROUND_DELAY_MS)
     }
 
     private fun setDefaultBackground() {
         lastThumb = null
-        backgroundManager?.color = ContextCompat.getColor(requireContext(), R.color.wu_bg)
+        val color = ContextCompat.getColor(requireContext(), R.color.wu_bg)
+        backgroundManager?.drawable = ColorDrawable(color)
+        backgroundManager?.color = color
     }
 
     private fun loadBackground(url: String) {
         if (!isAdded) return
+        val mgr = backgroundManager ?: return
+        if (!mgr.isAttached) {
+            activity?.window?.let { mgr.attach(it) }
+        }
         val metrics = resources.displayMetrics
         val w = metrics.widthPixels.coerceAtLeast(1280)
         val h = metrics.heightPixels.coerceAtLeast(720)
@@ -235,7 +243,7 @@ class BrowseFragment : BrowseSupportFragment() {
         return LayerDrawable(
             arrayOf(
                 BitmapDrawable(resources, bitmap),
-                ColorDrawable(0xB3000000.toInt()),
+                ColorDrawable(0x99000000.toInt()),
             )
         )
     }

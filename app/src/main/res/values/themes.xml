@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.WebunimeTv" parent="Theme.Leanback">
-        <item name="android:windowBackground">@color/wu_bg</item>
+        <!-- Transparan agar BackgroundManager (backdrop fokus) terlihat -->
+        <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:colorPrimary">@color/wu_accent</item>
         <item name="defaultBrandColor">@color/wu_bg</item>
         <item name="defaultBrandColorDark">@color/wu_bg</item>

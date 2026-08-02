@@ -1,6 +1,6 @@
 {
-  "versionCode": 196,
-  "versionName": "1.9.6",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.9.6/WEBUNIME-TV-v1.9.6.apk",
-  "changelog": "Thumbnail landscape saat fokus kartu (TMDB/situs); fallback portrait jika belum ada"
+  "versionCode": 197,
+  "versionName": "1.9.7",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.9.7/WEBUNIME-TV-v1.9.7.apk",
+  "changelog": "Perbaiki background browse: backdrop mengikuti thumbnail landscape saat fokus kartu"
 }

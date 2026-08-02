@@ -2,7 +2,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/wu_bg">
+    android:background="@android:color/transparent">
 
     <FrameLayout
         android:id="@+id/main_browse_fragment"
@@ -17,7 +17,7 @@
         android:background="@color/wu_bg"
         android:gravity="center"
         android:orientation="vertical"
-            android:visibility="visible">
+        android:visibility="visible">
 
         <ProgressBar
             android:layout_width="64dp"
