@@ -26,6 +26,9 @@ data class CatalogItem(
     val sinopsis: String? = null,
     val slug: String? = null,
     val source: String? = null,
+    /** Tanggal rilis (teks/ISO) — dipakai sort Film Indonesia terbaru. */
+    val rilis: String? = null,
+    val rilis_iso: String? = null,
     val players: List<PlayerServer>? = null,
     val episodes: List<Episode>? = null,
     val episodes_count: Int? = null,
@@ -44,6 +47,40 @@ data class CatalogItem(
         rating?.takeIf { it.isNotBlank() }?.let { parts += "★ $it" }
         durasi?.takeIf { it.isNotBlank() }?.let { parts += it }
         return parts.joinToString(" · ")
+    }
+
+    /** Kunci sort rilis terbaru: YYYYMMDD, fallback tahun, lalu 0. */
+    fun releaseSortKey(): Long {
+        val iso = rilis_iso?.trim().orEmpty()
+        val isoMatch = Regex("""^(\d{4})-(\d{2})-(\d{2})""").find(iso)
+        if (isoMatch != null) {
+            val (y, m, d) = isoMatch.destructured
+            return "$y$m$d".toLongOrNull() ?: 0L
+        }
+        val text = rilis?.trim().orEmpty()
+        val months = mapOf(
+            "jan" to "01", "january" to "01",
+            "feb" to "02", "february" to "02",
+            "mar" to "03", "march" to "03",
+            "apr" to "04", "april" to "04",
+            "mei" to "05", "may" to "05",
+            "jun" to "06", "june" to "06",
+            "jul" to "07", "july" to "07",
+            "agu" to "08", "aug" to "08", "august" to "08", "agustus" to "08",
+            "sep" to "09", "september" to "09",
+            "okt" to "10", "oct" to "10", "october" to "10", "oktober" to "10",
+            "nov" to "11", "november" to "11",
+            "des" to "12", "dec" to "12", "december" to "12", "desember" to "12",
+        )
+        val m = Regex("""^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$""").find(text)
+        if (m != null) {
+            val day = m.groupValues[1].padStart(2, '0')
+            val mon = months[m.groupValues[2].lowercase()]
+            val year = m.groupValues[3]
+            if (mon != null) return "$year$mon$day".toLongOrNull() ?: 0L
+        }
+        val yearOnly = tahun?.trim()?.toLongOrNull()
+        return if (yearOnly != null) yearOnly * 10000L else 0L
     }
 
     fun isSeriesLike(): Boolean =
@@ -132,13 +169,14 @@ data class CatalogSnapshot(
     val movies: List<CatalogItem> = emptyList(),
     val series: List<CatalogItem> = emptyList(),
     val horror: List<CatalogItem> = emptyList(),
+    val indonesia: List<CatalogItem> = emptyList(),
     val anime: List<CatalogItem> = emptyList(),
     val animeMovies: List<CatalogItem> = emptyList(),
     val animeLatest: List<CatalogItem> = emptyList(),
 ) {
     fun findBySlug(slug: String): CatalogItem? {
         if (slug.isBlank()) return null
-        val all = movies + series + horror + anime + animeMovies
+        val all = movies + series + horror + indonesia + anime + animeMovies
         all.firstOrNull { it.slug == slug }?.let { return it }
         // Feed anime-terbaru: hanya anime_slug — ambil entri penuh dari katalog anime
         anime.firstOrNull { it.slug == slug || it.anime_slug == slug }?.let { return it }
@@ -151,11 +189,11 @@ data class CatalogSnapshot(
             it.anime_slug == animeSlug && (episode == null || it.episode == episode)
         }
 
-    /** Cari di seluruh katalog (film, series, horror, anime). */
+    /** Cari di seluruh katalog (film, series, horror, indonesia, anime). */
     fun search(query: String, limit: Int = 40): List<CatalogItem> {
         val q = query.trim().lowercase()
         if (q.length < 2) return emptyList()
-        val pool = (movies + series + horror + anime + animeMovies)
+        val pool = (movies + series + horror + indonesia + anime + animeMovies)
             .distinctBy { it.slug ?: "${it.anime_slug}:${it.judul}" }
         return pool
             .asSequence()

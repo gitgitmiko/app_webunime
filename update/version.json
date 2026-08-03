@@ -1,6 +1,6 @@
 {
-  "versionCode": 199,
-  "versionName": "1.9.9",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.9.9/WEBUNIME-TV-v1.9.9.apk",
-  "changelog": "Perbaiki poster blank: jangan rewrite cover.showcdnx yang masih hidup; fallback landscape jika portrait gagal"
+  "versionCode": 200,
+  "versionName": "1.10.0",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.0/WEBUNIME-TV-v1.10.0.apk",
+  "changelog": "Film Indonesia (baris baru, sort rilis terbaru); putar bun.p2pplay autoplay/pause/OK; auto pilih kualitas tertinggi; seed katalog indonesia.json"
 }

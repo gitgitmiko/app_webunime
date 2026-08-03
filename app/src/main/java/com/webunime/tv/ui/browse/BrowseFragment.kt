@@ -271,6 +271,14 @@ class BrowseFragment : BrowseSupportFragment() {
 
         addRow(R.string.row_continue, buildContinueItems(), isContinue = true)
         addRow(
+            R.string.row_indonesia,
+            snap.indonesia.sortedWith(
+                compareByDescending<CatalogItem> { it.releaseSortKey() }
+                    .thenByDescending { it.tahun?.toIntOrNull() ?: 0 }
+                    .thenBy { it.displayTitle() }
+            )
+        )
+        addRow(
             getString(R.string.row_movies_year, currentYear),
             snap.movies.filter { it.tahun == currentYear.toString() }
         )

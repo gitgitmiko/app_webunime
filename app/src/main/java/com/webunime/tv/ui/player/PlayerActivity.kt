@@ -760,6 +760,7 @@ class PlayerActivity : AppCompatActivity() {
         val isPixeldrain = url.contains("pixeldrain", ignoreCase = true)
         val isMega = url.contains("mega.nz", ignoreCase = true) ||
             url.contains("mega.co.nz", ignoreCase = true)
+        val isP2pPlay = url.contains("p2pplay", ignoreCase = true)
         val seekMs = resumePositionMs
         webView.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(
@@ -804,6 +805,9 @@ class PlayerActivity : AppCompatActivity() {
                 if (isMega) {
                     view?.evaluateJavascript(sourceFailWatcherJs, null)
                     view?.evaluateJavascript(megaAutoplayJs, null)
+                }
+                if (isP2pPlay) {
+                    view?.evaluateJavascript(p2pPlayAutoplayJs, null)
                 }
                 view?.evaluateJavascript(
                     """
@@ -893,12 +897,11 @@ class PlayerActivity : AppCompatActivity() {
             hideHandler.removeCallbacks(webFailTimeoutRunnable)
             hideHandler.postDelayed(
                 webFailTimeoutRunnable,
-                if (url.contains("mega.nz", ignoreCase = true) ||
-                    url.contains("mega.co.nz", ignoreCase = true)
-                ) {
-                    MEGA_FAIL_TIMEOUT_MS
-                } else {
-                    WEB_FAIL_TIMEOUT_MS
+                when {
+                    url.contains("mega.nz", ignoreCase = true) ||
+                        url.contains("mega.co.nz", ignoreCase = true) -> MEGA_FAIL_TIMEOUT_MS
+                    url.contains("p2pplay", ignoreCase = true) -> P2PPLAY_FAIL_TIMEOUT_MS
+                    else -> WEB_FAIL_TIMEOUT_MS
                 }
             )
         }
@@ -1075,15 +1078,20 @@ class PlayerActivity : AppCompatActivity() {
             peekPlayerChrome()
         }
         if (webView.visibility == View.VISIBLE && isOkKey(event.keyCode)) {
-            // Jangan toggle selama grace: mencegah pause tak sengaja di Hydrax.
-            if (SystemClock.uptimeMillis() < ignoreRemoteUntil) return true
+            // Grace: cegah pause Hydrax, tapi izinkan OK untuk klik poster p2pplay.
+            if (SystemClock.uptimeMillis() < ignoreRemoteUntil && !isP2pPlayUrl()) return true
             if (webVideoActive || isAbyssWrapper) {
                 if (event.action == KeyEvent.ACTION_UP) togglePlayback()
                 return true
             }
-            // Mega belum play: OK = klik tombol play (bukan navigasi D-pad di halaman).
-            if (event.action == KeyEvent.ACTION_UP && isMegaPlayerUrl()) {
-                tryMegaPlayClick()
+            // Mega / p2pplay: OK = boot poster ATAU toggle pause/play.
+            if (event.action == KeyEvent.ACTION_UP && (isMegaPlayerUrl() || isP2pPlayUrl())) {
+                if (isP2pPlayUrl()) {
+                    // Setelah video hidup, selalu toggle (jangan bootstrap play lagi).
+                    if (webVideoActive) togglePlayback() else tryP2pPlayClick()
+                } else {
+                    tryMegaPlayClick()
+                }
                 return true
             }
             showTitleThenAutoHide()
@@ -1245,6 +1253,13 @@ class PlayerActivity : AppCompatActivity() {
                 webView.url.orEmpty().contains("mega.", ignoreCase = true))
     }
 
+    private fun isP2pPlayUrl(): Boolean {
+        val u = sourceUrl
+        return u.contains("p2pplay", ignoreCase = true) ||
+            (this::webView.isInitialized &&
+                webView.url.orEmpty().contains("p2pplay", ignoreCase = true))
+    }
+
     private fun tryMegaPlayClick() {
         if (!this::webView.isInitialized) return
         webView.evaluateJavascript(
@@ -1260,6 +1275,40 @@ class PlayerActivity : AppCompatActivity() {
                 for(var i=0;i<sels.length;i++){
                   var el=document.querySelector(sels[i]);
                   if(el){ try{el.focus();}catch(e){} try{el.click(); return;}catch(e){} }
+                }
+                var v=document.querySelector("video");
+                if(v){ try{v.muted=false; v.play();}catch(e){} }
+              }catch(e){}
+            })();
+            """.trimIndent(),
+            null
+        )
+        showTitleThenAutoHide()
+    }
+
+    private fun tryP2pPlayClick() {
+        if (!this::webView.isInitialized) return
+        webView.evaluateJavascript(
+            """
+            (function(){
+              try{
+                if(typeof window.__wuP2pTryPlay==="function"){ window.__wuP2pTryPlay(); return; }
+                var c=document.getElementById('player-button-container');
+                if(c){ c.click(); return; }
+                var b=document.getElementById('player-button');
+                if(b){ b.click(); return; }
+                if(typeof jwplayer==="function"){
+                  var p=jwplayer();
+                  if(p&&typeof p.play==="function"){ p.play(); return; }
+                }
+                var sels=[
+                  ".jw-icon-display",".jw-display-icon-container",".jw-display button",
+                  ".jw-icon-playback","[aria-label='Play']","[aria-label*='Play' i]",
+                  "button[class*='play']",".play-button"
+                ];
+                for(var i=0;i<sels.length;i++){
+                  var el=document.querySelector(sels[i]);
+                  if(el){ try{el.click(); return;}catch(e){} }
                 }
                 var v=document.querySelector("video");
                 if(v){ try{v.muted=false; v.play();}catch(e){} }
@@ -1424,6 +1473,8 @@ class PlayerActivity : AppCompatActivity() {
         private const val WEB_FAIL_TIMEOUT_MS = 32_000L
         /** Mega error page biasanya cepat; jangan tunggu 32 dtk. */
         private const val MEGA_FAIL_TIMEOUT_MS = 14_000L
+        /** bun.p2pplay SPA + JWPlayer butuh decrypt + ads setup lebih lama. */
+        private const val P2PPLAY_FAIL_TIMEOUT_MS = 55_000L
         private const val PROGRESS_TICK_MS = 10_000L
         private const val SEEK_DEBOUNCE_MS = 140L
         private const val REMOTE_GRACE_MS = 1_200L
@@ -1561,6 +1612,170 @@ class PlayerActivity : AppCompatActivity() {
             })();
         """.trimIndent()
 
+    /** Autostart JWPlayer di bun.p2pplay.pro (+ hook progress). */
+    private val p2pPlayAutoplayJs: String = """
+            (function(){
+              if(window.__wuP2pPlay) return;
+              window.__wuP2pPlay=true;
+              window.__wuP2pStarted=false;
+              var autoIv=null;
+              function stopAuto(){
+                window.__wuP2pStarted=true;
+                if(autoIv){ clearInterval(autoIv); autoIv=null; }
+              }
+              function notifyPlay(){
+                stopAuto();
+                try{WebunimePlayback.onPlay();}catch(e){}
+              }
+              function notifyPause(){ try{WebunimePlayback.onPause();}catch(e){} }
+              function notifyEnded(){ try{WebunimePlayback.onEnded();}catch(e){} }
+              function hookJw(p){
+                try{
+                  if(!p||p.__wuHooked) return;
+                  p.__wuHooked=true;
+                  p.on('play', function(){ notifyPlay(); pickBestQuality(p); });
+                  p.on('levels', function(){ pickBestQuality(p); });
+                  p.on('visualQuality', function(){});
+                  p.on('pause', notifyPause);
+                  p.on('complete', notifyEnded);
+                  p.on('time', function(e){
+                    try{
+                      WebunimePlayback.onProgress(e.position||0, e.duration||0);
+                    }catch(err){}
+                  });
+                  // Levels HLS sering baru muncul setelah play sebentar
+                  setTimeout(function(){ pickBestQuality(p); }, 800);
+                  setTimeout(function(){ pickBestQuality(p); }, 2500);
+                  setTimeout(function(){ pickBestQuality(p); }, 5000);
+                }catch(e){}
+              }
+              function scoreLevel(l){
+                if(!l) return -1;
+                var label=String(l.label||l.name||"").toLowerCase();
+                var h=Number(l.height)||0;
+                if(/auto/.test(label) && !h) return 0; // Auto terakhir dipilih hanya jika tak ada opsi lain
+                if(h>=1000 || /1080|fhd|full\s*hd/.test(label)) return 1080 + h;
+                if(h>=700 || (/\b720\b|\bhd\b/.test(label) && !/1080/.test(label))) return 720 + h;
+                if(h>=400 || /\b480\b/.test(label)) return 480 + h;
+                if(h>0) return h;
+                if(/high|tinggi/.test(label)) return 900;
+                if(/medium|sedang/.test(label)) return 500;
+                if(/low|rendah/.test(label)) return 200;
+                return 1;
+              }
+              function pickBestQuality(p){
+                try{
+                  if(!p||typeof p.getQualityLevels!=="function"||typeof p.setCurrentQuality!=="function") return;
+                  var levels=p.getQualityLevels()||[];
+                  if(!levels.length) return;
+                  var best=-1, bestScore=-1;
+                  for(var i=0;i<levels.length;i++){
+                    var s=scoreLevel(levels[i]);
+                    if(s>bestScore){ bestScore=s; best=i; }
+                  }
+                  if(best<0) return;
+                  var cur=typeof p.getCurrentQuality==="function"?p.getCurrentQuality():-1;
+                  if(cur!==best) p.setCurrentQuality(best);
+                }catch(e){}
+              }
+              function clickPoster(){
+                try{
+                  var c=document.getElementById('player-button-container');
+                  if(c){ c.click(); return true; }
+                  var b=document.getElementById('player-button');
+                  if(b){ b.click(); return true; }
+                  var el=document.querySelector(
+                    '#player-button-container,#player-button,.player-button,[class*="dot-pulse"]'
+                  );
+                  if(el){
+                    var t=el.closest('#player-button-container')||el;
+                    t.click();
+                    return true;
+                  }
+                }catch(e){}
+                return false;
+              }
+              function tryPlay(){
+                // Sudah start: jangan paksa play lagi (biar pause user tidak di-override)
+                if(window.__wuP2pStarted) return true;
+                if(document.getElementById('player-button-container') ||
+                   document.getElementById('player-button')){
+                  return clickPoster();
+                }
+                try{
+                  if(typeof jwplayer==="function"){
+                    var p=jwplayer();
+                    if(p){
+                      hookJw(p);
+                      var st=typeof p.getState==="function"?p.getState():"";
+                      if(st==="playing"||st==="buffering"){
+                        stopAuto();
+                        return true;
+                      }
+                      if(typeof p.play==="function"){ p.play(); }
+                      return false;
+                    }
+                  }
+                }catch(e){}
+                try{
+                  var sels=[
+                    ".jw-icon-display",".jw-display-icon-container",".jw-display button",
+                    ".jw-icon-playback","[aria-label='Play']","button[class*='play']"
+                  ];
+                  for(var i=0;i<sels.length;i++){
+                    var el=document.querySelector(sels[i]);
+                    if(el){ el.click(); return false; }
+                  }
+                }catch(e){}
+                try{
+                  var v=document.querySelector("video");
+                  if(v){
+                    if(!v.paused&&!v.ended){ stopAuto(); notifyPlay(); return true; }
+                    v.muted=false; v.play(); return false;
+                  }
+                }catch(e){}
+                return false;
+              }
+              window.__wuP2pTryPlay=function(){
+                // Poster masih ada → boot play. Sudah di JWPlayer → toggle pause/play saja.
+                if(document.getElementById('player-button-container') ||
+                   document.getElementById('player-button')){
+                  tryPlay();
+                  return;
+                }
+                try{
+                  if(typeof jwplayer==="function"){
+                    var p=jwplayer();
+                    if(p){
+                      hookJw(p);
+                      var st=typeof p.getState==="function"?p.getState():"";
+                      if(st==="playing"||st==="buffering"){
+                        stopAuto();
+                        if(typeof p.pause==="function") p.pause();
+                      } else if(typeof p.play==="function") {
+                        p.play();
+                      }
+                      return;
+                    }
+                  }
+                }catch(e){}
+                try{
+                  if(typeof window.__wuToggle==="function"){ window.__wuToggle(); return; }
+                  var v=document.querySelector("video");
+                  if(v){ if(v.paused) v.play(); else v.pause(); }
+                }catch(e){}
+              };
+              var n=0;
+              autoIv=setInterval(function(){
+                if(window.__wuP2pStarted || ++n>60){
+                  if(autoIv){ clearInterval(autoIv); autoIv=null; }
+                  return;
+                }
+                tryPlay();
+              }, 600);
+            })();
+        """.trimIndent()
+
     /** Inject di setiap halaman WebView (termasuk anime Mega/Blogger yang tidak lewat shim proxy). */
     private val universalPlayerJs: String = """
             (function(){
@@ -1646,13 +1861,15 @@ class PlayerActivity : AppCompatActivity() {
               if(typeof window.__wuToggle!=="function"){
                 window.__wuToggle=function(){
                   try{
-                    var v=__wuVid();
-                    if(v){ if(v.paused) v.play(); else v.pause(); return; }
+                    // Utamakan JWPlayer (p2pplay) — pause video mentah sering di-resume player.
                     var jp=__wuJw();
                     if(jp){
                       var s=typeof jp.getState==="function"?jp.getState():"";
                       if(s==="playing"||s==="buffering") jp.pause(); else jp.play();
+                      return;
                     }
+                    var v=__wuVid();
+                    if(v){ if(v.paused) v.play(); else v.pause(); }
                   }catch(e){}
                 };
               }

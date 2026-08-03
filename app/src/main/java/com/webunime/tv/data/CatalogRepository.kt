@@ -43,6 +43,7 @@ class CatalogRepository(private val context: Context) {
         snapshot.movies.isNotEmpty() ||
             snapshot.series.isNotEmpty() ||
             snapshot.horror.isNotEmpty() ||
+            snapshot.indonesia.isNotEmpty() ||
             snapshot.anime.isNotEmpty() ||
             snapshot.animeMovies.isNotEmpty() ||
             snapshot.animeLatest.isNotEmpty()
@@ -63,21 +64,24 @@ class CatalogRepository(private val context: Context) {
         return loadHeavyCatalog()
     }
 
-    /** Film / horror / anime terbaru — cepat, cukup untuk isi layar pertama. */
+    /** Film / horror / indonesia / anime terbaru — cepat, cukup untuk isi layar pertama. */
     suspend fun loadBrowseFirst(): CatalogSnapshot = withContext(Dispatchers.IO) {
         if (snapshot.movies.isNotEmpty() || snapshot.horror.isNotEmpty() ||
+            snapshot.indonesia.isNotEmpty() ||
             snapshot.animeMovies.isNotEmpty() || snapshot.animeLatest.isNotEmpty()
         ) {
             return@withContext snapshot
         }
         val movies = readList("movies.json")
         val horror = readList("horror.json")
+        val indonesia = readList("indonesia.json")
         val animeMovies = readList("anime-movies.json")
         val animeLatest = readList("anime-latest.json")
         snapshot = enrichThumbnails(
             snapshot.copy(
                 movies = movies,
                 horror = horror,
+                indonesia = indonesia,
                 animeMovies = animeMovies,
                 animeLatest = animeLatest,
             )
@@ -233,6 +237,7 @@ class CatalogRepository(private val context: Context) {
             "movies.json",
             "series.json",
             "horror.json",
+            "indonesia.json",
             "anime.json",
             "anime-movies.json",
             "anime-latest.json",

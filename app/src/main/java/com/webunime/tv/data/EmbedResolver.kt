@@ -135,7 +135,8 @@ object EmbedResolver {
             host.contains("pixeldrain") ||
             host.contains("googleapis") ||
             host.contains("googleusercontent") ||
-            host.contains("r2.cloudflarestorage")
+            host.contains("r2.cloudflarestorage") ||
+            host.contains("p2pplay")
     }
 
     private fun resolvePlayeriframe(sourceUrl: String): String =

@@ -45,9 +45,13 @@ object PlayerRouter {
             (key == "hydrax" && (u.contains("abyss") || u.contains("gn1r5n")))
     }
 
-    private fun isP2p(p: PlayerServer): Boolean =
-        (p.server ?: "").lowercase().contains("p2p") ||
-            (p.label ?: "").lowercase().contains("p2p")
+    private fun isP2p(p: PlayerServer): Boolean {
+        val s = (p.server ?: "").lowercase()
+        val l = (p.label ?: "").lowercase()
+        val u = (p.url ?: "").lowercase()
+        return s.contains("p2p") || l.contains("p2p") ||
+            u.contains("p2pplay") || u.contains("p2pplay.pro")
+    }
 
     /**
      * Anime: Mega 1080 → 720 → 480 → Wibufile 1080 → 720 → 480 → Blogspot → lainnya.
@@ -127,6 +131,7 @@ object PlayerRouter {
             host.contains("filedon") -> "https://filedon.co/"
             host.contains("blogger") || host.contains("google") -> "https://www.blogger.com/"
             host.contains("mega.nz") -> "https://mega.nz/"
+            host.contains("p2pplay") -> "https://kconaz.com/"
             else -> null
         }
     }
