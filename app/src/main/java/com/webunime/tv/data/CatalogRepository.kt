@@ -192,7 +192,7 @@ class CatalogRepository(private val context: Context) {
     /**
      * Normalisasi URL katalog:
      * - poster/image.showcdnx → poster.lk21official (cover.showcdnx tetap)
-     * - playeriframe.sbs → videonode.de (domain wrapper lama 404)
+     * - host player lama → baru (lihat [PLAYER_HOST_ALIASES])
      */
     private fun normalizeCatalogUrls(item: CatalogItem): CatalogItem {
         val thumb = rewriteDeadPosterHost(item.thumbnail)
@@ -236,12 +236,25 @@ class CatalogRepository(private val context: Context) {
             )
     }
 
+    /**
+     * Alias host player. Kalau domain berubah lagi, tambah entri di sini
+     * (sinkron dengan WEBUNIME scripts/lib/player-host-aliases.js).
+     */
+    private val playerHostAliases = listOf(
+        "playeriframe.sbs" to "videonode.de",
+    )
+
     private fun rewritePlayerHost(url: String?): String? {
         if (url.isNullOrBlank()) return url
-        return url.replace(
-            Regex("""(?i)https?://playeriframe\.sbs"""),
-            "https://videonode.de",
-        )
+        var out = url
+        for ((from, to) in playerHostAliases) {
+            if (from.isBlank() || to.isBlank() || from.equals(to, ignoreCase = true)) continue
+            out = out.replace(
+                Regex("""(?i)https?://${Regex.escape(from)}"""),
+                "https://$to",
+            )
+        }
+        return out
     }
 
     private fun downloadAndCache(fileName: String) {
