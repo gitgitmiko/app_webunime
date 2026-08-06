@@ -1,6 +1,6 @@
 {
-  "versionCode": 200,
-  "versionName": "1.10.0",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.0/WEBUNIME-TV-v1.10.0.apk",
-  "changelog": "Perbaiki server film mati: rewrite playeriframe.sbs → videonode.de (Goblin II dll)"
+  "versionCode": 201,
+  "versionName": "1.10.1",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.1/WEBUNIME-TV-v1.10.1.apk",
+  "changelog": "Perbaiki Goblin II & film lain: server playeriframe.sbs (404) otomatis ke videonode.de"
 }
