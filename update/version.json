@@ -1,6 +1,6 @@
 {
-  "versionCode": 201,
-  "versionName": "1.10.1",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.1/WEBUNIME-TV-v1.10.1.apk",
-  "changelog": "Perbaiki Goblin II & film lain: server playeriframe.sbs (404) otomatis ke videonode.de"
+  "versionCode": 202,
+  "versionName": "1.10.2",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.2/WEBUNIME-TV-v1.10.2.apk",
+  "changelog": "Hero carousel di browse: backdrop + info film unggulan berputar, ikut fokus kartu"
 }

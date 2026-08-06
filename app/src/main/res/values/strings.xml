@@ -14,6 +14,12 @@
     <string name="row_search_results">Hasil pencarian</string>
     <string name="row_continue">Lanjutkan menonton</string>
     <string name="play">▶  Putar</string>
+    <string name="hero_watch">▶  Tonton</string>
+    <string name="hero_badge_movie">FILM</string>
+    <string name="hero_badge_series">SERIES</string>
+    <string name="hero_badge_anime">ANIME</string>
+    <string name="hero_badge_horror">HOROR</string>
+    <string name="hero_badge_continue">LANJUTKAN</string>
     <string name="resume_play">▶  Lanjutkan</string>
     <string name="failover_server">Server bermasalah · coba %1$s</string>
     <string name="episodes">Episode</string>

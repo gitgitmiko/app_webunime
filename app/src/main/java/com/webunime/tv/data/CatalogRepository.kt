@@ -246,7 +246,7 @@ class CatalogRepository(private val context: Context) {
 
     private fun rewritePlayerHost(url: String?): String? {
         if (url.isNullOrBlank()) return url
-        var out = url
+        var out: String = url
         for ((from, to) in playerHostAliases) {
             if (from.isBlank() || to.isBlank() || from.equals(to, ignoreCase = true)) continue
             out = out.replace(

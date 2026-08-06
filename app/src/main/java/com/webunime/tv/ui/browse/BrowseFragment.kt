@@ -2,13 +2,9 @@ package com.webunime.tv.ui.browse
 
 import android.content.Intent
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import androidx.leanback.app.BrowseSupportFragment
 import androidx.leanback.widget.ArrayObjectAdapter
@@ -19,7 +15,6 @@ import androidx.leanback.widget.ListRowPresenter
 import androidx.leanback.widget.OnItemViewClickedListener
 import androidx.leanback.widget.OnItemViewSelectedListener
 import androidx.leanback.widget.VerticalGridView
-import com.bumptech.glide.Glide
 import com.webunime.tv.R
 import com.webunime.tv.WebunimeApp
 import com.webunime.tv.data.CatalogItem
@@ -27,7 +22,7 @@ import com.webunime.tv.ui.search.SearchActivity
 import java.util.Calendar
 
 /**
- * Browse Netflix-style: backdrop ImageView di MainActivity berubah mengikuti item fokus.
+ * Browse Netflix-style: hero carousel + backdrop mengikuti item fokus.
  */
 class BrowseFragment : BrowseSupportFragment() {
 
@@ -35,10 +30,7 @@ class BrowseFragment : BrowseSupportFragment() {
     private val cardPresenter = CardPresenter()
     private val rowPaging = mutableMapOf<Long, RowPagingState>()
 
-    private var backdropView: ImageView? = null
-    private val bgHandler = Handler(Looper.getMainLooper())
-    private var pendingThumb: String? = null
-    private var lastThumb: String? = null
+    private var hero: HeroCarouselController? = null
 
     /** Posisi browse yang dipertahankan saat kembali dari Detail/Player. */
     private var lastRowIndex: Int = 0
@@ -51,17 +43,6 @@ class BrowseFragment : BrowseSupportFragment() {
 
     private val restoreSelectionRunnable = Runnable { restoreBrowseSelection() }
     private val focusGridRunnable = Runnable { focusRowsGrid() }
-
-    private val applyBackground = Runnable {
-        val url = pendingThumb
-        if (url.isNullOrBlank()) {
-            setDefaultBackground()
-            return@Runnable
-        }
-        if (url == lastThumb) return@Runnable
-        lastThumb = url
-        loadBackground(url)
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -84,8 +65,16 @@ class BrowseFragment : BrowseSupportFragment() {
         brandColor = Color.TRANSPARENT
         searchAffordanceColor = ContextCompat.getColor(requireContext(), R.color.wu_accent)
 
-        backdropView = activity?.findViewById(R.id.browseBackdrop)
-        setDefaultBackground()
+        hero = HeroCarouselController.attach(requireActivity()) { item ->
+            if (item.type == TYPE_CONTINUE) {
+                (activity as? MainActivity)?.openContinueWatch(item)
+                return@attach
+            }
+            val slug = item.slug?.takeIf { it.isNotBlank() }
+                ?: item.anime_slug?.takeIf { it.isNotBlank() }
+                ?: return@attach
+            (activity as? MainActivity)?.openDetail(slug, item.episode)
+        }
 
         setOnSearchClickedListener {
             startActivity(Intent(requireActivity(), SearchActivity::class.java))
@@ -112,10 +101,7 @@ class BrowseFragment : BrowseSupportFragment() {
 
         onItemViewSelectedListener = OnItemViewSelectedListener { _, item, rowViewHolder, row ->
             val catalog = item as? CatalogItem
-            scheduleBackground(
-                catalog?.thumbnail_landscape?.takeIf { it.isNotBlank() }
-                    ?: catalog?.thumbnail
-            )
+            updateHeroForSelection(catalog)
             val listRow = row as? ListRow ?: return@OnItemViewSelectedListener
             val selectedIndex =
                 (rowViewHolder as? ListRowPresenter.ViewHolder)?.selectedPosition ?: -1
@@ -128,9 +114,9 @@ class BrowseFragment : BrowseSupportFragment() {
     }
 
     override fun onPause() {
-        // Akan kembali dari Detail/Player → pulihkan posisi sekali di onResume.
         pendingPositionRestore = true
         cancelPendingRestores()
+        hero?.pauseRotate()
         super.onPause()
     }
 
@@ -147,9 +133,8 @@ class BrowseFragment : BrowseSupportFragment() {
 
     override fun onDestroy() {
         cancelPendingRestores()
-        bgHandler.removeCallbacks(applyBackground)
-        backdropView?.let { runCatching { Glide.with(it).clear(it) } }
-        backdropView = null
+        hero?.release()
+        hero = null
         super.onDestroy()
     }
 
@@ -184,6 +169,16 @@ class BrowseFragment : BrowseSupportFragment() {
         grid.requestFocus()
     }
 
+    private fun updateHeroForSelection(catalog: CatalogItem?) {
+        val h = hero ?: return
+        // Di baris Lanjutkan / kosong → putar film unggulan lagi.
+        if (catalog == null || catalog.type == TYPE_CONTINUE) {
+            h.resumeRotate()
+            return
+        }
+        h.onBrowseItemFocused(catalog)
+    }
+
     private fun clearOpaqueBackgrounds(root: View) {
         root.background = null
         root.setBackgroundColor(Color.TRANSPARENT)
@@ -192,7 +187,6 @@ class BrowseFragment : BrowseSupportFragment() {
             it.setBackgroundColor(Color.TRANSPARENT)
         }
         rowsSupportFragment?.verticalGridView?.setBackgroundColor(Color.TRANSPARENT)
-        // Leanback sering punya container penuh di child pertama.
         if (root is ViewGroup) {
             for (i in 0 until root.childCount) {
                 val child = root.getChildAt(i)
@@ -202,34 +196,16 @@ class BrowseFragment : BrowseSupportFragment() {
                 }
             }
         }
-    }
-
-    private fun scheduleBackground(thumbUrl: String?) {
-        pendingThumb = thumbUrl?.takeIf { it.isNotBlank() }
-        bgHandler.removeCallbacks(applyBackground)
-        bgHandler.postDelayed(applyBackground, BACKGROUND_DELAY_MS)
-    }
-
-    private fun setDefaultBackground() {
-        lastThumb = null
-        val iv = backdropView ?: activity?.findViewById(R.id.browseBackdrop)
-        backdropView = iv
-        if (iv != null) {
-            runCatching { Glide.with(iv).clear(iv) }
-            iv.setImageDrawable(ColorDrawable(ContextCompat.getColor(requireContext(), R.color.wu_bg)))
+        // Fokus naik dari baris kartu bisa ke tombol Tonton hero.
+        val grid = rowsSupportFragment?.verticalGridView
+        val watch = activity?.findViewById<View>(R.id.browseHeroWatch)
+        if (grid != null && watch != null) {
+            if (grid.id == View.NO_ID) {
+                grid.id = View.generateViewId()
+            }
+            grid.nextFocusUpId = R.id.browseHeroWatch
+            watch.nextFocusDownId = grid.id
         }
-    }
-
-    private fun loadBackground(url: String) {
-        if (!isAdded) return
-        val iv = backdropView ?: activity?.findViewById(R.id.browseBackdrop) ?: return
-        backdropView = iv
-        Glide.with(iv)
-            .load(url)
-            .centerCrop()
-            .placeholder(ColorDrawable(ContextCompat.getColor(requireContext(), R.color.wu_bg)))
-            .error(ColorDrawable(ContextCompat.getColor(requireContext(), R.color.wu_bg)))
-            .into(iv)
     }
 
     fun reloadRows() {
@@ -265,9 +241,15 @@ class BrowseFragment : BrowseSupportFragment() {
             addRow(getString(titleRes), items, isContinue)
 
         val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+        val yearMovies = snap.movies.filter { it.tahun == currentYear.toString() }
         val familyMovies = snap.movies.filter { item ->
             item.genre.orEmpty().any { it.equals("Family", ignoreCase = true) }
         }
+        val featured = yearMovies
+            .filter { !it.thumbnail_landscape.isNullOrBlank() }
+            .take(FEATURED_LIMIT)
+            .ifEmpty { yearMovies.take(FEATURED_LIMIT) }
+        hero?.setFeatured(featured)
 
         addRow(R.string.row_continue, buildContinueItems(), isContinue = true)
         addRow(
@@ -280,7 +262,7 @@ class BrowseFragment : BrowseSupportFragment() {
         )
         addRow(
             getString(R.string.row_movies_year, currentYear),
-            snap.movies.filter { it.tahun == currentYear.toString() }
+            yearMovies
         )
         addRow(R.string.row_family, familyMovies)
         addRow(R.string.row_horror, snap.horror)
@@ -397,9 +379,9 @@ class BrowseFragment : BrowseSupportFragment() {
     )
 
     companion object {
-        private const val BACKGROUND_DELAY_MS = 350L
         private const val PAGE_SIZE = 10
         private const val PREFETCH_THRESHOLD = 3
+        private const val FEATURED_LIMIT = 10
         const val TYPE_CONTINUE = "continue"
 
         private fun formatContinueMeta(positionMs: Long, durationMs: Long): String {

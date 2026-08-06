@@ -11,8 +11,8 @@ android {
         applicationId = "com.webunime.tv"
         minSdk = 21
         targetSdk = 34
-        versionCode = 201
-        versionName = "1.10.1"
+        versionCode = 202
+        versionName = "1.10.2"
     }
 
     buildTypes {
