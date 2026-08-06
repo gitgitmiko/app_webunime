@@ -185,17 +185,42 @@ class CatalogRepository(private val context: Context) {
         } ?: return emptyList()
 
         return runCatching {
-            listAdapter.fromJson(json).orEmpty().map { normalizePosterUrls(it) }
+            listAdapter.fromJson(json).orEmpty().map { normalizeCatalogUrls(it) }
         }.getOrDefault(emptyList())
     }
 
-    /** CDN poster/image.showcdnx.com sering NXDOMAIN — mirror path di poster.lk21official.cc.
-     * cover.showcdnx.com masih hidup: jangan di-rewrite (mirror cover.lk21 sering 404). */
-    private fun normalizePosterUrls(item: CatalogItem): CatalogItem {
+    /**
+     * Normalisasi URL katalog:
+     * - poster/image.showcdnx → poster.lk21official (cover.showcdnx tetap)
+     * - playeriframe.sbs → videonode.de (domain wrapper lama 404)
+     */
+    private fun normalizeCatalogUrls(item: CatalogItem): CatalogItem {
         val thumb = rewriteDeadPosterHost(item.thumbnail)
         val land = rewriteDeadPosterHost(item.thumbnail_landscape)
-        if (thumb == item.thumbnail && land == item.thumbnail_landscape) return item
-        return item.copy(thumbnail = thumb, thumbnail_landscape = land)
+        val players = item.players?.map { p ->
+            val u = rewritePlayerHost(p.url)
+            if (u == p.url) p else p.copy(url = u)
+        }
+        val episodes = item.episodes?.map { ep ->
+            val epsPlayers = ep.players?.map { p ->
+                val u = rewritePlayerHost(p.url)
+                if (u == p.url) p else p.copy(url = u)
+            }
+            if (epsPlayers == ep.players) ep else ep.copy(players = epsPlayers)
+        }
+        if (thumb == item.thumbnail &&
+            land == item.thumbnail_landscape &&
+            players == item.players &&
+            episodes == item.episodes
+        ) {
+            return item
+        }
+        return item.copy(
+            thumbnail = thumb,
+            thumbnail_landscape = land,
+            players = players,
+            episodes = episodes,
+        )
     }
 
     private fun rewriteDeadPosterHost(url: String?): String? {
@@ -209,6 +234,14 @@ class CatalogRepository(private val context: Context) {
                 Regex("""(?i)https?://image\.showcdnx\.com"""),
                 "https://poster.lk21official.cc",
             )
+    }
+
+    private fun rewritePlayerHost(url: String?): String? {
+        if (url.isNullOrBlank()) return url
+        return url.replace(
+            Regex("""(?i)https?://playeriframe\.sbs"""),
+            "https://videonode.de",
+        )
     }
 
     private fun downloadAndCache(fileName: String) {
