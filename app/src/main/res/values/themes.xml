@@ -10,6 +10,8 @@
         <item name="defaultSearchBrightColor">@color/wu_accent</item>
         <item name="browseTitleTextStyle">@style/Wu.BrowseTitle</item>
         <item name="rowHeaderStyle">@style/Wu.RowHeader</item>
+        <!-- Dorong baris (Lanjutkan, dll.) di bawah band hero -->
+        <item name="browseRowsMarginTop">@dimen/browse_rows_margin_top</item>
     </style>
 
     <style name="Wu.BrowseTitle" parent="TextAppearance.Leanback.Title">

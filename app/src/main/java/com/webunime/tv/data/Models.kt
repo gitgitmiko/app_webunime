@@ -16,6 +16,11 @@ data class CatalogItem(
      * Diisi scraper (TMDB → situs); kosong = app fallback crop portrait.
      */
     val thumbnail_landscape: String? = null,
+    /**
+     * YouTube video id trailer (TMDB). Dipakai hero carousel autoplay ringan.
+     * Kosong = tetap backdrop gambar saja.
+     */
+    val trailer_youtube: String? = null,
     /** Cadangan bila [thumbnail] gagal load (mis. poster 404 → screenshot episode). Tidak dari JSON. */
     @Json(ignore = true)
     val thumbnailAlt: String? = null,

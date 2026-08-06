@@ -11,8 +11,29 @@ android {
         applicationId = "com.webunime.tv"
         minSdk = 21
         targetSdk = 34
-        versionCode = 202
-        versionName = "1.10.2"
+        versionCode = 203
+        versionName = "1.10.3"
+
+        // Opsional: taruh TMDB_API_KEY=... di local.properties (jangan commit).
+        val tmdbKey = run {
+            val localFile = rootProject.file("local.properties")
+            val fromLocal = if (localFile.exists()) {
+                localFile.readLines()
+                    .firstOrNull { it.startsWith("TMDB_API_KEY=") }
+                    ?.substringAfter("=")
+                    ?.trim()
+                    ?.trim('"')
+                    .orEmpty()
+            } else {
+                ""
+            }
+            fromLocal.ifBlank {
+                (project.findProperty("TMDB_API_KEY") as? String)?.trim().orEmpty()
+            }.ifBlank {
+                System.getenv("TMDB_API_KEY")?.trim().orEmpty()
+            }.replace("\"", "")
+        }
+        buildConfigField("String", "TMDB_API_KEY", "\"$tmdbKey\"")
     }
 
     buildTypes {

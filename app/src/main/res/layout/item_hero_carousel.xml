@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Baris hero dalam VerticalGridView — ikut scroll bersama list di bawahnya. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/heroCarouselRoot"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/browse_hero_row_height"
+    android:background="@android:color/transparent"
+    android:clickable="true"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:paddingStart="48dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="56dp"
+    android:paddingBottom="16dp">
+
+    <TextView
+        android:id="@+id/browseHeroBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_hero_badge"
+        android:focusable="false"
+        android:paddingLeft="10dp"
+        android:paddingTop="4dp"
+        android:paddingRight="10dp"
+        android:paddingBottom="4dp"
+        android:textColor="@color/wu_text"
+        android:textSize="11sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/browseHeroTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:ellipsize="end"
+        android:focusable="false"
+        android:maxLines="2"
+        android:textColor="@color/wu_text"
+        android:textSize="28sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/browseHeroMeta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:ellipsize="end"
+        android:focusable="false"
+        android:maxLines="1"
+        android:textColor="@color/wu_text_dim"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/browseHeroSynopsis"
+        android:layout_width="@dimen/browse_hero_panel_width"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:ellipsize="end"
+        android:focusable="false"
+        android:lineSpacingExtra="2dp"
+        android:maxLines="3"
+        android:textColor="@color/wu_text_dim"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/browseHeroHint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:focusable="false"
+        android:text="@string/hero_nav_hint"
+        android:textColor="@color/wu_text_muted"
+        android:textSize="12sp" />
+
+    <LinearLayout
+        android:id="@+id/browseHeroDots"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:focusable="false"
+        android:gravity="center_vertical"
+        android:orientation="horizontal" />
+</LinearLayout>

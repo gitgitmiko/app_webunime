@@ -1,6 +1,6 @@
 {
-  "versionCode": 202,
-  "versionName": "1.10.2",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.2/WEBUNIME-TV-v1.10.2.apk",
-  "changelog": "Hero carousel di browse: backdrop + info film unggulan berputar, ikut fokus kartu"
+  "versionCode": 203,
+  "versionName": "1.10.3",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.3/WEBUNIME-TV-v1.10.3.apk",
+  "changelog": "Hero carousel scrollable + trailer YouTube setelah 2 detik fokus (rating >7). Geser manual ←/→, OK tonton."
 }
