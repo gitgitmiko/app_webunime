@@ -573,8 +573,16 @@ class PlayerActivity : AppCompatActivity() {
             httpFactory.setDefaultRequestProperties(headers)
         }
 
+        // Buffer lebih kecil: hemat RAM TV, 1080p cenderung lebih stabil (kurang GC/pressure).
+        // Default tetap pilih server 1080; yang diubah hanya seberapa banyak yang di-buffer.
         val loadControl = DefaultLoadControl.Builder()
-            .setBufferDurationsMs(50_000, 180_000, 5_000, 8_000)
+            .setBufferDurationsMs(
+                /* minBufferMs */ 12_000,
+                /* maxBufferMs */ 45_000,
+                /* bufferForPlaybackMs */ 1_500,
+                /* bufferForPlaybackAfterRebufferMs */ 3_000,
+            )
+            .setTargetBufferBytes(18 * 1024 * 1024)
             .setPrioritizeTimeOverSizeThresholds(true)
             .build()
 

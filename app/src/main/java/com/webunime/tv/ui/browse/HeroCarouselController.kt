@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Context
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
-import android.os.SystemClock
 import android.view.KeyEvent
 import android.view.View
 import android.widget.ImageView
@@ -16,23 +15,19 @@ import com.webunime.tv.R
 import com.webunime.tv.data.CatalogItem
 
 /**
- * Hero carousel: backdrop + teks di baris Leanback.
- * Geser manual ←/→; OK buka detail.
- * Trailer YouTube: autoplay setelah 2 detik fokus (lihat [HeroTrailerPlayer]).
+ * Hero carousel: backdrop landscape + teks di baris Leanback.
+ * Geser manual ←/→; OK buka detail. Tanpa trailer video.
  */
 class HeroCarouselController(
     private val context: Context,
     private val backdrop: ImageView,
-    private val trailer: HeroTrailerPlayer?,
     private val onWatch: (CatalogItem) -> Unit,
 ) {
     private var featured: List<CatalogItem> = emptyList()
     private var index = 0
     private var current: CatalogItem? = null
     private var lastBackdropUrl: String? = null
-    /** True saat mode carousel unggulan (bukan ikut fokus kartu baris). */
     private var featuredMode = true
-    private var trailerFocusAtMs: Long = 0L
 
     private var panel: View? = null
     private var badge: TextView? = null
@@ -80,9 +75,6 @@ class HeroCarouselController(
             if (hasFocus) {
                 showFeaturedMode()
                 hint?.visibility = if (featured.size > 1) View.VISIBLE else View.GONE
-                scheduleTrailerIfNeeded()
-            } else {
-                trailer?.cancel()
             }
         }
 
@@ -92,7 +84,6 @@ class HeroCarouselController(
     fun unbindHeroView(view: View?) {
         if (view == null) return
         if (panel !== view) return
-        trailer?.cancel()
         view.setOnKeyListener(null)
         view.setOnClickListener(null)
         view.onFocusChangeListener = null
@@ -109,31 +100,26 @@ class HeroCarouselController(
         featured = items
         index = 0
         featuredMode = true
-        trailer?.cancel()
         if (featured.isEmpty()) {
             current = null
             return
         }
         showItem(featured[0], updateDots = true)
         updateChrome()
-        scheduleTrailerIfNeeded()
     }
 
     fun currentItem(): CatalogItem? = current
 
-    /** Fokus kartu di baris konten: backdrop ikut item; hentikan trailer. */
     fun onBrowseItemFocused(item: CatalogItem?) {
         if (item == null) {
             showFeaturedMode()
             return
         }
         featuredMode = false
-        trailer?.cancel()
         updateChrome()
         showItem(item, updateDots = false)
     }
 
-    /** Kembali ke slide unggulan (hero fokus / baris Lanjutkan). */
     fun showFeaturedMode() {
         if (featured.isEmpty()) return
         featuredMode = true
@@ -147,12 +133,10 @@ class HeroCarouselController(
         } else {
             showItem(featured[index.coerceIn(0, featured.lastIndex)], updateDots = true)
         }
-        scheduleTrailerIfNeeded()
     }
 
     fun pauseRotate() {
         featuredMode = false
-        trailer?.cancel()
         updateChrome()
     }
 
@@ -164,7 +148,6 @@ class HeroCarouselController(
         index = (index + 1) % featured.size
         showItem(featured[index], updateDots = true)
         updateChrome()
-        scheduleTrailerIfNeeded()
     }
 
     fun showPrev() {
@@ -173,53 +156,18 @@ class HeroCarouselController(
         index = if (index <= 0) featured.lastIndex else index - 1
         showItem(featured[index], updateDots = true)
         updateChrome()
-        scheduleTrailerIfNeeded()
     }
 
     fun openCurrent() {
         val item = current ?: return
-        trailer?.cancel()
         onWatch(item)
     }
 
     fun release() {
-        trailer?.release()
         unbindHeroView(panel)
         runCatching { Glide.with(backdrop).clear(backdrop) }
         current = null
         featured = emptyList()
-    }
-
-    private fun scheduleTrailerIfNeeded() {
-        if (!featuredMode) {
-            trailer?.cancel()
-            return
-        }
-        val focused = panel?.hasFocus() == true
-        if (!focused) {
-            trailer?.cancel()
-            return
-        }
-        val item = current ?: return
-        trailerFocusAtMs = SystemClock.uptimeMillis()
-        val known = TrailerResolver.cachedOrField(item)
-        if (!known.isNullOrBlank()) {
-            trailer?.schedule(known, HeroTrailerPlayer.FOCUS_DELAY_MS)
-            return
-        }
-        trailer?.cancel()
-        val slug = item.slug
-        val focusToken = trailerFocusAtMs
-        TrailerResolver.resolveAsync(item) { key ->
-            if (!featuredMode) return@resolveAsync
-            if (panel?.hasFocus() != true) return@resolveAsync
-            if (current?.slug != slug) return@resolveAsync
-            if (trailerFocusAtMs != focusToken) return@resolveAsync
-            if (key.isNullOrBlank()) return@resolveAsync
-            val elapsed = SystemClock.uptimeMillis() - focusToken
-            val remain = (HeroTrailerPlayer.FOCUS_DELAY_MS - elapsed).coerceAtLeast(0L)
-            trailer?.schedule(key, remain)
-        }
     }
 
     private fun updateChrome() {
@@ -234,7 +182,6 @@ class HeroCarouselController(
         val item = current ?: featured.getOrNull(index) ?: return
         showItem(item, updateDots = true)
         updateChrome()
-        scheduleTrailerIfNeeded()
     }
 
     private fun showItem(item: CatalogItem, updateDots: Boolean) {
@@ -254,10 +201,6 @@ class HeroCarouselController(
     }
 
     private fun loadBackdrop(url: String?) {
-        // Pastikan ImageView terlihat lagi jika trailer belum/sudah di-cancel.
-        if (trailer == null || backdrop.visibility != View.VISIBLE) {
-            // HeroTrailerPlayer mengatur visibility; jangan paksa VISIBLE saat trailer aktif.
-        }
         if (url.isNullOrBlank()) {
             lastBackdropUrl = null
             backdrop.setImageDrawable(
@@ -357,8 +300,7 @@ class HeroCarouselController(
             onWatch: (CatalogItem) -> Unit,
         ): HeroCarouselController? {
             val backdrop = activity.findViewById<ImageView>(R.id.browseBackdrop) ?: return null
-            val trailer = HeroTrailerPlayer.attach(activity)
-            return HeroCarouselController(activity, backdrop, trailer, onWatch)
+            return HeroCarouselController(activity, backdrop, onWatch)
         }
     }
 }

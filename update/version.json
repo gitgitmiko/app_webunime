@@ -1,6 +1,6 @@
 {
-  "versionCode": 203,
-  "versionName": "1.10.3",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.3/WEBUNIME-TV-v1.10.3.apk",
-  "changelog": "Hero carousel scrollable + trailer YouTube setelah 2 detik fokus (rating >7). Geser manual ←/→, OK tonton."
+  "versionCode": 204,
+  "versionName": "1.10.4",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.4/WEBUNIME-TV-v1.10.4.apk",
+  "changelog": "Hapus trailer YouTube (hemat RAM). Hero random rating>7. Buffer Exo lebih kecil agar 1080p lebih lancar di TV."
 }

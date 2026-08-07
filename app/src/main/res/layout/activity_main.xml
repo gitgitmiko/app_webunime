@@ -12,13 +12,6 @@
         android:importantForAccessibility="no"
         android:scaleType="centerCrop" />
 
-    <!-- Host trailer: WebView dibuat on-demand, dihancurkan saat fokus hilang -->
-    <FrameLayout
-        android:id="@+id/browseTrailerHost"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone" />
-
     <View
         android:id="@+id/browseBackdropDim"
         android:layout_width="match_parent"

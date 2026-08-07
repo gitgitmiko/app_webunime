@@ -306,13 +306,10 @@ class BrowseFragment : BrowseSupportFragment() {
             .filter { ratingValue(it) > FEATURED_MIN_RATING }
             .distinctBy { it.slug?.takeIf { s -> s.isNotBlank() } ?: it.displayTitle() }
             .toList()
-        val withLandscape = pool
-            .filter { !it.thumbnail_landscape.isNullOrBlank() }
-            .sortedByDescending { ratingValue(it) }
-        val ranked = withLandscape.ifEmpty {
-            pool.sortedByDescending { ratingValue(it) }
-        }
-        return ranked.take(FEATURED_LIMIT)
+        val withLandscape = pool.filter { !it.thumbnail_landscape.isNullOrBlank() }
+        val source = withLandscape.ifEmpty { pool }
+        // Acak tiap buka/reload browse; tetap rating > 7.
+        return source.shuffled().take(FEATURED_LIMIT)
     }
 
     private fun buildContinueItems(): List<CatalogItem> =
