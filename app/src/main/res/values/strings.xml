@@ -21,6 +21,7 @@
     <string name="hero_badge_anime">ANIME</string>
     <string name="hero_badge_horror">HOROR</string>
     <string name="hero_badge_continue">LANJUTKAN</string>
+    <string name="hero_badge_new">NEW</string>
     <string name="resume_play">▶  Lanjutkan</string>
     <string name="failover_server">Server bermasalah · coba %1$s</string>
     <string name="episodes">Episode</string>

@@ -167,6 +167,8 @@ class CardPresenter : Presenter() {
         }
 
         private fun posterBadgeColor(label: String): Int = when {
+            label == "NEW" ->
+                Color.argb(0xE6, 0x00, 0x8A, 0x3E)
             label.endsWith("EPS") ->
                 Color.argb(0xE6, 0x0D, 0x47, 0x6B)
             label.contains("CAM") || label.contains("TS") || label.contains("TC") ->

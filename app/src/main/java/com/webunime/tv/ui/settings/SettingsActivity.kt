@@ -1,5 +1,6 @@
 package com.webunime.tv.ui.settings
 
+import android.content.Context
 import android.os.Bundle
 import android.view.KeyEvent
 import android.widget.TextView
@@ -28,12 +29,17 @@ class SettingsActivity : AppCompatActivity() {
     private val updateChecker by lazy { AppUpdateChecker(this) }
     private val scrapeClient by lazy { ScrapeTriggerClient() }
     private val catalogRepo by lazy { (application as WebunimeApp).catalogRepository }
+    private val scrapePrefs by lazy {
+        getSharedPreferences(PREFS_SCRAPE, Context.MODE_PRIVATE)
+    }
 
     private var pendingApkFile: File? = null
     private var checking = false
     private var catalogBusy = false
 
     private lateinit var catalogStatusView: TextView
+    private lateinit var startScrapeBtn: MaterialButton
+    private lateinit var refreshCatalogBtn: MaterialButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,16 +51,17 @@ class SettingsActivity : AppCompatActivity() {
             BuildConfig.VERSION_CODE,
         )
         catalogStatusView = findViewById(R.id.settingsCatalogStatus)
+        startScrapeBtn = findViewById(R.id.settingsStartScrape)
+        refreshCatalogBtn = findViewById(R.id.settingsRefreshCatalog)
 
         val checkBtn = findViewById<MaterialButton>(R.id.settingsCheckUpdate)
         checkBtn.setOnClickListener { checkForUpdate() }
         checkBtn.requestFocus()
 
-        findViewById<MaterialButton>(R.id.settingsStartScrape)
-            .setOnClickListener { startScrape() }
-        findViewById<MaterialButton>(R.id.settingsRefreshCatalog)
-            .setOnClickListener { refreshCatalog() }
+        startScrapeBtn.setOnClickListener { startScrape() }
+        refreshCatalogBtn.setOnClickListener { refreshCatalog() }
 
+        applyScrapeButtonLocked(isScrapeLocked())
         refreshCatalogStatusLabel()
     }
 
@@ -73,6 +80,7 @@ class SettingsActivity : AppCompatActivity() {
                     ).show()
                 }
         }
+        applyScrapeButtonLocked(isScrapeLocked())
         refreshCatalogStatusLabel()
     }
 
@@ -86,24 +94,48 @@ class SettingsActivity : AppCompatActivity() {
         return super.dispatchKeyEvent(event)
     }
 
+    private fun isScrapeLocked(): Boolean =
+        scrapePrefs.getBoolean(KEY_SCRAPE_LOCKED, false)
+
+    private fun setScrapeLocked(locked: Boolean) {
+        scrapePrefs.edit().putBoolean(KEY_SCRAPE_LOCKED, locked).apply()
+        applyScrapeButtonLocked(locked)
+    }
+
+    private fun applyScrapeButtonLocked(locked: Boolean) {
+        if (!::startScrapeBtn.isInitialized) return
+        startScrapeBtn.isEnabled = !locked
+        startScrapeBtn.isFocusable = !locked
+        startScrapeBtn.isClickable = !locked
+        startScrapeBtn.alpha = if (locked) 0.45f else 1f
+    }
+
     private fun refreshCatalogStatusLabel() {
         lifecycleScope.launch {
             val status = runCatching { catalogRepo.fetchSyncStatus() }.getOrNull()
             if (isFinishing) return@launch
+            if (status?.isRunning() == true) {
+                setScrapeLocked(true)
+                catalogStatusView.setText(R.string.settings_catalog_processing)
+                return@launch
+            }
             catalogStatusView.text = when {
                 status == null -> getString(R.string.settings_catalog_hint)
-                status.isRunning() -> getString(R.string.settings_catalog_processing)
                 status.isFailed() ->
                     status.message?.takeIf { it.isNotBlank() }
                         ?: getString(R.string.settings_catalog_hint)
                 else -> getString(R.string.settings_catalog_hint)
             }
+            // Status selesai tidak otomatis unlock — tunggu Update data sukses.
+            applyScrapeButtonLocked(isScrapeLocked())
         }
     }
 
     private fun startScrape() {
-        if (catalogBusy || isFinishing) return
+        if (catalogBusy || isFinishing || isScrapeLocked()) return
         catalogBusy = true
+        // Disable segera agar tidak spam sebelum respons proxy.
+        setScrapeLocked(true)
         Toast.makeText(this, R.string.settings_scrape_starting, Toast.LENGTH_SHORT).show()
         lifecycleScope.launch {
             val result = scrapeClient.startScrape()
@@ -117,6 +149,7 @@ class SettingsActivity : AppCompatActivity() {
                         Toast.LENGTH_LONG,
                     ).show()
                     catalogStatusView.setText(R.string.settings_catalog_processing)
+                    refreshCatalogBtn.requestFocus()
                 }
                 result.errorCode == "already_running" || result.httpCode == 409 -> {
                     Toast.makeText(
@@ -125,8 +158,11 @@ class SettingsActivity : AppCompatActivity() {
                         Toast.LENGTH_LONG,
                     ).show()
                     catalogStatusView.setText(R.string.settings_catalog_processing)
+                    refreshCatalogBtn.requestFocus()
                 }
                 result.errorCode == "rate_limited" || result.httpCode == 429 -> {
+                    // Gagal mulai → unlock supaya bisa coba lagi nanti.
+                    setScrapeLocked(false)
                     Toast.makeText(
                         this@SettingsActivity,
                         R.string.settings_scrape_rate_limited,
@@ -134,6 +170,7 @@ class SettingsActivity : AppCompatActivity() {
                     ).show()
                 }
                 else -> {
+                    setScrapeLocked(false)
                     Toast.makeText(
                         this@SettingsActivity,
                         getString(R.string.settings_scrape_failed, result.message),
@@ -156,6 +193,7 @@ class SettingsActivity : AppCompatActivity() {
             }
             if (status?.isRunning() == true) {
                 catalogBusy = false
+                setScrapeLocked(true)
                 catalogStatusView.setText(R.string.settings_catalog_processing)
                 Toast.makeText(
                     this@SettingsActivity,
@@ -177,12 +215,14 @@ class SettingsActivity : AppCompatActivity() {
             catalogBusy = false
             if (isFinishing) return@launch
             if (ok > 0) {
+                setScrapeLocked(false)
                 Toast.makeText(
                     this@SettingsActivity,
                     getString(R.string.settings_catalog_updated, ok),
                     Toast.LENGTH_LONG,
                 ).show()
                 catalogStatusView.text = getString(R.string.settings_catalog_updated, ok)
+                startScrapeBtn.requestFocus()
             } else {
                 Toast.makeText(
                     this@SettingsActivity,
@@ -271,5 +311,10 @@ class SettingsActivity : AppCompatActivity() {
                     }
             }
         }
+    }
+
+    companion object {
+        private const val PREFS_SCRAPE = "settings_scrape"
+        private const val KEY_SCRAPE_LOCKED = "scrape_button_locked"
     }
 }

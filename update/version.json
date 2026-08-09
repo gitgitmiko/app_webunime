@@ -1,6 +1,6 @@
 {
-  "versionCode": 214,
-  "versionName": "1.10.14",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.14/WEBUNIME-TV-v1.10.14.apk",
-  "changelog": "Settings: mulai scraping manual + update data katalog dari GitHub (cek status scrape)."
+  "versionCode": 215,
+  "versionName": "1.10.15",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.15/WEBUNIME-TV-v1.10.15.apk",
+  "changelog": "Badge NEW untuk judul baru; tombol Mulai scraping disable anti-spam sampai Update data sukses."
 }

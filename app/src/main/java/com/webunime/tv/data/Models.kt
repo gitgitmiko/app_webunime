@@ -21,6 +21,8 @@ data class CatalogItem(
     val thumbnailAlt: String? = null,
     val rating: String? = null,
     val quality: String? = null,
+    /** True jika judul/feed baru di-scrape pada sync terakhir (badge NEW di TV). */
+    val is_new: Boolean? = null,
     val durasi: String? = null,
     val genre: List<String>? = null,
     val sinopsis: String? = null,
@@ -104,14 +106,17 @@ data class CatalogItem(
         return !episodes.isNullOrEmpty() && (totalEpisodes() ?: 0) > 1
     }
 
-    /** Label badge pojok kanan atas: total EPS untuk series/anime, kualitas untuk film. */
+    /** Label badge pojok kanan atas: NEW > total EPS > kualitas film. */
     fun posterBadgeLabel(): String? {
+        if (is_new == true) return "NEW"
         if (showsEpisodeCountBadge()) {
             val n = totalEpisodes() ?: return null
             return "$n EPS"
         }
         return quality?.trim()?.takeIf { it.isNotBlank() }?.uppercase()
     }
+
+    fun showsNewBadge(): Boolean = is_new == true
 
     /** Sinopsis yang sudah dipisah dari blok metadata scraper (Sutradara, Negara, dll). */
     fun parsedSinopsis(): SinopsisMeta = SinopsisMeta.parse(sinopsis)

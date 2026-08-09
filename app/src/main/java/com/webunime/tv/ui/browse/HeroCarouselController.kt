@@ -33,6 +33,7 @@ class HeroCarouselController(
     private var panel: View? = null
     private var badge: TextView? = null
     private var quality: TextView? = null
+    private var newBadge: TextView? = null
     private var title: TextView? = null
     private var meta: TextView? = null
     private var synopsis: TextView? = null
@@ -62,6 +63,7 @@ class HeroCarouselController(
         panel = view
         badge = view.findViewById(R.id.browseHeroBadge)
         quality = view.findViewById(R.id.browseHeroQuality)
+        newBadge = view.findViewById(R.id.browseHeroNew)
         title = view.findViewById(R.id.browseHeroTitle)
         meta = view.findViewById(R.id.browseHeroMeta)
         synopsis = view.findViewById(R.id.browseHeroSynopsis)
@@ -90,6 +92,7 @@ class HeroCarouselController(
         panel = null
         badge = null
         quality = null
+        newBadge = null
         title = null
         meta = null
         synopsis = null
@@ -186,6 +189,7 @@ class HeroCarouselController(
         current = item
         badge?.text = badgeLabel(item)
         bindQuality(item)
+        newBadge?.visibility = if (item.showsNewBadge()) View.VISIBLE else View.GONE
         title?.text = item.displayTitle()
         meta?.text = buildMeta(item)
         val syn = item.parsedSinopsis().plot.trim()
