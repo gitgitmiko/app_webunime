@@ -53,6 +53,22 @@
             android:visibility="gone" />
 
         <TextView
+            android:id="@+id/browseHeroCountry"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_hero_chip"
+            android:focusable="false"
+            android:paddingLeft="10dp"
+            android:paddingTop="4dp"
+            android:paddingRight="10dp"
+            android:paddingBottom="4dp"
+            android:textColor="@color/wu_text"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <TextView
             android:id="@+id/browseHeroNew"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -93,6 +109,16 @@
         android:textColor="@color/wu_text_dim"
         android:textSize="14sp" />
 
+    <LinearLayout
+        android:id="@+id/browseHeroGenres"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:focusable="false"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone" />
+
     <TextView
         android:id="@+id/browseHeroSynopsis"
         android:layout_width="@dimen/browse_hero_panel_width"
@@ -101,7 +127,7 @@
         android:ellipsize="end"
         android:focusable="false"
         android:lineSpacingExtra="2dp"
-        android:maxLines="3"
+        android:maxLines="2"
         android:textColor="@color/wu_text_dim"
         android:textSize="14sp" />
 

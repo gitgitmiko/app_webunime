@@ -184,13 +184,11 @@ class BrowseFragment : BrowseSupportFragment() {
         if (pendingPositionRestore) {
             pendingPositionRestore = false
             restoreRetries = 0
-            // Kembali dari Search/Detail: restore fokus sekali, baru soft-refresh continue.
-            // Jangan reloadRows di sini — itu yang bikin bounce atas/bawah.
+            // Continue dulu (tanpa reload penuh), lalu restore fokus sekali.
+            // Hindari postDelayed kedua — itu yang bikin beranda “bergoyang” setelah back.
+            refreshContinueRowOnly(allowFullReload = false)
             view?.post {
-                restoreBrowseSelection()
-                view?.postDelayed({
-                    if (isAdded) refreshContinueRowOnly(allowFullReload = false)
-                }, 350)
+                if (isAdded) restoreBrowseSelection()
             }
         } else {
             refreshContinueRowOnly(allowFullReload = true)
@@ -583,49 +581,55 @@ class BrowseFragment : BrowseSupportFragment() {
     private fun restoreBrowseSelection() {
         if (!isAdded || !this::rowsAdapter.isInitialized) return
         if (rowsAdapter.size() <= 0) return
-        if (restoreRetries > 5) return
+        if (restoreRetries > 4) return
 
         val rowIndex = lastRowIndex.coerceIn(0, rowsAdapter.size() - 1)
-        selectedPosition = rowIndex
         val listRow = rowsAdapter.get(rowIndex) as? ListRow ?: return
-
         val grid = rowsGrid() ?: return
-        grid.setSelectedPosition(rowIndex)
 
-        if (listRow is HeroListRow) {
-            val holder = grid.findViewHolderForAdapterPosition(rowIndex) as? ListRowPresenter.ViewHolder
-            val horizontal = holder?.gridView
-            if (horizontal != null) {
-                horizontal.selectedPosition = 0
-                if (!grid.hasFocus() && !horizontal.hasFocus()) {
-                    horizontal.requestFocus()
-                }
-                restoreRetries = 0
-            } else {
-                restoreRetries++
-                view?.removeCallbacks(restoreSelectionRunnable)
-                view?.postDelayed(restoreSelectionRunnable, 100)
-            }
+        if (listRow !is HeroListRow) {
+            ensureLoadedUntil(listRow.headerItem.id, lastItemIndex)
+        }
+        val itemIndex = if (listRow is HeroListRow) {
+            0
+        } else {
+            lastItemIndex.coerceIn(0, (listRow.adapter?.size() ?: 1) - 1)
+        }
+
+        val holder = grid.findViewHolderForAdapterPosition(rowIndex) as? ListRowPresenter.ViewHolder
+        val horizontal = holder?.gridView
+        val alreadyOnRow = grid.selectedPosition == rowIndex
+        val alreadyOnItem = horizontal != null && horizontal.selectedPosition == itemIndex
+        val hasBrowseFocus = grid.hasFocus() || horizontal?.hasFocus() == true
+
+        // Sudah di posisi benar + fokus → jangan set ulang (hindari animasi/scroll).
+        if (alreadyOnRow && alreadyOnItem && hasBrowseFocus) {
+            restoreRetries = 0
             return
         }
 
-        ensureLoadedUntil(listRow.headerItem.id, lastItemIndex)
-        val itemIndex = lastItemIndex.coerceIn(0, (listRow.adapter?.size() ?: 1) - 1)
-        val holder = grid.findViewHolderForAdapterPosition(rowIndex) as? ListRowPresenter.ViewHolder
-        val horizontal = holder?.gridView
-        if (horizontal != null) {
-            horizontal.selectedPosition = itemIndex
-            // Jangan requestFocus berulang jika sudah ada fokus di browse —
-            // itu memicu resize kartu landscape/portrait → glitch atas/bawah.
-            if (!grid.hasFocus() && !horizontal.hasFocus()) {
-                horizontal.requestFocus()
-            }
-            restoreRetries = 0
-        } else {
+        if (selectedPosition != rowIndex) {
+            selectedPosition = rowIndex
+        }
+        if (!alreadyOnRow) {
+            grid.setSelectedPosition(rowIndex)
+        }
+
+        if (horizontal == null) {
             restoreRetries++
             view?.removeCallbacks(restoreSelectionRunnable)
-            view?.postDelayed(restoreSelectionRunnable, 100)
+            view?.postDelayed(restoreSelectionRunnable, 80)
+            return
         }
+
+        if (!alreadyOnItem) {
+            horizontal.selectedPosition = itemIndex
+        }
+        // Hanya ambil fokus jika benar-benar hilang (mis. tertinggal di activity lain).
+        if (!hasBrowseFocus) {
+            horizontal.requestFocus()
+        }
+        restoreRetries = 0
     }
 
     private fun ensureLoadedUntil(rowId: Long, index: Int) {

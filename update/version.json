@@ -1,6 +1,6 @@
 {
-  "versionCode": 216,
-  "versionName": "1.10.16",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.16/WEBUNIME-TV-v1.10.16.apk",
-  "changelog": "Item NEW di depan semua list; hero: NEW dulu lalu acak rating tinggi (maks 10)."
+  "versionCode": 217,
+  "versionName": "1.10.17",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.17/WEBUNIME-TV-v1.10.17.apk",
+  "changelog": "Hero: badge genre berwarna + negara/bendera; perbaiki goyang beranda saat back dari detail."
 }

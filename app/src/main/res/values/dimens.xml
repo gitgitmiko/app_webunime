@@ -3,5 +3,5 @@
     <!-- Hanya cadangan title/search; hero ikut sebagai baris pertama -->
     <dimen name="browse_rows_margin_top">112dp</dimen>
     <dimen name="browse_hero_panel_width">520dp</dimen>
-    <dimen name="browse_hero_row_height">260dp</dimen>
+    <dimen name="browse_hero_row_height">280dp</dimen>
 </resources>

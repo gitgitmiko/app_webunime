@@ -33,9 +33,11 @@ class HeroCarouselController(
     private var panel: View? = null
     private var badge: TextView? = null
     private var quality: TextView? = null
+    private var country: TextView? = null
     private var newBadge: TextView? = null
     private var title: TextView? = null
     private var meta: TextView? = null
+    private var genres: LinearLayout? = null
     private var synopsis: TextView? = null
     private var dots: LinearLayout? = null
 
@@ -63,9 +65,11 @@ class HeroCarouselController(
         panel = view
         badge = view.findViewById(R.id.browseHeroBadge)
         quality = view.findViewById(R.id.browseHeroQuality)
+        country = view.findViewById(R.id.browseHeroCountry)
         newBadge = view.findViewById(R.id.browseHeroNew)
         title = view.findViewById(R.id.browseHeroTitle)
         meta = view.findViewById(R.id.browseHeroMeta)
+        genres = view.findViewById(R.id.browseHeroGenres)
         synopsis = view.findViewById(R.id.browseHeroSynopsis)
         dots = view.findViewById(R.id.browseHeroDots)
 
@@ -92,9 +96,11 @@ class HeroCarouselController(
         panel = null
         badge = null
         quality = null
+        country = null
         newBadge = null
         title = null
         meta = null
+        genres = null
         synopsis = null
         dots = null
     }
@@ -189,9 +195,11 @@ class HeroCarouselController(
         current = item
         badge?.text = badgeLabel(item)
         bindQuality(item)
+        bindCountry(item)
         newBadge?.visibility = if (item.showsNewBadge()) View.VISIBLE else View.GONE
         title?.text = item.displayTitle()
         meta?.text = buildMeta(item)
+        bindGenres(item)
         val syn = item.parsedSinopsis().plot.trim()
         synopsis?.text = syn
         synopsis?.visibility = if (syn.isBlank()) View.GONE else View.VISIBLE
@@ -212,12 +220,69 @@ class HeroCarouselController(
         }
         view.visibility = View.VISIBLE
         view.text = label
+        applyChipBackground(view, qualityBadgeColor(label))
+    }
+
+    private fun bindCountry(item: CatalogItem) {
+        val view = country ?: return
+        val raw = item.parsedSinopsis().negara?.trim()?.takeIf { it.isNotBlank() }
+        if (raw == null) {
+            view.visibility = View.GONE
+            return
+        }
+        view.visibility = View.VISIBLE
+        view.text = HeroBadgeStyles.countryBadgeText(raw)
+        applyChipBackground(view, HeroBadgeStyles.countryColor(raw))
+    }
+
+    private fun bindGenres(item: CatalogItem) {
+        val container = genres ?: return
+        container.removeAllViews()
+        val list = item.genre.orEmpty()
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .distinctBy { it.lowercase() }
+            .take(MAX_GENRE_BADGES)
+        if (list.isEmpty()) {
+            container.visibility = View.GONE
+            return
+        }
+        container.visibility = View.VISIBLE
+        val density = context.resources.displayMetrics.density
+        val padH = (10 * density).toInt()
+        val padV = (4 * density).toInt()
+        val gap = (6 * density).toInt()
+        for ((i, genre) in list.withIndex()) {
+            val chip = TextView(context).apply {
+                text = genre
+                textSize = 11f
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                setTextColor(ContextCompat.getColor(context, R.color.wu_text))
+                setPadding(padH, padV, padH, padV)
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                isFocusable = false
+                background = GradientDrawable().apply {
+                    cornerRadius = 3f * density
+                    setColor(HeroBadgeStyles.genreColor(genre))
+                }
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).also { lp ->
+                    if (i > 0) lp.marginStart = gap
+                }
+            }
+            container.addView(chip)
+        }
+    }
+
+    private fun applyChipBackground(view: TextView, color: Int) {
         val bg = (view.background as? GradientDrawable)?.mutate() as? GradientDrawable
             ?: GradientDrawable().apply {
                 cornerRadius = 3f * context.resources.displayMetrics.density
                 view.background = this
             }
-        bg.setColor(qualityBadgeColor(label))
+        bg.setColor(color)
     }
 
     private fun qualityBadgeColor(label: String): Int = when {
@@ -319,12 +384,12 @@ class HeroCarouselController(
         item.rating?.takeIf { it.isNotBlank() }?.let { parts += "★ $it" }
         item.tahun?.takeIf { it.isNotBlank() }?.let { parts += it }
         item.durasi?.takeIf { it.isNotBlank() }?.let { parts += it }
-        val genres = item.genre.orEmpty().take(3).joinToString(", ")
-        if (genres.isNotBlank()) parts += genres
         return parts.joinToString("  ·  ")
     }
 
     companion object {
+        private const val MAX_GENRE_BADGES = 4
+
         fun attach(
             activity: Activity,
             onWatch: (CatalogItem) -> Unit,

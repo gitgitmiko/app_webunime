@@ -119,9 +119,11 @@ class CardPresenter : Presenter() {
 
         private fun applyCardSize(card: ImageCardView, focused: Boolean) {
             val (w, h) = cardSizeFor(focused)
+            val sizeKey = "$w x $h"
+            if (card.getTag(R.id.tag_card_size) == sizeKey) return
+            card.setTag(R.id.tag_card_size, sizeKey)
             card.setMainImageDimensions(w, h)
-            card.requestLayout()
-            (card.parent as? ViewGroup)?.requestLayout()
+            // Jangan requestLayout parent HorizontalGridView — memicu bounce saat back dari detail.
         }
 
         /** Gambar badge (kualitas / total EPS) di pojok kanan atas bitmap poster. */
