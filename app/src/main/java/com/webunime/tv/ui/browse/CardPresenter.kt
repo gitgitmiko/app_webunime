@@ -192,13 +192,8 @@ class CardPresenter : Presenter() {
             val portrait = movie.thumbnail?.takeIf { it.isNotBlank() }
             val landscape = movie.thumbnail_landscape?.takeIf { it.isNotBlank() }
             val alt = movie.thumbnailAlt?.takeIf { it.isNotBlank() && it != portrait }
-            // Fokus: landscape bila ada, lalu portrait (+ alt).
-            // Unfocus: portrait dulu; landscape cadangan jika poster gagal/kosong.
-            val urls = if (focused) {
-                listOfNotNull(landscape, portrait, alt).distinct()
-            } else {
-                listOfNotNull(portrait, alt, landscape).distinct()
-            }
+            // Kartu selalu portrait. Landscape hanya untuk background hero (HeroCarouselController).
+            val urls = listOfNotNull(portrait, alt, landscape).distinct()
             val nextUrl = urls.firstOrNull()
             val prevUrl = card.mainImageView.getTag(R.id.tag_thumb_url) as? String
             val prevSize = card.getTag(R.id.tag_card_size) as? String
@@ -277,11 +272,8 @@ class CardPresenter : Presenter() {
             titleView.isHorizontalFadingEdgeEnabled = false
 
             setOnFocusChangeListener { _, hasFocus ->
-                val item = getTag(R.id.tag_catalog_item) as? CatalogItem
                 applyCardSize(this, hasFocus)
-                if (item != null && canUseGlide(context)) {
-                    bindPoster(this, item, force = true)
-                }
+                // Gambar kartu tidak diganti saat fokus (tetap portrait).
 
                 val tv = titleTextView() ?: return@setOnFocusChangeListener
                 (tv.getTag(R.id.tag_marquee_run) as? Runnable)?.let { tv.removeCallbacks(it) }

@@ -1,6 +1,6 @@
 {
-  "versionCode": 218,
-  "versionName": "1.10.18",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.18/WEBUNIME-TV-v1.10.18.apk",
-  "changelog": "Perbaiki goyang beranda saat back dari Detail/Search/Settings (kartu ukuran tetap + restore fokus tanpa scroll)."
+  "versionCode": 219,
+  "versionName": "1.10.19",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.19/WEBUNIME-TV-v1.10.19.apk",
+  "changelog": "Kartu fokus tetap portrait; gambar landscape hanya untuk background hero."
 }
