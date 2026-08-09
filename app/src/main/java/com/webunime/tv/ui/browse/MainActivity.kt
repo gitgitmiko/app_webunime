@@ -1,12 +1,13 @@
 package com.webunime.tv.ui.browse
 
-import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.view.ContextThemeWrapper
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import com.webunime.tv.R
@@ -18,6 +19,7 @@ import com.webunime.tv.data.PlayerRouter
 import com.webunime.tv.ui.detail.DetailActivity
 import com.webunime.tv.ui.player.PlayerActivity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -44,8 +46,11 @@ class MainActivity : FragmentActivity() {
         val loadingText = findViewById<TextView>(R.id.catalogLoadingText)
 
         lifecycleScope.launch {
-            // Sync GitHub 1×/hari (unduh file). Parse ringan saja → hero + continue cepat.
-            // Baris lain + series/anime di-load saat digeser (lazy).
+            // Cek OTA paralel dengan load katalog — jangan ditunda sampai sync selesai.
+            val updateDeferred = async(Dispatchers.IO) {
+                runCatching { updateChecker.fetchAvailableUpdate() }.getOrNull()
+            }
+
             loading.visibility = View.VISIBLE
             val needRemote = repo.needsGithubRefreshToday()
             if (needRemote) {
@@ -65,7 +70,10 @@ class MainActivity : FragmentActivity() {
                 browseFragment()?.reloadRows()
             }
 
-            checkForAppUpdate()
+            val info = updateDeferred.await()
+            if (!isFinishing && info != null) {
+                showUpdateDialog(info)
+            }
         }
     }
 
@@ -113,20 +121,13 @@ class MainActivity : FragmentActivity() {
         return super.dispatchKeyEvent(normalized)
     }
 
-    private fun checkForAppUpdate() {
-        if (updateDialogShown || isFinishing) return
-        lifecycleScope.launch {
-            val info = runCatching { updateChecker.fetchAvailableUpdate() }.getOrNull()
-                ?: return@launch
-            if (isFinishing || updateDialogShown) return@launch
-            showUpdateDialog(info)
-        }
-    }
-
     private fun showUpdateDialog(info: AppUpdateInfo) {
+        if (updateDialogShown || isFinishing) return
         updateDialogShown = true
         val notes = info.changelog?.takeIf { it.isNotBlank() }.orEmpty()
-        AlertDialog.Builder(this)
+        // AppCompat + theme Material: AlertDialog bawaan Leanback sering tidak terlihat di TV.
+        val themed = ContextThemeWrapper(this, R.style.Theme_WebunimeTv_Detail)
+        AlertDialog.Builder(themed)
             .setTitle(R.string.update_title)
             .setMessage(getString(R.string.update_message, info.versionName, notes))
             .setPositiveButton(R.string.update_now) { _, _ -> startUpdateDownload(info) }
@@ -138,8 +139,7 @@ class MainActivity : FragmentActivity() {
     private fun startUpdateDownload(info: AppUpdateInfo) {
         pendingUpdateInfo = info
         lifecycleScope.launch {
-            // Ambil ulang version.json sebelum unduh → langsung loncat ke APK terbaru
-            // (bukan versi yang sempat tampil di dialog karena CDN basi).
+            // Ambil ulang version.json sebelum unduh → langsung loncat ke APK terbaru.
             val latest = runCatching { updateChecker.fetchAvailableUpdate() }.getOrNull()
             val toInstall = when {
                 latest == null -> info

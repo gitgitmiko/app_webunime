@@ -1,6 +1,6 @@
 {
-  "versionCode": 211,
-  "versionName": "1.10.11",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.11/WEBUNIME-TV-v1.10.11.apk",
-  "changelog": "Settings + cek update manual; spinner loading saat parse Series/Anime lazy-load."
+  "versionCode": 212,
+  "versionName": "1.10.12",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.12/WEBUNIME-TV-v1.10.12.apk",
+  "changelog": "Perbaiki notif OTA di TV: cek paralel, fallback jsDelivr, dialog AppCompat yang terlihat."
 }

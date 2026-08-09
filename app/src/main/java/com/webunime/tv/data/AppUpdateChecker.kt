@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
 import androidx.core.content.FileProvider
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.Moshi
@@ -15,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.json.JSONObject
 import java.io.File
 import java.util.concurrent.TimeUnit
 
@@ -28,9 +30,9 @@ data class AppUpdateInfo(
 
 /**
  * Self-update tanpa Play Store:
- * 1) Baca update/version.json di GitHub
+ * 1) Baca update/version.json (GitHub raw + fallback jsDelivr)
  * 2) Jika versionCode lebih tinggi → unduh APK
- * 3) Install lewat Package Installer (izin "Install unknown apps")
+ * 3) Install lewat Package Installer
  */
 class AppUpdateChecker(private val context: Context) {
 
@@ -47,24 +49,61 @@ class AppUpdateChecker(private val context: Context) {
     private val adapter = moshi.adapter(AppUpdateInfo::class.java)
 
     suspend fun fetchAvailableUpdate(): AppUpdateInfo? = withContext(Dispatchers.IO) {
-        // Cache-bust: raw.githubusercontent.com / CDN sering menahan version.json
-        // sampai ~5 menit, sehingga TV bisa “naik tangga” 1.10.10 → 11 → 12.
-        val url = "$VERSION_JSON_URL?t=${System.currentTimeMillis()}"
-        val request = Request.Builder()
-            .url(url)
-            .header("User-Agent", "WEBUNIME-TV/${BuildConfig.VERSION_NAME}")
-            .header("Cache-Control", "no-cache")
-            .header("Pragma", "no-cache")
-            .build()
-        val body = client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) return@withContext null
-            response.body?.string().orEmpty()
+        val bust = System.currentTimeMillis()
+        val urls = listOf(
+            "$VERSION_JSON_URL?t=$bust",
+            "$VERSION_JSON_JSDELIVR?t=$bust",
+        )
+        var info: AppUpdateInfo? = null
+        for (url in urls) {
+            info = fetchVersionJson(url)
+            if (info != null) break
         }
-        if (body.isBlank()) return@withContext null
-        val info = runCatching { adapter.fromJson(body) }.getOrNull() ?: return@withContext null
-        if (info.versionCode <= BuildConfig.VERSION_CODE) return@withContext null
-        if (info.apkUrl.isBlank() || !info.apkUrl.startsWith("http")) return@withContext null
-        info
+        val resolved = info ?: return@withContext null
+        if (resolved.versionCode <= BuildConfig.VERSION_CODE) {
+            Log.i(TAG, "Up to date: installed=${BuildConfig.VERSION_CODE} remote=${resolved.versionCode}")
+            return@withContext null
+        }
+        if (resolved.apkUrl.isBlank() || !resolved.apkUrl.startsWith("http")) return@withContext null
+        Log.i(TAG, "Update available: ${resolved.versionName} (${resolved.versionCode})")
+        resolved
+    }
+
+    private fun fetchVersionJson(url: String): AppUpdateInfo? {
+        return runCatching {
+            val request = Request.Builder()
+                .url(url)
+                .header("User-Agent", "WEBUNIME-TV/${BuildConfig.VERSION_NAME}")
+                .header("Cache-Control", "no-cache, no-store, must-revalidate")
+                .header("Pragma", "no-cache")
+                .get()
+                .build()
+            val body = client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    Log.w(TAG, "version.json HTTP ${response.code} for $url")
+                    return null
+                }
+                response.body?.string().orEmpty()
+            }
+            if (body.isBlank()) return null
+            parseUpdateInfo(body)
+        }.onFailure {
+            Log.w(TAG, "version.json fetch failed: $url — ${it.message}")
+        }.getOrNull()
+    }
+
+    private fun parseUpdateInfo(body: String): AppUpdateInfo? {
+        adapter.fromJson(body)?.let { return it }
+        // Fallback JSONObject bila Moshi gagal (BOM / whitespace aneh)
+        return runCatching {
+            val o = JSONObject(body.trim().removePrefix("\uFEFF"))
+            AppUpdateInfo(
+                versionCode = o.getInt("versionCode"),
+                versionName = o.getString("versionName"),
+                apkUrl = o.getString("apkUrl"),
+                changelog = o.optString("changelog").takeIf { it.isNotBlank() },
+            )
+        }.getOrNull()
     }
 
     suspend fun downloadApk(
@@ -141,7 +180,13 @@ class AppUpdateChecker(private val context: Context) {
     }
 
     companion object {
+        private const val TAG = "AppUpdate"
+
         const val VERSION_JSON_URL =
             "https://raw.githubusercontent.com/gitgitmiko/app_webunime/main/update/version.json"
+
+        /** CDN mirror — sering lebih cepat / kurang cache ketat daripada raw.githubusercontent. */
+        const val VERSION_JSON_JSDELIVR =
+            "https://cdn.jsdelivr.net/gh/gitgitmiko/app_webunime@main/update/version.json"
     }
 }

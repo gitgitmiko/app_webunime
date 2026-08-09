@@ -1,11 +1,12 @@
 package com.webunime.tv.ui.settings
 
-import android.app.AlertDialog
 import android.os.Bundle
 import android.view.KeyEvent
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ContextThemeWrapper
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.webunime.tv.BuildConfig
@@ -91,7 +92,8 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun showUpdateDialog(info: AppUpdateInfo) {
         val notes = info.changelog?.takeIf { it.isNotBlank() }.orEmpty()
-        AlertDialog.Builder(this)
+        val themed = ContextThemeWrapper(this, R.style.Theme_WebunimeTv_Detail)
+        AlertDialog.Builder(themed)
             .setTitle(R.string.update_title)
             .setMessage(getString(R.string.update_message, info.versionName, notes))
             .setPositiveButton(R.string.update_now) { _, _ -> startUpdateDownload(info) }
