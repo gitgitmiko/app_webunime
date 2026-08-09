@@ -1,6 +1,6 @@
 {
-  "versionCode": 208,
-  "versionName": "1.10.8",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.8/WEBUNIME-TV-v1.10.8.apk",
-  "changelog": "Detail film: tampilkan Sutradara, Bintang Film, Negara, Release, dan Updated dari metadata sinopsis."
+  "versionCode": 209,
+  "versionName": "1.10.9",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.9/WEBUNIME-TV-v1.10.9.apk",
+  "changelog": "P2P playcdn: autoplay + fokus tombol play seperti TurboVIP (tanpa panah bawah dulu)."
 }

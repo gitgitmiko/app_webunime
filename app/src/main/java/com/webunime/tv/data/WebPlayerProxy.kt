@@ -34,6 +34,7 @@ object WebPlayerProxy {
     private val managedHost = Regex(
         "(playeriframe|videonode|turbovid|emturbo|turboviplay|turbosplayer|gn1r5n|hownetwork|" +
             "abyss|iamcdn|short\\.icu|abysscdn|morphify|tiktokcdn|sptvp|" +
+            "playcdn|p2pplay|" +
             "googleusercontent|storage\\.googleapis\\.com|img-place)",
         RegexOption.IGNORE_CASE
     )
@@ -156,6 +157,7 @@ object WebPlayerProxy {
             host.contains("turboviplay") || host.contains("turbosplayer") ||
             host.contains("tiktokcdn") || host.contains("sptvp") ||
             host.contains("googleusercontent") -> "https://turbovidhls.com/"
+        host.contains("playcdn") || host.contains("p2pplay") -> "https://videonode.de/"
         else -> "https://playeriframe.sbs/"
     }
 
@@ -279,6 +281,15 @@ object WebPlayerProxy {
             Regex("""function\s+devtoolIsOpening\s*\(\s*\)\s*\{[\s\S]*?\}\s*devtoolIsOpening\s*\(\s*\)\s*;?""", RegexOption.IGNORE_CASE),
             "/* anti-devtools disabled */"
         )
+        // playcdn P2P: matikan trap debugger + hapus overlay iklan klik
+        out = out.replace(
+            Regex("""<script[^>]*>\s*function\s+devtoolIsOpening[\s\S]*?</script>""", RegexOption.IGNORE_CASE),
+            "<!-- anti-devtools removed -->"
+        )
+        out = out.replace(
+            Regex("""<a\b[^>]*\bid=["']overlay["'][^>]*>[\s\S]*?</a>""", RegexOption.IGNORE_CASE),
+            ""
+        )
         // Cast SPA: path harus mengandung /e/
         out = out.replace(
             Regex("""path\.indexOf\(\s*['"]/e/['"]\s*\)\s*!==\s*0"""),
@@ -364,11 +375,12 @@ object WebPlayerProxy {
         val isAbyss = host.contains("abyss") || host.contains("iamcdn") || host.contains("short.icu")
         val isCast = host.contains("gn1r5n")
         val isTurbo = host.contains("turbo")
+        val isP2p = host.contains("playcdn") || host.contains("p2pplay")
 
         return """
 <script data-webunime-shim>
 (function(){
-  var IS_ABYSS=$isAbyss, IS_CAST=$isCast, IS_TURBO=$isTurbo;
+  var IS_ABYSS=$isAbyss, IS_CAST=$isCast, IS_TURBO=$isTurbo, IS_P2P=$isP2p;
 
   // ---- Kontrol play/pause eksplisit untuk remote TV (tombol OK) ----
   // Membaca status asli player lalu pause()/play(). Flag __wuUserPaused
@@ -621,6 +633,97 @@ object WebPlayerProxy {
       if(ready || (document.querySelector("video") && document.querySelector("video").readyState>=2)){ if(pre) pre.style.display="none"; if(!window.__wuUserPaused){ try{ if(typeof jwplayer==="function") jwplayer("video_player").play(); }catch(e){} setTimeout(function(){try{window.__wuHidePlayerUi();}catch(e){}}, 2000); } clearInterval(tiv); return; }
       if(typeof play==="function" && tt>6 && !window.__wuUserPaused){ try{play();}catch(e){} }
     } catch(e){} if(tt>40) clearInterval(tiv); }, 500);
+  }
+
+  if (IS_P2P) {
+    // playcdn.de / p2pplay: hapus overlay iklan, fokus tombol play JW, paksa play seperti TurboVIP
+    (function stripP2pOverlay(){
+      function nuke(){
+        try{
+          var o=document.getElementById("overlay");
+          if(o&&o.parentNode) o.parentNode.removeChild(o);
+        }catch(e){}
+      }
+      nuke();
+      document.addEventListener("DOMContentLoaded", nuke);
+      setTimeout(nuke, 200);
+      setTimeout(nuke, 800);
+      setTimeout(nuke, 1600);
+    })();
+    function p2pJw(){
+      try{
+        if(typeof jwplayer==="function"){
+          var p=jwplayer("vstr");
+          if(p&&typeof p.play==="function") return p;
+          p=jwplayer();
+          if(p&&typeof p.play==="function") return p;
+        }
+      }catch(e){}
+      return null;
+    }
+    function p2pFocusPlay(){
+      try{
+        var sels=[".jw-icon-display",".jw-display-icon-display",".jw-display-icon-container",
+          ".jw-icon-playback","[aria-label='Play']","[aria-label*='Play' i]",
+          "#player-button-container","#player-button",".player-button"];
+        for(var i=0;i<sels.length;i++){
+          var el=document.querySelector(sels[i]);
+          if(!el) continue;
+          try{ el.setAttribute("tabindex","0"); }catch(e){}
+          try{ el.focus(); }catch(e){}
+          return el;
+        }
+        var jp=p2pJw();
+        if(jp&&typeof jp.getContainer==="function"){
+          var c=jp.getContainer();
+          if(c){ try{ c.setAttribute("tabindex","0"); c.focus(); }catch(e){} }
+        }
+      }catch(e){}
+      return null;
+    }
+    function p2pTryPlay(){
+      if(window.__wuUserPaused) return false;
+      try{
+        var o=document.getElementById("overlay");
+        if(o){ try{o.click();}catch(e){} try{if(o.parentNode)o.parentNode.removeChild(o);}catch(e){} }
+      }catch(e){}
+      var focused=p2pFocusPlay();
+      try{ if(focused) focused.click(); }catch(e){}
+      try{
+        var jp=p2pJw();
+        if(jp){
+          var st=typeof jp.getState==="function"?jp.getState():"";
+          if(st==="playing"||st==="buffering"){
+            try{WebunimePlayback.onPlay();}catch(e){}
+            return true;
+          }
+          try{ jp.play(true); }catch(e){ try{ jp.play(); }catch(e2){} }
+        }
+      }catch(e){}
+      try{
+        var v=document.querySelector("video");
+        if(v){
+          if(!v.paused&&!v.ended){ try{WebunimePlayback.onPlay();}catch(e){} return true; }
+          v.muted=false; v.volume=1; v.play();
+        }
+      }catch(e){}
+      return false;
+    }
+    window.__wuP2pTryPlay=function(){ p2pTryPlay(); };
+    var pt=0; var piv=setInterval(function(){
+      pt++;
+      try{
+        if(p2pTryPlay()){
+          // Tetap fokus play icon sebentar bila masih idle (agar OK remote langsung play)
+          p2pFocusPlay();
+          if(pt>8){ clearInterval(piv); return; }
+        }
+      }catch(e){}
+      if(pt>50) clearInterval(piv);
+    }, 400);
+    setTimeout(p2pTryPlay, 600);
+    setTimeout(p2pTryPlay, 1400);
+    setTimeout(p2pTryPlay, 2600);
   }
 
   // Auto-hide kontrol JWPlayer juga untuk Hydrax saat playing

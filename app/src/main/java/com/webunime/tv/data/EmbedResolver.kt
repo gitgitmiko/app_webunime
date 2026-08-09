@@ -136,7 +136,8 @@ object EmbedResolver {
             host.contains("googleapis") ||
             host.contains("googleusercontent") ||
             host.contains("r2.cloudflarestorage") ||
-            host.contains("p2pplay")
+            host.contains("p2pplay") ||
+            host.contains("playcdn")
     }
 
     private fun resolvePlayeriframe(sourceUrl: String): String =
@@ -310,7 +311,10 @@ object EmbedResolver {
                 }
             }
         }
-        val prefer = listOf("turbo", "emturbovid", "gn1r5n", "cast", "abyss", "hydrax", "wibufile", "blogger")
+        val prefer = listOf(
+            "turbo", "emturbovid", "gn1r5n", "cast", "abyss", "hydrax",
+            "playcdn", "p2pplay", "wibufile", "blogger",
+        )
         for (key in prefer) {
             candidates.firstOrNull { it.contains(key, ignoreCase = true) }?.let { return it }
         }

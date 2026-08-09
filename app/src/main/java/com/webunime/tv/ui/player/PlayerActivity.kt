@@ -768,7 +768,8 @@ class PlayerActivity : AppCompatActivity() {
         val isPixeldrain = url.contains("pixeldrain", ignoreCase = true)
         val isMega = url.contains("mega.nz", ignoreCase = true) ||
             url.contains("mega.co.nz", ignoreCase = true)
-        val isP2pPlay = url.contains("p2pplay", ignoreCase = true)
+        val isP2pPlay = PlayerRouter.isP2pUrl(url) ||
+            server.contains("p2p", ignoreCase = true)
         val seekMs = resumePositionMs
         webView.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(
@@ -814,8 +815,15 @@ class PlayerActivity : AppCompatActivity() {
                     view?.evaluateJavascript(sourceFailWatcherJs, null)
                     view?.evaluateJavascript(megaAutoplayJs, null)
                 }
-                if (isP2pPlay) {
+                val pageIsP2p = isP2pPlay ||
+                    PlayerRouter.isP2pUrl(pageUrl.orEmpty()) ||
+                    isP2pPlayUrl()
+                if (pageIsP2p) {
                     view?.evaluateJavascript(p2pPlayAutoplayJs, null)
+                    // Cadangan: klik/fokus tombol play setelah JW ready (mirip TurboVIP).
+                    hideHandler.postDelayed({ tryP2pPlayClick() }, 700)
+                    hideHandler.postDelayed({ tryP2pPlayClick() }, 1600)
+                    hideHandler.postDelayed({ tryP2pPlayClick() }, 2800)
                 }
                 view?.evaluateJavascript(
                     """
@@ -908,7 +916,8 @@ class PlayerActivity : AppCompatActivity() {
                 when {
                     url.contains("mega.nz", ignoreCase = true) ||
                         url.contains("mega.co.nz", ignoreCase = true) -> MEGA_FAIL_TIMEOUT_MS
-                    url.contains("p2pplay", ignoreCase = true) -> P2PPLAY_FAIL_TIMEOUT_MS
+                    PlayerRouter.isP2pUrl(url) ||
+                        server.contains("p2p", ignoreCase = true) -> P2PPLAY_FAIL_TIMEOUT_MS
                     else -> WEB_FAIL_TIMEOUT_MS
                 }
             )
@@ -1262,10 +1271,9 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun isP2pPlayUrl(): Boolean {
-        val u = sourceUrl
-        return u.contains("p2pplay", ignoreCase = true) ||
-            (this::webView.isInitialized &&
-                webView.url.orEmpty().contains("p2pplay", ignoreCase = true))
+        if (serverLabel.contains("p2p", ignoreCase = true)) return true
+        if (PlayerRouter.isP2pUrl(sourceUrl)) return true
+        return this::webView.isInitialized && PlayerRouter.isP2pUrl(webView.url.orEmpty())
     }
 
     private fun tryMegaPlayClick() {
@@ -1295,28 +1303,39 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun tryP2pPlayClick() {
+        if (isFinishing || isDestroyed) return
         if (!this::webView.isInitialized) return
+        if (!isP2pPlayUrl()) return
         webView.evaluateJavascript(
             """
             (function(){
               try{
                 if(typeof window.__wuP2pTryPlay==="function"){ window.__wuP2pTryPlay(); return; }
+                var o=document.getElementById('overlay');
+                if(o){ try{o.click();}catch(e){} try{if(o.parentNode)o.parentNode.removeChild(o);}catch(e){} }
                 var c=document.getElementById('player-button-container');
-                if(c){ c.click(); return; }
+                if(c){ try{c.focus();}catch(e){} c.click(); return; }
                 var b=document.getElementById('player-button');
-                if(b){ b.click(); return; }
+                if(b){ try{b.focus();}catch(e){} b.click(); return; }
                 if(typeof jwplayer==="function"){
-                  var p=jwplayer();
-                  if(p&&typeof p.play==="function"){ p.play(); return; }
+                  var p=null;
+                  try{ p=jwplayer("vstr"); }catch(e){}
+                  if(!p||typeof p.play!=="function"){ try{ p=jwplayer(); }catch(e){} }
+                  if(p&&typeof p.play==="function"){
+                    try{ p.play(true); }catch(e){ try{ p.play(); }catch(e2){} }
+                  }
                 }
                 var sels=[
-                  ".jw-icon-display",".jw-display-icon-container",".jw-display button",
+                  ".jw-icon-display",".jw-display-icon-display",".jw-display-icon-container",
                   ".jw-icon-playback","[aria-label='Play']","[aria-label*='Play' i]",
                   "button[class*='play']",".play-button"
                 ];
                 for(var i=0;i<sels.length;i++){
                   var el=document.querySelector(sels[i]);
-                  if(el){ try{el.click(); return;}catch(e){} }
+                  if(el){
+                    try{ el.setAttribute("tabindex","0"); el.focus(); }catch(e){}
+                    try{ el.click(); return; }catch(e){}
+                  }
                 }
                 var v=document.querySelector("video");
                 if(v){ try{v.muted=false; v.play();}catch(e){} }
@@ -1620,7 +1639,7 @@ class PlayerActivity : AppCompatActivity() {
             })();
         """.trimIndent()
 
-    /** Autostart JWPlayer di bun.p2pplay.pro (+ hook progress). */
+    /** Autostart JWPlayer di playcdn.de / bun.p2pplay (+ hook progress + fokus tombol play). */
     private val p2pPlayAutoplayJs: String = """
             (function(){
               if(window.__wuP2pPlay) return;
@@ -1637,6 +1656,39 @@ class PlayerActivity : AppCompatActivity() {
               }
               function notifyPause(){ try{WebunimePlayback.onPause();}catch(e){} }
               function notifyEnded(){ try{WebunimePlayback.onEnded();}catch(e){} }
+              function getJw(){
+                try{
+                  if(typeof jwplayer!=="function") return null;
+                  var p=null;
+                  try{ p=jwplayer("vstr"); }catch(e){}
+                  if(p&&typeof p.play==="function") return p;
+                  try{ p=jwplayer(); }catch(e){}
+                  if(p&&typeof p.play==="function") return p;
+                }catch(e){}
+                return null;
+              }
+              function focusPlayBtn(){
+                try{
+                  var sels=[
+                    ".jw-icon-display",".jw-display-icon-display",".jw-display-icon-container",
+                    ".jw-icon-playback","[aria-label='Play']","[aria-label*='Play' i]",
+                    "#player-button-container","#player-button",".player-button"
+                  ];
+                  for(var i=0;i<sels.length;i++){
+                    var el=document.querySelector(sels[i]);
+                    if(!el) continue;
+                    try{ el.setAttribute("tabindex","0"); }catch(e){}
+                    try{ el.focus(); }catch(e){}
+                    return el;
+                  }
+                  var p=getJw();
+                  if(p&&typeof p.getContainer==="function"){
+                    var c=p.getContainer();
+                    if(c){ try{ c.setAttribute("tabindex","0"); c.focus(); }catch(e){} }
+                  }
+                }catch(e){}
+                return null;
+              }
               function hookJw(p){
                 try{
                   if(!p||p.__wuHooked) return;
@@ -1688,15 +1740,18 @@ class PlayerActivity : AppCompatActivity() {
               }
               function clickPoster(){
                 try{
+                  var o=document.getElementById('overlay');
+                  if(o){ try{o.click();}catch(e){} try{if(o.parentNode)o.parentNode.removeChild(o);}catch(e){} }
                   var c=document.getElementById('player-button-container');
-                  if(c){ c.click(); return true; }
+                  if(c){ try{c.focus();}catch(e){} c.click(); return true; }
                   var b=document.getElementById('player-button');
-                  if(b){ b.click(); return true; }
+                  if(b){ try{b.focus();}catch(e){} b.click(); return true; }
                   var el=document.querySelector(
                     '#player-button-container,#player-button,.player-button,[class*="dot-pulse"]'
                   );
                   if(el){
                     var t=el.closest('#player-button-container')||el;
+                    try{ t.focus(); }catch(e){}
                     t.click();
                     return true;
                   }
@@ -1710,29 +1765,36 @@ class PlayerActivity : AppCompatActivity() {
                    document.getElementById('player-button')){
                   return clickPoster();
                 }
+                try{ clickPoster(); }catch(e){}
                 try{
-                  if(typeof jwplayer==="function"){
-                    var p=jwplayer();
-                    if(p){
-                      hookJw(p);
-                      var st=typeof p.getState==="function"?p.getState():"";
-                      if(st==="playing"||st==="buffering"){
-                        stopAuto();
-                        return true;
-                      }
-                      if(typeof p.play==="function"){ p.play(); }
-                      return false;
+                  var p=getJw();
+                  if(p){
+                    hookJw(p);
+                    var st=typeof p.getState==="function"?p.getState():"";
+                    if(st==="playing"||st==="buffering"){
+                      stopAuto();
+                      return true;
                     }
+                    var btn=focusPlayBtn();
+                    try{ if(btn) btn.click(); }catch(e){}
+                    if(typeof p.play==="function"){
+                      try{ p.play(true); }catch(e){ try{ p.play(); }catch(e2){} }
+                    }
+                    return false;
                   }
                 }catch(e){}
                 try{
                   var sels=[
-                    ".jw-icon-display",".jw-display-icon-container",".jw-display button",
-                    ".jw-icon-playback","[aria-label='Play']","button[class*='play']"
+                    ".jw-icon-display",".jw-display-icon-display",".jw-display-icon-container",
+                    ".jw-display button",".jw-icon-playback","[aria-label='Play']","button[class*='play']"
                   ];
                   for(var i=0;i<sels.length;i++){
                     var el=document.querySelector(sels[i]);
-                    if(el){ el.click(); return false; }
+                    if(el){
+                      try{ el.setAttribute("tabindex","0"); el.focus(); }catch(e){}
+                      el.click();
+                      return false;
+                    }
                   }
                 }catch(e){}
                 try{
@@ -1742,29 +1804,30 @@ class PlayerActivity : AppCompatActivity() {
                     v.muted=false; v.play(); return false;
                   }
                 }catch(e){}
+                focusPlayBtn();
                 return false;
               }
               window.__wuP2pTryPlay=function(){
-                // Poster masih ada → boot play. Sudah di JWPlayer → toggle pause/play saja.
+                // Poster/overlay masih ada → boot play. Sudah di JWPlayer → toggle pause/play saja.
                 if(document.getElementById('player-button-container') ||
-                   document.getElementById('player-button')){
+                   document.getElementById('player-button') ||
+                   document.getElementById('overlay')){
                   tryPlay();
                   return;
                 }
                 try{
-                  if(typeof jwplayer==="function"){
-                    var p=jwplayer();
-                    if(p){
-                      hookJw(p);
-                      var st=typeof p.getState==="function"?p.getState():"";
-                      if(st==="playing"||st==="buffering"){
-                        stopAuto();
-                        if(typeof p.pause==="function") p.pause();
-                      } else if(typeof p.play==="function") {
-                        p.play();
-                      }
-                      return;
+                  var p=getJw();
+                  if(p){
+                    hookJw(p);
+                    var st=typeof p.getState==="function"?p.getState():"";
+                    if(st==="playing"||st==="buffering"){
+                      stopAuto();
+                      if(typeof p.pause==="function") p.pause();
+                    } else if(typeof p.play==="function") {
+                      focusPlayBtn();
+                      try{ p.play(true); }catch(e){ p.play(); }
                     }
+                    return;
                   }
                 }catch(e){}
                 try{
@@ -1780,7 +1843,10 @@ class PlayerActivity : AppCompatActivity() {
                   return;
                 }
                 tryPlay();
-              }, 600);
+              }, 500);
+              setTimeout(tryPlay, 400);
+              setTimeout(tryPlay, 1200);
+              setTimeout(focusPlayBtn, 900);
             })();
         """.trimIndent()
 

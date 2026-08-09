@@ -49,8 +49,16 @@ object PlayerRouter {
         val s = (p.server ?: "").lowercase()
         val l = (p.label ?: "").lowercase()
         val u = (p.url ?: "").lowercase()
-        return s.contains("p2p") || l.contains("p2p") ||
-            u.contains("p2pplay") || u.contains("p2pplay.pro")
+        return s.contains("p2p") || l.contains("p2p") || isP2pUrl(u)
+    }
+
+    /** URL player P2P (playcdn / p2pplay / wrapper /iframe/p2p/). */
+    fun isP2pUrl(url: String): Boolean {
+        val u = url.lowercase()
+        return u.contains("p2pplay") ||
+            u.contains("playcdn.de") ||
+            u.contains("/iframe/p2p/") ||
+            u.contains("/iframe/p2p?")
     }
 
     /**
@@ -132,6 +140,7 @@ object PlayerRouter {
             host.contains("blogger") || host.contains("google") -> "https://www.blogger.com/"
             host.contains("mega.nz") -> "https://mega.nz/"
             host.contains("p2pplay") -> "https://kconaz.com/"
+            host.contains("playcdn") -> "https://videonode.de/"
             else -> null
         }
     }
