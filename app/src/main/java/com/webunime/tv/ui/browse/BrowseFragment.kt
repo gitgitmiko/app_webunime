@@ -3,6 +3,7 @@ package com.webunime.tv.ui.browse
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
@@ -25,6 +26,7 @@ import com.webunime.tv.data.CatalogItem
 import com.webunime.tv.data.CatalogSection
 import com.webunime.tv.data.CatalogSnapshot
 import com.webunime.tv.ui.search.SearchActivity
+import com.webunime.tv.ui.settings.SettingsActivity
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -36,6 +38,7 @@ class BrowseFragment : BrowseSupportFragment() {
 
     private lateinit var rowsAdapter: ArrayObjectAdapter
     private val cardPresenter = CardPresenter()
+    private val rowLoadingPresenter = RowLoadingPresenter()
     private val rowPaging = mutableMapOf<Long, RowPagingState>()
 
     private var hero: HeroCarouselController? = null
@@ -58,6 +61,19 @@ class BrowseFragment : BrowseSupportFragment() {
 
     private val restoreSelectionRunnable = Runnable { restoreBrowseSelection() }
     private val focusGridRunnable = Runnable { focusRowsGrid() }
+
+    override fun onInflateTitleView(
+        inflater: LayoutInflater,
+        parent: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View = inflater.inflate(R.layout.wu_browse_title, parent, false)
+
+    private fun bindSettingsOrb() {
+        val title = titleView as? WebunimeTitleView ?: return
+        title.setOnSettingsClickedListener {
+            startActivity(Intent(requireActivity(), SettingsActivity::class.java))
+        }
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -85,6 +101,8 @@ class BrowseFragment : BrowseSupportFragment() {
         setOnSearchClickedListener {
             startActivity(Intent(requireActivity(), SearchActivity::class.java))
         }
+        bindSettingsOrb()
+        view?.post { bindSettingsOrb() }
 
         val cardRowPresenter = ListRowPresenter(FocusHighlight.ZOOM_FACTOR_SMALL).apply {
             shadowEnabled = true
@@ -107,6 +125,7 @@ class BrowseFragment : BrowseSupportFragment() {
             when (item) {
                 is HeroCarouselItem -> hero?.openCurrent()
                 is CatalogItem -> openCatalog(item)
+                is RowLoadingItem -> Unit
             }
         }
 
@@ -372,6 +391,7 @@ class BrowseFragment : BrowseSupportFragment() {
 
     /**
      * Append baris berikutnya jika fokus mendekati akhir, atau [force] (prefetch).
+     * Series/Anime (~10MB) menampilkan baris loading + spinner saat JSON di-parse.
      */
     private fun maybeAppendDeferredRows(force: Boolean = false) {
         if (!isAdded || !this::rowsAdapter.isInitialized) return
@@ -395,14 +415,45 @@ class BrowseFragment : BrowseSupportFragment() {
                 }
                 val spec = deferredRowSpecs[deferredRowIndex]
                 deferredRowIndex++
+
+                val needsParse = spec.sections.any { !repo.isSectionLoaded(it) }
+                var loadingRowPos = -1
+                if (needsParse) {
+                    loadingRowPos = rowsAdapter.size()
+                    addLoadingRow(spec.title)
+                }
+
                 runCatching { repo.ensureSections(spec.sections) }
                 if (!isAdded) return@launch
+
+                if (loadingRowPos >= 0) {
+                    removeLoadingRowAt(loadingRowPos)
+                }
+
                 val items = spec.items(repo.snapshot)
                 if (items.isEmpty()) continue
                 addCardRow(spec.title, items, preferItemIndex = keepItemForDeferred)
                 appended++
                 if (prefetchOnly) break
             }
+        }
+    }
+
+    private fun addLoadingRow(title: String) {
+        val list = ArrayObjectAdapter(rowLoadingPresenter)
+        // Beberapa kartu skeleton supaya baris terasa penuh saat parse.
+        val msg = getString(R.string.loading_row, title)
+        repeat(4) { list.add(RowLoadingItem(msg)) }
+        val rowId = rowsAdapter.size().toLong()
+        rowsAdapter.add(ListRow(HeaderItem(rowId, title), list))
+    }
+
+    private fun removeLoadingRowAt(index: Int) {
+        if (index !in 0 until rowsAdapter.size()) return
+        val row = rowsAdapter.get(index) as? ListRow ?: return
+        val first = row.adapter?.get(0)
+        if (first is RowLoadingItem) {
+            rowsAdapter.removeItems(index, 1)
         }
     }
 

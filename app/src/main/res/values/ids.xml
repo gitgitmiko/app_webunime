@@ -5,4 +5,5 @@
     <item name="tag_catalog_item" type="id" />
     <item name="tag_card_size" type="id" />
     <item name="tag_quality" type="id" />
+    <item name="row_loading_label" type="id" />
 </resources>

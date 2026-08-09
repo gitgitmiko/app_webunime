@@ -50,6 +50,12 @@
             android:theme="@style/Theme.WebunimeTv.Search" />
 
         <activity
+            android:name=".ui.settings.SettingsActivity"
+            android:exported="false"
+            android:screenOrientation="landscape"
+            android:theme="@style/Theme.WebunimeTv.Detail" />
+
+        <activity
             android:name=".ui.player.PlayerActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout"
             android:exported="false"

@@ -1,0 +1,154 @@
+package com.webunime.tv.ui.browse
+
+import android.content.Context
+import android.graphics.drawable.Drawable
+import android.util.AttributeSet
+import android.view.LayoutInflater
+import android.view.View
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.core.content.ContextCompat
+import androidx.leanback.widget.SearchOrbView
+import androidx.leanback.widget.TitleViewAdapter
+import com.webunime.tv.R
+
+/**
+ * Title Leanback dengan SearchOrb + SettingsOrb (kanan search).
+ */
+class WebunimeTitleView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = androidx.leanback.R.attr.browseTitleViewStyle,
+) : FrameLayout(context, attrs, defStyleAttr), TitleViewAdapter.Provider {
+
+    private val badgeView: ImageView
+    private val textView: TextView
+    private val searchOrbView: SearchOrbView
+    private val settingsOrbView: SearchOrbView
+
+    private var flags: Int = TitleViewAdapter.FULL_VIEW_VISIBLE
+    private var hasSearchListener = false
+    private var hasSettingsListener = false
+
+    private val titleViewAdapter = object : TitleViewAdapter() {
+        override fun getSearchAffordanceView(): View = searchOrbView
+
+        override fun setOnSearchClickedListener(listener: OnClickListener?) {
+            this@WebunimeTitleView.setOnSearchClickedListener(listener)
+        }
+
+        override fun setAnimationEnabled(enable: Boolean) {
+            enableAnimation(enable)
+        }
+
+        override fun getBadgeDrawable(): Drawable? = badgeView.drawable
+
+        override fun getSearchAffordanceColors(): SearchOrbView.Colors =
+            searchOrbView.orbColors
+
+        override fun getTitle(): CharSequence? = textView.text
+
+        override fun setBadgeDrawable(drawable: Drawable?) {
+            this@WebunimeTitleView.setBadgeDrawable(drawable)
+        }
+
+        override fun setSearchAffordanceColors(colors: SearchOrbView.Colors) {
+            this@WebunimeTitleView.setSearchAffordanceColors(colors)
+        }
+
+        override fun setTitle(titleText: CharSequence?) {
+            this@WebunimeTitleView.setTitle(titleText)
+        }
+
+        override fun updateComponentsVisibility(flags: Int) {
+            this@WebunimeTitleView.updateComponentsVisibility(flags)
+        }
+    }
+
+    init {
+        LayoutInflater.from(context).inflate(R.layout.wu_title_view, this, true)
+        badgeView = findViewById(R.id.title_badge)
+        textView = findViewById(R.id.title_text)
+        searchOrbView = findViewById(R.id.title_orb)
+        settingsOrbView = findViewById(R.id.settings_orb)
+
+        settingsOrbView.orbIcon = ContextCompat.getDrawable(context, R.drawable.ic_settings)
+        settingsOrbView.contentDescription = context.getString(R.string.settings)
+
+        clipToPadding = false
+        clipChildren = false
+    }
+
+    fun setTitle(titleText: CharSequence?) {
+        textView.text = titleText
+        updateBadgeVisibility()
+    }
+
+    fun getTitle(): CharSequence? = textView.text
+
+    fun setBadgeDrawable(drawable: Drawable?) {
+        badgeView.setImageDrawable(drawable)
+        updateBadgeVisibility()
+    }
+
+    fun getBadgeDrawable(): Drawable? = badgeView.drawable
+
+    fun setOnSearchClickedListener(listener: OnClickListener?) {
+        hasSearchListener = listener != null
+        searchOrbView.setOnOrbClickedListener(listener)
+        updateOrbVisibility()
+    }
+
+    fun setOnSettingsClickedListener(listener: OnClickListener?) {
+        hasSettingsListener = listener != null
+        settingsOrbView.setOnOrbClickedListener(listener)
+        updateOrbVisibility()
+    }
+
+    fun getSearchAffordanceView(): View = searchOrbView
+
+    fun setSearchAffordanceColors(colors: SearchOrbView.Colors) {
+        searchOrbView.orbColors = colors
+        settingsOrbView.orbColors = colors
+    }
+
+    fun getSearchAffordanceColors(): SearchOrbView.Colors = searchOrbView.orbColors
+
+    fun enableAnimation(enable: Boolean) {
+        searchOrbView.enableOrbColorAnimation(enable && searchOrbView.hasFocus())
+        settingsOrbView.enableOrbColorAnimation(enable && settingsOrbView.hasFocus())
+    }
+
+    fun updateComponentsVisibility(flags: Int) {
+        this.flags = flags
+        if (flags and TitleViewAdapter.BRANDING_VIEW_VISIBLE == TitleViewAdapter.BRANDING_VIEW_VISIBLE) {
+            updateBadgeVisibility()
+        } else {
+            badgeView.visibility = GONE
+            textView.visibility = GONE
+        }
+        updateOrbVisibility()
+    }
+
+    private fun updateOrbVisibility() {
+        val showOrbs =
+            flags and TitleViewAdapter.SEARCH_VIEW_VISIBLE == TitleViewAdapter.SEARCH_VIEW_VISIBLE
+        searchOrbView.visibility =
+            if (hasSearchListener && showOrbs) VISIBLE else INVISIBLE
+        settingsOrbView.visibility =
+            if (hasSettingsListener && showOrbs) VISIBLE else INVISIBLE
+    }
+
+    private fun updateBadgeVisibility() {
+        if (badgeView.drawable != null) {
+            badgeView.visibility = VISIBLE
+            textView.visibility = GONE
+        } else {
+            badgeView.visibility = GONE
+            textView.visibility = VISIBLE
+        }
+    }
+
+    override fun getTitleViewAdapter(): TitleViewAdapter = titleViewAdapter
+}

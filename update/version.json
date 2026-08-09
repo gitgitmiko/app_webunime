@@ -1,6 +1,6 @@
 {
-  "versionCode": 210,
-  "versionName": "1.10.10",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.10/WEBUNIME-TV-v1.10.10.apk",
-  "changelog": "OTA: selalu unduh versi terbaru (cache-bust version.json, cek ulang sebelum install)."
+  "versionCode": 211,
+  "versionName": "1.10.11",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.11/WEBUNIME-TV-v1.10.11.apk",
+  "changelog": "Settings + cek update manual; spinner loading saat parse Series/Anime lazy-load."
 }

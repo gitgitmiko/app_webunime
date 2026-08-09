@@ -42,6 +42,7 @@
     <string name="updating">Memperbarui dari GitHub…</string>
     <string name="loading_catalog">Memuat katalog…</string>
     <string name="loading_local_fallback">GitHub gagal · memuat data lokal…</string>
+    <string name="loading_row">Memuat %1$s…</string>
     <string name="update_title">Update tersedia</string>
     <string name="update_message">Versi %1$s siap diunduh.\n%2$s</string>
     <string name="update_now">Update</string>
@@ -55,4 +56,11 @@
     <string name="search_hint">Cari film, series, atau anime…</string>
     <string name="search_empty">Ketik judul untuk mencari</string>
     <string name="search_no_results">Tidak ada hasil untuk \"%1$s\"</string>
+    <string name="settings">Pengaturan</string>
+    <string name="settings_section_update">Pembaruan</string>
+    <string name="settings_version">Versi terpasang: %1$s (%2$d)</string>
+    <string name="settings_check_update">Cek pembaruan</string>
+    <string name="settings_check_update_hint">Jika sebelumnya memilih Nanti, cek ulang di sini untuk unduh versi terbaru.</string>
+    <string name="settings_checking_update">Memeriksa pembaruan…</string>
+    <string name="settings_up_to_date">Sudah versi terbaru (%1$s)</string>
 </resources>
