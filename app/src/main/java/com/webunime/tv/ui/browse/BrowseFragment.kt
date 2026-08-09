@@ -50,9 +50,11 @@ class BrowseFragment : BrowseSupportFragment() {
     private var lastItemIndex: Int = 0
     private var continueRowIndex: Int = -1
     private var rowsBuilt: Boolean = false
-    /** True hanya sekali setelah kembali dari Detail/Player. */
+    /** True hanya sekali setelah kembali dari Detail/Player/Search/Settings. */
     private var pendingPositionRestore: Boolean = false
     private var restoreRetries: Int = 0
+    /** Blok append baris lazy saat resume — append memicu scroll/shake. */
+    private var suppressDeferredAppend: Boolean = false
 
     /** Spesifikasi baris yang belum ditampilkan (lazy vertikal). */
     private var deferredRowSpecs: List<DeferredRowSpec> = emptyList()
@@ -60,8 +62,9 @@ class BrowseFragment : BrowseSupportFragment() {
     private var appendRowsJob: Job? = null
     private var keepItemForDeferred: Int = 0
 
-    private val restoreSelectionRunnable = Runnable { restoreBrowseSelection() }
+    private val restoreSelectionRunnable = Runnable { softRestoreFocusOnly() }
     private val focusGridRunnable = Runnable { focusRowsGrid() }
+    private val endSuppressDeferredRunnable = Runnable { suppressDeferredAppend = false }
 
     override fun onInflateTitleView(
         inflater: LayoutInflater,
@@ -107,7 +110,16 @@ class BrowseFragment : BrowseSupportFragment() {
         view.post {
             clearOpaqueBackgrounds(view)
             installTitleOrbFocusFix()
+            configureRowsGridStability()
         }
+    }
+
+    /** Kurangi realign otomatis Leanback yang terasa seperti beranda bergoyang. */
+    private fun configureRowsGridStability() {
+        val grid = rowsGrid() ?: return
+        grid.windowAlignment = VerticalGridView.WINDOW_ALIGN_NO_EDGE
+        grid.itemAlignmentOffsetPercent = VerticalGridView.ITEM_ALIGN_OFFSET_PERCENT_DISABLED
+        grid.isFocusDrawingOrderEnabled = true
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -128,12 +140,12 @@ class BrowseFragment : BrowseSupportFragment() {
         bindSettingsOrb()
         view?.post { bindSettingsOrb() }
 
-        val cardRowPresenter = ListRowPresenter(FocusHighlight.ZOOM_FACTOR_SMALL).apply {
+        val cardRowPresenter = ListRowPresenter(FocusHighlight.ZOOM_FACTOR_XSMALL).apply {
             shadowEnabled = true
             selectEffectEnabled = true
             headerPresenter = hideBlankHeaderPresenter()
         }
-        val heroRowPresenter = ListRowPresenter(FocusHighlight.ZOOM_FACTOR_SMALL).apply {
+        val heroRowPresenter = ListRowPresenter(FocusHighlight.ZOOM_FACTOR_NONE).apply {
             shadowEnabled = false
             selectEffectEnabled = false
             headerPresenter = hideBlankHeaderPresenter()
@@ -184,12 +196,15 @@ class BrowseFragment : BrowseSupportFragment() {
         if (pendingPositionRestore) {
             pendingPositionRestore = false
             restoreRetries = 0
-            // Continue dulu (tanpa reload penuh), lalu restore fokus sekali.
-            // Hindari postDelayed kedua — itu yang bikin beranda “bergoyang” setelah back.
+            // Jangan setSelectedPosition ulang — itu penyebab shake saat back.
+            // Cukup pastikan fokus ada di grid jika benar-benar hilang.
+            suppressDeferredAppend = true
+            view?.removeCallbacks(endSuppressDeferredRunnable)
             refreshContinueRowOnly(allowFullReload = false)
             view?.post {
-                if (isAdded) restoreBrowseSelection()
+                if (isAdded) softRestoreFocusOnly()
             }
+            view?.postDelayed(endSuppressDeferredRunnable, 600)
         } else {
             refreshContinueRowOnly(allowFullReload = true)
         }
@@ -197,6 +212,7 @@ class BrowseFragment : BrowseSupportFragment() {
 
     override fun onDestroy() {
         cancelPendingRestores()
+        view?.removeCallbacks(endSuppressDeferredRunnable)
         hero?.release()
         hero = null
         super.onDestroy()
@@ -207,6 +223,7 @@ class BrowseFragment : BrowseSupportFragment() {
     fun cancelPendingRestores() {
         view?.removeCallbacks(restoreSelectionRunnable)
         view?.removeCallbacks(focusGridRunnable)
+        view?.removeCallbacks(endSuppressDeferredRunnable)
         restoreRetries = 99
     }
 
@@ -423,6 +440,7 @@ class BrowseFragment : BrowseSupportFragment() {
      */
     private fun maybeAppendDeferredRows(force: Boolean = false) {
         if (!isAdded || !this::rowsAdapter.isInitialized) return
+        if (suppressDeferredAppend && !force) return
         if (deferredRowIndex >= deferredRowSpecs.size) return
         if (appendRowsJob?.isActive == true) return
 
@@ -578,58 +596,69 @@ class BrowseFragment : BrowseSupportFragment() {
         return true
     }
 
-    private fun restoreBrowseSelection() {
+    /**
+     * Kembalikan fokus ke baris browse tanpa mengubah selectedPosition
+     * (menghindari animasi scroll Leanback = shaking).
+     */
+    private fun softRestoreFocusOnly() {
         if (!isAdded || !this::rowsAdapter.isInitialized) return
         if (rowsAdapter.size() <= 0) return
-        if (restoreRetries > 4) return
 
-        val rowIndex = lastRowIndex.coerceIn(0, rowsAdapter.size() - 1)
-        val listRow = rowsAdapter.get(rowIndex) as? ListRow ?: return
         val grid = rowsGrid() ?: return
+        configureRowsGridStability()
 
-        if (listRow !is HeroListRow) {
-            ensureLoadedUntil(listRow.headerItem.id, lastItemIndex)
-        }
-        val itemIndex = if (listRow is HeroListRow) {
-            0
-        } else {
-            lastItemIndex.coerceIn(0, (listRow.adapter?.size() ?: 1) - 1)
-        }
-
-        val holder = grid.findViewHolderForAdapterPosition(rowIndex) as? ListRowPresenter.ViewHolder
-        val horizontal = holder?.gridView
-        val alreadyOnRow = grid.selectedPosition == rowIndex
-        val alreadyOnItem = horizontal != null && horizontal.selectedPosition == itemIndex
-        val hasBrowseFocus = grid.hasFocus() || horizontal?.hasFocus() == true
-
-        // Sudah di posisi benar + fokus → jangan set ulang (hindari animasi/scroll).
-        if (alreadyOnRow && alreadyOnItem && hasBrowseFocus) {
+        val focused = activity?.window?.decorView?.findFocus()
+        if (focused != null && isUnderRowsGrid(focused, grid)) {
             restoreRetries = 0
             return
         }
 
-        if (selectedPosition != rowIndex) {
-            selectedPosition = rowIndex
-        }
-        if (!alreadyOnRow) {
-            grid.setSelectedPosition(rowIndex)
-        }
-
-        if (horizontal == null) {
-            restoreRetries++
-            view?.removeCallbacks(restoreSelectionRunnable)
-            view?.postDelayed(restoreSelectionRunnable, 80)
+        // Fokus di title Search/Settings setelah back dari Settings — biarkan di title,
+        // jangan tarik ke konten (itu juga terasa goyang).
+        if (focused != null && isUnderTitleView(focused)) {
+            restoreRetries = 0
             return
         }
 
-        if (!alreadyOnItem) {
-            horizontal.selectedPosition = itemIndex
+        val rowIndex = grid.selectedPosition.coerceIn(0, rowsAdapter.size() - 1)
+        val holder = grid.findViewHolderForAdapterPosition(rowIndex) as? ListRowPresenter.ViewHolder
+        val horizontal = holder?.gridView
+        if (horizontal != null) {
+            if (!horizontal.hasFocus()) horizontal.requestFocus()
+            restoreRetries = 0
+            return
         }
-        // Hanya ambil fokus jika benar-benar hilang (mis. tertinggal di activity lain).
-        if (!hasBrowseFocus) {
-            horizontal.requestFocus()
+
+        if (!grid.hasFocus()) {
+            grid.requestFocus()
         }
-        restoreRetries = 0
+        // Holder belum siap — coba sekali lagi tanpa mengubah posisi.
+        if (restoreRetries < 3) {
+            restoreRetries++
+            view?.removeCallbacks(restoreSelectionRunnable)
+            view?.postDelayed(restoreSelectionRunnable, 50)
+        } else {
+            restoreRetries = 0
+        }
+    }
+
+    private fun isUnderRowsGrid(focused: View, grid: VerticalGridView): Boolean {
+        var v: View? = focused
+        while (v != null) {
+            if (v === grid) return true
+            v = v.parent as? View
+        }
+        return false
+    }
+
+    private fun isUnderTitleView(focused: View): Boolean {
+        val title = titleView ?: return false
+        var v: View? = focused
+        while (v != null) {
+            if (v === title) return true
+            v = v.parent as? View
+        }
+        return false
     }
 
     private fun ensureLoadedUntil(rowId: Long, index: Int) {

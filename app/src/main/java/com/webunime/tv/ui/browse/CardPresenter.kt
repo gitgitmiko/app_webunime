@@ -27,10 +27,9 @@ import com.webunime.tv.R
 import com.webunime.tv.data.CatalogItem
 
 /**
- * Kartu browse/search ala Netflix:
- * Semua kategori (film / series / horor / anime):
- * tidak fokus = poster portrait; fokus = landscape 16:9.
- * Badge di pojok kanan atas: kualitas (film/horor) atau total EPS (series/anime).
+ * Kartu browse/search:
+ * Ukuran tetap portrait; fokus hanya ganti gambar (+ zoom kecil Leanback).
+ * Badge di pojok kanan atas: NEW / kualitas / total EPS.
  */
 class CardPresenter : Presenter() {
 
@@ -39,7 +38,7 @@ class CardPresenter : Presenter() {
             isFocusable = true
             isFocusableInTouchMode = true
             isClickable = true
-            setMainImageDimensions(PORTRAIT_W, PORTRAIT_H)
+            setMainImageDimensions(CARD_W, CARD_H)
             cardType = ImageCardView.CARD_TYPE_INFO_UNDER
             setBackgroundColor(ContextCompat.getColor(context, R.color.wu_bg))
             setInfoAreaBackgroundColor(ContextCompat.getColor(context, R.color.wu_bg))
@@ -103,19 +102,17 @@ class CardPresenter : Presenter() {
     }
 
     companion object {
-        // Tidak fokus — poster ~2:3
-        private const val PORTRAIT_W = 156
-        private const val PORTRAIT_H = 234
-
-        // Fokus — title card Netflix ~16:9
-        private const val FOCUS_LANDSCAPE_W = 400
-        private const val FOCUS_LANDSCAPE_H = 225
+        /**
+         * Ukuran kartu tetap (portrait). Fokus hanya ganti gambar + zoom Leanback —
+         * morph lebar/tinggi saat fokus adalah penyebab utama “shaking” saat back
+         * dari Detail / Search / Settings.
+         */
+        private const val CARD_W = 156
+        private const val CARD_H = 234
 
         private const val MARQUEE_DELAY_MS = 480L
 
-        private fun cardSizeFor(focused: Boolean): Pair<Int, Int> =
-            if (focused) FOCUS_LANDSCAPE_W to FOCUS_LANDSCAPE_H
-            else PORTRAIT_W to PORTRAIT_H
+        private fun cardSizeFor(focused: Boolean): Pair<Int, Int> = CARD_W to CARD_H
 
         private fun applyCardSize(card: ImageCardView, focused: Boolean) {
             val (w, h) = cardSizeFor(focused)
@@ -123,7 +120,6 @@ class CardPresenter : Presenter() {
             if (card.getTag(R.id.tag_card_size) == sizeKey) return
             card.setTag(R.id.tag_card_size, sizeKey)
             card.setMainImageDimensions(w, h)
-            // Jangan requestLayout parent HorizontalGridView — memicu bounce saat back dari detail.
         }
 
         /** Gambar badge (kualitas / total EPS) di pojok kanan atas bitmap poster. */
