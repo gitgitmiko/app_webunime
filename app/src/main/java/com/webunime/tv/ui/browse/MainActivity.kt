@@ -94,6 +94,11 @@ class MainActivity : FragmentActivity() {
                     ).show()
                 }
         }
+
+        val repo = (application as WebunimeApp).catalogRepository
+        if (repo.consumeBrowseReloadRequest()) {
+            browseFragment()?.reloadRows()
+        }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

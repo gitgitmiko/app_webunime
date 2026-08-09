@@ -1,6 +1,6 @@
 {
-  "versionCode": 213,
-  "versionName": "1.10.13",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.13/WEBUNIME-TV-v1.10.13.apk",
-  "changelog": "Hero: badge resolusi HD/CAM; hapus hint panah carousel; fokus Search ke Settings lebih andal."
+  "versionCode": 214,
+  "versionName": "1.10.14",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.14/WEBUNIME-TV-v1.10.14.apk",
+  "changelog": "Settings: mulai scraping manual + update data katalog dari GitHub (cek status scrape)."
 }

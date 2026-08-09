@@ -11,3 +11,7 @@
 *.apk
 *.ap_
 *.aab
+proxy/**/.env*
+proxy/**/.vercel/
+.tmp-webunime/
+.kotlin/

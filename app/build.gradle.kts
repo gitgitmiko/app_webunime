@@ -11,8 +11,16 @@ android {
         applicationId = "com.webunime.tv"
         minSdk = 21
         targetSdk = 34
-        versionCode = 213
-        versionName = "1.10.13"
+        versionCode = 214
+        versionName = "1.10.14"
+
+        // Proxy Vercel (PAT GitHub hanya di server). Key bukan token GitHub.
+        buildConfigField(
+            "String",
+            "SCRAPE_PROXY_URL",
+            "\"https://webunime-scrape-proxy.vercel.app/api/scrape\"",
+        )
+        buildConfigField("String", "SCRAPE_APP_KEY", "\"wu-tv-scrape-k7m2p9x4\"")
     }
 
     buildTypes {

@@ -190,15 +190,87 @@ class CatalogRepository(private val context: Context) {
      * @return jumlah file yang berhasil diunduh (0 = gagal total → pakai lokal).
      */
     suspend fun refreshFromGithub(): Int = withContext(Dispatchers.IO) {
-        var ok = 0
-        for (name in CATALOG_FILES) {
-            if (runCatching { downloadAndCache(name) }.isSuccess) ok++
-        }
-        // Reset agar load ulang dari cache baru.
+        val ok = downloadCatalogFiles(cacheBust = false)
         snapshot = CatalogSnapshot()
         loadedSections.clear()
         loadStartupShell()
         ok
+    }
+
+    /**
+     * Sync manual dari Settings: bypass limit 1×/hari, cache-bust CDN raw GitHub.
+     * @return jumlah file OK; 0 = gagal total.
+     */
+    suspend fun forceRefreshFromGithub(): Int = refreshMutex.withLock {
+        val ok = withContext(Dispatchers.IO) {
+            downloadCatalogFiles(cacheBust = true)
+        }
+        snapshot = CatalogSnapshot()
+        loadedSections.clear()
+        loadStartupShell()
+        if (ok > 0) {
+            prefs.edit()
+                .putString(KEY_LAST_SYNC_DAY, todayKey())
+                .putBoolean(KEY_RELOAD_BROWSE, true)
+                .apply()
+            githubRefreshDone.set(true)
+        }
+        ok
+    }
+
+    /** True jika Settings baru saja sync katalog — MainActivity harus reloadRows. */
+    fun consumeBrowseReloadRequest(): Boolean {
+        if (!prefs.getBoolean(KEY_RELOAD_BROWSE, false)) return false
+        prefs.edit().putBoolean(KEY_RELOAD_BROWSE, false).apply()
+        return true
+    }
+
+    /** Baca sync-status.json publik (tanpa token), dengan cache-bust. */
+    suspend fun fetchSyncStatus(): CatalogSyncStatus? = withContext(Dispatchers.IO) {
+        val bust = System.currentTimeMillis()
+        val urls = listOf(
+            "$GITHUB_RAW_BASE$SYNC_STATUS_FILE?t=$bust",
+            "$GITHUB_JSDELIVR_BASE$SYNC_STATUS_FILE?t=$bust",
+        )
+        for (url in urls) {
+            val status = runCatching { fetchSyncStatusFrom(url) }.getOrNull()
+            if (status != null) return@withContext status
+        }
+        null
+    }
+
+    private fun fetchSyncStatusFrom(url: String): CatalogSyncStatus? {
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", "WEBUNIME-TV/1.0")
+            .header("Cache-Control", "no-cache, no-store, must-revalidate")
+            .header("Pragma", "no-cache")
+            .get()
+            .build()
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) return null
+            val body = response.body?.string().orEmpty()
+            if (body.isBlank()) return null
+            return moshi.adapter(CatalogSyncStatus::class.java).fromJson(body)
+                ?: runCatching {
+                    val o = org.json.JSONObject(body.trim().removePrefix("\uFEFF"))
+                    CatalogSyncStatus(
+                        state = o.optString("state").takeIf { it.isNotBlank() },
+                        startedAt = o.optString("startedAt").takeIf { it.isNotBlank() && it != "null" },
+                        finishedAt = o.optString("finishedAt").takeIf { it.isNotBlank() && it != "null" },
+                        runId = if (o.has("runId") && !o.isNull("runId")) o.optLong("runId") else null,
+                        message = o.optString("message").takeIf { it.isNotBlank() },
+                    )
+                }.getOrNull()
+        }
+    }
+
+    private fun downloadCatalogFiles(cacheBust: Boolean): Int {
+        var ok = 0
+        for (name in CATALOG_FILES) {
+            if (runCatching { downloadAndCache(name, cacheBust) }.isSuccess) ok++
+        }
+        return ok
     }
 
     private fun hasDownloadedCache(): Boolean =
@@ -358,30 +430,54 @@ class CatalogRepository(private val context: Context) {
         return out
     }
 
-    private fun downloadAndCache(fileName: String) {
-        val url = "$GITHUB_RAW_BASE$fileName"
-        val request = Request.Builder()
-            .url(url)
-            .header("User-Agent", "WEBUNIME-TV/1.0")
-            .build()
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) error("HTTP ${response.code} for $fileName")
-            val body = response.body?.string().orEmpty()
-            if (body.length < 2) error("Empty body $fileName")
-            // Validasi ringan saja — jangan parse penuh di sini (anime/series ~10MB,
-            // double-parse di emulator membuat UI stuck hitam lama).
-            val trimmed = body.trimStart()
-            if (!trimmed.startsWith("[")) error("Invalid JSON root $fileName")
-            File(cacheDir, fileName).writeText(body, Charsets.UTF_8)
+    private fun downloadAndCache(fileName: String, cacheBust: Boolean = false) {
+        val bust = if (cacheBust) "?t=${System.currentTimeMillis()}" else ""
+        val urls = buildList {
+            add("$GITHUB_RAW_BASE$fileName$bust")
+            if (cacheBust) add("$GITHUB_JSDELIVR_BASE$fileName$bust")
         }
+        var lastError: Throwable? = null
+        for (url in urls) {
+            val result = runCatching {
+                val request = Request.Builder()
+                    .url(url)
+                    .header("User-Agent", "WEBUNIME-TV/1.0")
+                    .apply {
+                        if (cacheBust) {
+                            header("Cache-Control", "no-cache, no-store, must-revalidate")
+                            header("Pragma", "no-cache")
+                        }
+                    }
+                    .build()
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) error("HTTP ${response.code} for $fileName")
+                    val body = response.body?.string().orEmpty()
+                    if (body.length < 2) error("Empty body $fileName")
+                    // Validasi ringan saja — jangan parse penuh di sini (anime/series ~10MB,
+                    // double-parse di emulator membuat UI stuck hitam lama).
+                    val trimmed = body.trimStart()
+                    if (!trimmed.startsWith("[")) error("Invalid JSON root $fileName")
+                    File(cacheDir, fileName).writeText(body, Charsets.UTF_8)
+                }
+            }
+            if (result.isSuccess) return
+            lastError = result.exceptionOrNull()
+        }
+        throw lastError ?: error("Download failed $fileName")
     }
 
     companion object {
         const val GITHUB_RAW_BASE =
             "https://raw.githubusercontent.com/gitgitmiko/WEBUNIME/main/public/data/"
 
+        const val GITHUB_JSDELIVR_BASE =
+            "https://cdn.jsdelivr.net/gh/gitgitmiko/WEBUNIME@main/public/data/"
+
+        const val SYNC_STATUS_FILE = "sync-status.json"
+
         private const val PREFS_NAME = "catalog_sync"
         private const val KEY_LAST_SYNC_DAY = "last_github_sync_day"
+        private const val KEY_RELOAD_BROWSE = "reload_browse_after_sync"
 
         private val CATALOG_FILES = listOf(
             "movies.json",

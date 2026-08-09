@@ -11,22 +11,29 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.webunime.tv.BuildConfig
 import com.webunime.tv.R
+import com.webunime.tv.WebunimeApp
 import com.webunime.tv.data.AppUpdateChecker
 import com.webunime.tv.data.AppUpdateInfo
+import com.webunime.tv.data.ScrapeTriggerClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * Pengaturan app — sementara hanya cek/update manual OTA.
- * Slot untuk fitur lain ke depan.
+ * Pengaturan: OTA APK + scrape manual + sync katalog dari GitHub.
  */
 class SettingsActivity : AppCompatActivity() {
 
     private val updateChecker by lazy { AppUpdateChecker(this) }
+    private val scrapeClient by lazy { ScrapeTriggerClient() }
+    private val catalogRepo by lazy { (application as WebunimeApp).catalogRepository }
+
     private var pendingApkFile: File? = null
     private var checking = false
+    private var catalogBusy = false
+
+    private lateinit var catalogStatusView: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,10 +44,18 @@ class SettingsActivity : AppCompatActivity() {
             BuildConfig.VERSION_NAME,
             BuildConfig.VERSION_CODE,
         )
+        catalogStatusView = findViewById(R.id.settingsCatalogStatus)
 
         val checkBtn = findViewById<MaterialButton>(R.id.settingsCheckUpdate)
         checkBtn.setOnClickListener { checkForUpdate() }
         checkBtn.requestFocus()
+
+        findViewById<MaterialButton>(R.id.settingsStartScrape)
+            .setOnClickListener { startScrape() }
+        findViewById<MaterialButton>(R.id.settingsRefreshCatalog)
+            .setOnClickListener { refreshCatalog() }
+
+        refreshCatalogStatusLabel()
     }
 
     override fun onResume() {
@@ -58,6 +73,7 @@ class SettingsActivity : AppCompatActivity() {
                     ).show()
                 }
         }
+        refreshCatalogStatusLabel()
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
@@ -68,6 +84,113 @@ class SettingsActivity : AppCompatActivity() {
             return true
         }
         return super.dispatchKeyEvent(event)
+    }
+
+    private fun refreshCatalogStatusLabel() {
+        lifecycleScope.launch {
+            val status = runCatching { catalogRepo.fetchSyncStatus() }.getOrNull()
+            if (isFinishing) return@launch
+            catalogStatusView.text = when {
+                status == null -> getString(R.string.settings_catalog_hint)
+                status.isRunning() -> getString(R.string.settings_catalog_processing)
+                status.isFailed() ->
+                    status.message?.takeIf { it.isNotBlank() }
+                        ?: getString(R.string.settings_catalog_hint)
+                else -> getString(R.string.settings_catalog_hint)
+            }
+        }
+    }
+
+    private fun startScrape() {
+        if (catalogBusy || isFinishing) return
+        catalogBusy = true
+        Toast.makeText(this, R.string.settings_scrape_starting, Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            val result = scrapeClient.startScrape()
+            catalogBusy = false
+            if (isFinishing) return@launch
+            when {
+                result.ok -> {
+                    Toast.makeText(
+                        this@SettingsActivity,
+                        R.string.settings_scrape_started,
+                        Toast.LENGTH_LONG,
+                    ).show()
+                    catalogStatusView.setText(R.string.settings_catalog_processing)
+                }
+                result.errorCode == "already_running" || result.httpCode == 409 -> {
+                    Toast.makeText(
+                        this@SettingsActivity,
+                        R.string.settings_scrape_running,
+                        Toast.LENGTH_LONG,
+                    ).show()
+                    catalogStatusView.setText(R.string.settings_catalog_processing)
+                }
+                result.errorCode == "rate_limited" || result.httpCode == 429 -> {
+                    Toast.makeText(
+                        this@SettingsActivity,
+                        R.string.settings_scrape_rate_limited,
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+                else -> {
+                    Toast.makeText(
+                        this@SettingsActivity,
+                        getString(R.string.settings_scrape_failed, result.message),
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
+            }
+        }
+    }
+
+    private fun refreshCatalog() {
+        if (catalogBusy || isFinishing) return
+        catalogBusy = true
+        Toast.makeText(this, R.string.settings_catalog_checking, Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            val status = runCatching { catalogRepo.fetchSyncStatus() }.getOrNull()
+            if (isFinishing) {
+                catalogBusy = false
+                return@launch
+            }
+            if (status?.isRunning() == true) {
+                catalogBusy = false
+                catalogStatusView.setText(R.string.settings_catalog_processing)
+                Toast.makeText(
+                    this@SettingsActivity,
+                    R.string.settings_catalog_processing,
+                    Toast.LENGTH_LONG,
+                ).show()
+                return@launch
+            }
+            if (status == null) {
+                Toast.makeText(
+                    this@SettingsActivity,
+                    R.string.settings_catalog_status_unknown,
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+
+            Toast.makeText(this@SettingsActivity, R.string.settings_catalog_updating, Toast.LENGTH_SHORT).show()
+            val ok = runCatching { catalogRepo.forceRefreshFromGithub() }.getOrDefault(0)
+            catalogBusy = false
+            if (isFinishing) return@launch
+            if (ok > 0) {
+                Toast.makeText(
+                    this@SettingsActivity,
+                    getString(R.string.settings_catalog_updated, ok),
+                    Toast.LENGTH_LONG,
+                ).show()
+                catalogStatusView.text = getString(R.string.settings_catalog_updated, ok)
+            } else {
+                Toast.makeText(
+                    this@SettingsActivity,
+                    R.string.settings_catalog_failed,
+                    Toast.LENGTH_LONG,
+                ).show()
+            }
+        }
     }
 
     private fun checkForUpdate() {

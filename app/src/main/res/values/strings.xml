@@ -62,4 +62,19 @@
     <string name="settings_check_update_hint">Jika sebelumnya memilih Nanti, cek ulang di sini untuk unduh versi terbaru.</string>
     <string name="settings_checking_update">Memeriksa pembaruan…</string>
     <string name="settings_up_to_date">Sudah versi terbaru (%1$s)</string>
+    <string name="settings_section_catalog">Data katalog</string>
+    <string name="settings_start_scrape">Mulai scraping</string>
+    <string name="settings_refresh_catalog">Update data terbaru</string>
+    <string name="settings_catalog_hint">Scraping ~2–5 menit. Setelah selesai, tekan Update data terbaru.</string>
+    <string name="settings_scrape_starting">Memulai scraping…</string>
+    <string name="settings_scrape_started">Scraping dimulai. Estimasi 2–5 menit.</string>
+    <string name="settings_scrape_running">Scraping masih berjalan. Coba lagi nanti.</string>
+    <string name="settings_scrape_rate_limited">Tunggu beberapa menit sebelum scrape lagi.</string>
+    <string name="settings_scrape_failed">Gagal memulai scrape: %1$s</string>
+    <string name="settings_catalog_checking">Memeriksa status data…</string>
+    <string name="settings_catalog_processing">Data terbaru sedang diproses. Tunggu scrape selesai.</string>
+    <string name="settings_catalog_updating">Mengunduh data dari GitHub…</string>
+    <string name="settings_catalog_updated">Data katalog diperbarui (%1$d file). Kembali ke beranda.</string>
+    <string name="settings_catalog_failed">Gagal mengunduh data katalog.</string>
+    <string name="settings_catalog_status_unknown">Status scrape tidak terbaca; mencoba unduh data…</string>
 </resources>
