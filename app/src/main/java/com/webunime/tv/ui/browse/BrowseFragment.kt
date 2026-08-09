@@ -324,56 +324,62 @@ class BrowseFragment : BrowseSupportFragment() {
                 title = getString(R.string.row_indonesia),
                 sections = listOf(CatalogSection.INDONESIA),
                 items = { s ->
-                    s.indonesia.sortedWith(
-                        compareByDescending<CatalogItem> { it.releaseSortKey() }
-                            .thenByDescending { it.tahun?.toIntOrNull() ?: 0 }
-                            .thenBy { it.displayTitle() },
+                    withNewFirst(
+                        s.indonesia.sortedWith(
+                            compareByDescending<CatalogItem> { it.releaseSortKey() }
+                                .thenByDescending { it.tahun?.toIntOrNull() ?: 0 }
+                                .thenBy { it.displayTitle() },
+                        ),
                     )
                 },
             ),
             DeferredRowSpec(
                 title = getString(R.string.row_movies_year, currentYear),
                 sections = listOf(CatalogSection.MOVIES),
-                items = { s -> s.movies.filter { it.tahun == currentYear.toString() } },
+                items = { s ->
+                    withNewFirst(s.movies.filter { it.tahun == currentYear.toString() })
+                },
             ),
             DeferredRowSpec(
                 title = getString(R.string.row_family),
                 sections = listOf(CatalogSection.MOVIES),
                 items = { s ->
-                    s.movies.filter { item ->
-                        item.genre.orEmpty().any { it.equals("Family", ignoreCase = true) }
-                    }
+                    withNewFirst(
+                        s.movies.filter { item ->
+                            item.genre.orEmpty().any { it.equals("Family", ignoreCase = true) }
+                        },
+                    )
                 },
             ),
             DeferredRowSpec(
                 title = getString(R.string.row_horror),
                 sections = listOf(CatalogSection.HORROR),
-                items = { s -> s.horror },
+                items = { s -> withNewFirst(s.horror) },
             ),
             DeferredRowSpec(
                 title = getString(R.string.row_series_latest),
                 sections = listOf(CatalogSection.SERIES_LATEST, CatalogSection.SERIES),
-                items = { s -> s.seriesLatest },
+                items = { s -> withNewFirst(s.seriesLatest) },
             ),
             DeferredRowSpec(
                 title = getString(R.string.row_series),
                 sections = listOf(CatalogSection.SERIES),
-                items = { s -> s.series },
+                items = { s -> withNewFirst(s.series) },
             ),
             DeferredRowSpec(
                 title = getString(R.string.row_anime_latest),
                 sections = listOf(CatalogSection.ANIME_LATEST, CatalogSection.ANIME),
-                items = { s -> s.animeLatest },
+                items = { s -> withNewFirst(s.animeLatest) },
             ),
             DeferredRowSpec(
                 title = getString(R.string.row_anime),
                 sections = listOf(CatalogSection.ANIME),
-                items = { s -> s.anime },
+                items = { s -> withNewFirst(s.anime) },
             ),
             DeferredRowSpec(
                 title = getString(R.string.row_anime_movies),
                 sections = listOf(CatalogSection.ANIME_MOVIES),
-                items = { s -> s.animeMovies },
+                items = { s -> withNewFirst(s.animeMovies) },
             ),
         )
 
@@ -482,16 +488,48 @@ class BrowseFragment : BrowseSupportFragment() {
     }
 
     private fun buildFeaturedCarousel(snap: CatalogSnapshot): List<CatalogItem> {
+        fun keyOf(item: CatalogItem): String =
+            item.slug?.takeIf { it.isNotBlank() } ?: item.displayTitle()
+
         val pool = (snap.movies + snap.series + snap.indonesia + snap.horror)
             .asSequence()
             .filter { !isAnimeCatalog(it) }
-            .filter { ratingValue(it) > FEATURED_MIN_RATING }
-            .distinctBy { it.slug?.takeIf { s -> s.isNotBlank() } ?: it.displayTitle() }
+            .distinctBy { keyOf(it) }
             .toList()
-        val withLandscape = pool.filter { !it.thumbnail_landscape.isNullOrBlank() }
-        val source = withLandscape.ifEmpty { pool }
-        // Acak tiap buka/reload browse; tetap rating > 7.
-        return source.shuffled().take(FEATURED_LIMIT)
+
+        // NEW selalu masuk dulu (meski rating ≤ 7), prefer yang punya landscape.
+        val news = pool.filter { it.showsNewBadge() }.let { list ->
+            val withLand = list.filter { !it.thumbnail_landscape.isNullOrBlank() }
+            val without = list.filter { it.thumbnail_landscape.isNullOrBlank() }
+            withLand + without
+        }
+
+        val ratedPool = pool
+            .filter { !it.showsNewBadge() }
+            .filter { ratingValue(it) > FEATURED_MIN_RATING }
+        val ratedWithLandscape = ratedPool.filter { !it.thumbnail_landscape.isNullOrBlank() }
+        val ratedSource = (ratedWithLandscape.ifEmpty { ratedPool }).shuffled()
+
+        val out = ArrayList<CatalogItem>(FEATURED_LIMIT)
+        val seen = HashSet<String>()
+        for (item in news) {
+            if (out.size >= FEATURED_LIMIT) break
+            if (!seen.add(keyOf(item))) continue
+            out.add(item)
+        }
+        for (item in ratedSource) {
+            if (out.size >= FEATURED_LIMIT) break
+            if (!seen.add(keyOf(item))) continue
+            out.add(item)
+        }
+        return out
+    }
+
+    /** Item is_new di depan; urutan relatif dalam tiap grup tetap. */
+    private fun withNewFirst(items: List<CatalogItem>): List<CatalogItem> {
+        if (items.isEmpty() || items.none { it.showsNewBadge() }) return items
+        val (news, rest) = items.partition { it.showsNewBadge() }
+        return news + rest
     }
 
     private fun buildContinueItems(): List<CatalogItem> =
