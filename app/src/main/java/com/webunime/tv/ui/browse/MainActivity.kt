@@ -44,13 +44,19 @@ class MainActivity : FragmentActivity() {
         val loadingText = findViewById<TextView>(R.id.catalogLoadingText)
 
         lifecycleScope.launch {
-            // Langsung GitHub → tampilkan. Tidak load lokal di depan (hindari 2× proses).
+            // Sync GitHub paling banyak 1× per hari (katalog update tengah malam).
+            // Buka ulang di hari yang sama → pakai cache lokal.
             loading.visibility = View.VISIBLE
-            loadingText.setText(R.string.updating)
+            val needRemote = repo.needsGithubRefreshToday()
+            if (needRemote) {
+                loadingText.setText(R.string.updating)
+                runCatching { repo.refreshFromGithubOnce() }
+            } else {
+                loadingText.setText(R.string.loading_catalog)
+            }
 
-            runCatching { repo.refreshFromGithubOnce() }
             if (!repo.isSnapshotReady()) {
-                loadingText.setText(R.string.loading_local_fallback)
+                if (needRemote) loadingText.setText(R.string.loading_local_fallback)
                 repo.loadInitial()
             }
 

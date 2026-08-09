@@ -125,11 +125,19 @@ class BrowseFragment : BrowseSupportFragment() {
     override fun onResume() {
         super.onResume()
         if (!rowsBuilt) return
-        refreshContinueRowOnly()
         if (pendingPositionRestore) {
             pendingPositionRestore = false
             restoreRetries = 0
-            view?.post(restoreSelectionRunnable)
+            // Kembali dari Search/Detail: restore fokus sekali, baru soft-refresh continue.
+            // Jangan reloadRows di sini — itu yang bikin bounce atas/bawah.
+            view?.post {
+                restoreBrowseSelection()
+                view?.postDelayed({
+                    if (isAdded) refreshContinueRowOnly(allowFullReload = false)
+                }, 350)
+            }
+        } else {
+            refreshContinueRowOnly(allowFullReload = true)
         }
     }
 
@@ -329,25 +337,37 @@ class BrowseFragment : BrowseSupportFragment() {
                 )
             }
 
-    private fun refreshContinueRowOnly() {
+    private fun refreshContinueRowOnly(allowFullReload: Boolean = true) {
         if (!this::rowsAdapter.isInitialized || !isAdded) return
         val items = buildContinueItems()
         if (continueRowIndex in 0 until rowsAdapter.size()) {
             val listRow = rowsAdapter.get(continueRowIndex) as? ListRow ?: return
             if (listRow is HeroListRow) return
             val adapter = listRow.adapter as? ArrayObjectAdapter ?: return
+            // Hindari clear+re-add jika isi sama — itu mencuri fokus / memicu bounce.
+            if (continueItemsEqual(adapter, items)) return
             adapter.clear()
             items.forEach { adapter.add(it) }
             val rowId = listRow.headerItem.id
             rowPaging[rowId] = RowPagingState(items, adapter, items.size)
-            if (items.isEmpty()) {
+            if (items.isEmpty() && allowFullReload) {
                 reloadRows()
             }
             return
         }
-        if (items.isNotEmpty()) {
+        if (items.isNotEmpty() && allowFullReload) {
             reloadRows()
         }
+    }
+
+    private fun continueItemsEqual(adapter: ArrayObjectAdapter, items: List<CatalogItem>): Boolean {
+        if (adapter.size() != items.size) return false
+        for (i in items.indices) {
+            val a = adapter.get(i) as? CatalogItem ?: return false
+            val b = items[i]
+            if (a.slug != b.slug || a.episode != b.episode || a.durasi != b.durasi) return false
+        }
+        return true
     }
 
     private fun restoreBrowseSelection() {
@@ -367,7 +387,9 @@ class BrowseFragment : BrowseSupportFragment() {
             val horizontal = holder?.gridView
             if (horizontal != null) {
                 horizontal.selectedPosition = 0
-                horizontal.requestFocus()
+                if (!grid.hasFocus() && !horizontal.hasFocus()) {
+                    horizontal.requestFocus()
+                }
                 restoreRetries = 0
             } else {
                 restoreRetries++
@@ -383,7 +405,11 @@ class BrowseFragment : BrowseSupportFragment() {
         val horizontal = holder?.gridView
         if (horizontal != null) {
             horizontal.selectedPosition = itemIndex
-            horizontal.requestFocus()
+            // Jangan requestFocus berulang jika sudah ada fokus di browse —
+            // itu memicu resize kartu landscape/portrait → glitch atas/bawah.
+            if (!grid.hasFocus() && !horizontal.hasFocus()) {
+                horizontal.requestFocus()
+            }
             restoreRetries = 0
         } else {
             restoreRetries++

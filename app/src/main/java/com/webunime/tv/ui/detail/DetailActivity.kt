@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
+import android.widget.HorizontalScrollView
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -17,6 +18,7 @@ import com.webunime.tv.data.CatalogItem
 import com.webunime.tv.data.Episode
 import com.webunime.tv.data.PlayerRouter
 import com.webunime.tv.data.PlayerServer
+import com.webunime.tv.data.WatchSessionStore
 import com.webunime.tv.ui.player.PlayerActivity
 
 class DetailActivity : AppCompatActivity() {
@@ -25,7 +27,15 @@ class DetailActivity : AppCompatActivity() {
     private var selectedEpisode: Episode? = null
     private var selectedPlayer: PlayerServer? = null
 
+    /** Indeks awal rentang aktif (0, 50, 100, …). Null = mode daftar penuh (&lt; threshold). */
+    private var episodeRangeStart: Int? = null
+
+    private lateinit var episodeJumpScroll: HorizontalScrollView
+    private lateinit var episodeJumpContainer: LinearLayout
+    private lateinit var episodeRangeScroll: HorizontalScrollView
+    private lateinit var episodeRangeContainer: LinearLayout
     private lateinit var episodeContainer: LinearLayout
+    private lateinit var episodeSection: View
     private lateinit var serverContainer: LinearLayout
     private lateinit var playButton: MaterialButton
 
@@ -49,6 +59,11 @@ class DetailActivity : AppCompatActivity() {
         val title = findViewById<TextView>(R.id.detailTitle)
         val meta = findViewById<TextView>(R.id.detailMeta)
         val synopsis = findViewById<TextView>(R.id.detailSynopsis)
+        episodeSection = findViewById(R.id.episodeSection)
+        episodeJumpScroll = findViewById(R.id.episodeJumpScroll)
+        episodeJumpContainer = findViewById(R.id.episodeJumpContainer)
+        episodeRangeScroll = findViewById(R.id.episodeRangeScroll)
+        episodeRangeContainer = findViewById(R.id.episodeRangeContainer)
         episodeContainer = findViewById(R.id.episodeContainer)
         serverContainer = findViewById(R.id.serverContainer)
         playButton = findViewById(R.id.playButton)
@@ -67,16 +82,21 @@ class DetailActivity : AppCompatActivity() {
         posterReq.into(poster)
         backdropReq.into(backdrop)
 
+        val episodesSorted = sortedEpisodes()
+        val continueEp = continueEpisode(episodesSorted)
         selectedEpisode = when {
             preferEpisode != null ->
-                item.episodes?.firstOrNull { ep ->
+                episodesSorted.firstOrNull { ep ->
                     ep.episode == preferEpisode &&
                         (preferSeason == null || ep.season == null || ep.season == preferSeason)
                 }
-                    ?: item.episodes?.firstOrNull { it.episode == preferEpisode }
-                    ?: item.episodes?.firstOrNull()
-            else -> item.episodes?.firstOrNull()
+                    ?: episodesSorted.firstOrNull { it.episode == preferEpisode }
+                    ?: episodesSorted.firstOrNull()
+            continueEp != null -> continueEp
+            usesEpisodeRanges(episodesSorted) -> episodesSorted.lastOrNull()
+            else -> episodesSorted.firstOrNull()
         }
+        initEpisodeRange()
         bindEpisodes()
         bindServers()
         updatePlayButtonLabel()
@@ -135,47 +155,245 @@ class DetailActivity : AppCompatActivity() {
         return super.dispatchKeyEvent(normalized)
     }
 
+    private fun contentSlug(): String =
+        item.slug?.takeIf { it.isNotBlank() }
+            ?: item.anime_slug?.takeIf { it.isNotBlank() }
+            ?: ""
+
+    private fun sortedEpisodes(): List<Episode> =
+        item.episodes.orEmpty().sortedWith(
+            compareBy<Episode> { it.season ?: 0 }.thenBy { it.episode ?: 0 },
+        )
+
+    private fun usesEpisodeRanges(episodes: List<Episode>): Boolean =
+        episodes.size >= EPISODE_RANGE_THRESHOLD
+
+    private fun initEpisodeRange() {
+        val episodes = sortedEpisodes()
+        if (!usesEpisodeRanges(episodes)) {
+            episodeRangeStart = null
+            return
+        }
+        val selectedIdx = selectedEpisode?.let { sel ->
+            episodes.indexOfFirst {
+                it.slug == sel.slug && it.episode == sel.episode && it.season == sel.season
+            }.takeIf { it >= 0 }
+                ?: episodes.indexOfFirst { it.episode == sel.episode }.takeIf { it >= 0 }
+        }
+        episodeRangeStart = if (selectedIdx != null) {
+            (selectedIdx / EPISODE_RANGE_SIZE) * EPISODE_RANGE_SIZE
+        } else {
+            // Judul panjang tanpa prefer: rentang terakhir (sering yang dicari).
+            ((episodes.size - 1) / EPISODE_RANGE_SIZE) * EPISODE_RANGE_SIZE
+        }
+    }
+
+    private fun continueEpisode(episodes: List<Episode>): Episode? {
+        val slug = contentSlug()
+        if (slug.isBlank()) return null
+        val sessions = (application as WebunimeApp).watchSessions
+        val session = sessions.continueWatching(limit = 200)
+            .firstOrNull { it.slug == slug }
+            ?: return null
+        val epNum = session.episode ?: return null
+        return episodes.firstOrNull { it.episode == epNum }
+    }
+
     private fun bindEpisodes() {
+        episodeJumpContainer.removeAllViews()
+        episodeRangeContainer.removeAllViews()
         episodeContainer.removeAllViews()
-        val episodes = item.episodes.orEmpty()
+
+        val episodes = sortedEpisodes()
         val episodeLabel = findViewById<TextView>(R.id.episodeLabel)
-        val episodeScroll = findViewById<View>(R.id.episodeScroll)
         if (episodes.isEmpty()) {
             episodeLabel.visibility = View.GONE
-            episodeScroll.visibility = View.GONE
+            episodeSection.visibility = View.GONE
+            episodeJumpScroll.visibility = View.GONE
+            episodeRangeScroll.visibility = View.GONE
             return
         }
         episodeLabel.visibility = View.VISIBLE
-        episodeScroll.visibility = View.VISIBLE
-        val slug = item.slug?.takeIf { it.isNotBlank() }
-            ?: item.anime_slug?.takeIf { it.isNotBlank() }
-            ?: ""
+        episodeSection.visibility = View.VISIBLE
+
+        val ranged = usesEpisodeRanges(episodes)
+        if (ranged) {
+            if (episodeRangeStart == null) initEpisodeRange()
+            bindJumpButtons(episodes)
+            bindRangeChips(episodes)
+            episodeJumpScroll.visibility = View.VISIBLE
+            episodeRangeScroll.visibility = View.VISIBLE
+        } else {
+            episodeRangeStart = null
+            episodeJumpScroll.visibility = View.GONE
+            episodeRangeScroll.visibility = View.GONE
+        }
+
+        val visible = if (ranged) {
+            val start = episodeRangeStart ?: 0
+            val end = (start + EPISODE_RANGE_SIZE).coerceAtMost(episodes.size)
+            episodes.subList(start, end)
+        } else {
+            episodes
+        }
+
+        val slug = contentSlug()
         val sessions = (application as WebunimeApp).watchSessions
-        episodes.forEach { ep ->
-            val watched = slug.isNotBlank() && sessions.isWatched(slug, ep.episode)
-            val btn = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                text = if (watched) {
-                    getString(R.string.episode_watched, ep.displayTitle())
-                } else {
-                    ep.displayTitle()
-                }
-                isFocusable = true
-                isAllCaps = false
-                if (watched) {
-                    setTextColor(getColor(R.color.wu_text_dim))
-                }
-                setOnClickListener {
-                    selectedEpisode = ep
+        visible.forEach { ep ->
+            val btn = makeEpisodeButton(ep, slug, sessions)
+            btn.tag = ep
+            episodeContainer.addView(btn)
+        }
+    }
+
+    private fun bindJumpButtons(episodes: List<Episode>) {
+        val continueEp = continueEpisode(episodes)
+        if (continueEp != null) {
+            episodeJumpContainer.addView(
+                makeChromeButton(
+                    text = getString(R.string.episode_jump_continue),
+                    selected = selectedEpisode?.episode == continueEp.episode &&
+                        selectedEpisode?.season == continueEp.season,
+                ) {
+                    selectEpisode(continueEp, focusEpisode = true)
+                },
+            )
+        }
+        val latest = episodes.lastOrNull()
+        if (latest != null) {
+            episodeJumpContainer.addView(
+                makeChromeButton(
+                    text = getString(R.string.episode_jump_latest),
+                    selected = selectedEpisode?.slug == latest.slug &&
+                        selectedEpisode?.episode == latest.episode,
+                ) {
+                    selectEpisode(latest, focusEpisode = true)
+                },
+            )
+        }
+    }
+
+    private fun bindRangeChips(episodes: List<Episode>) {
+        val total = episodes.size
+        var start = 0
+        while (start < total) {
+            val endInclusive = (start + EPISODE_RANGE_SIZE).coerceAtMost(total)
+            val rangeStart = start
+            val label = getString(
+                R.string.episode_range,
+                start + 1,
+                endInclusive,
+            )
+            val selected = episodeRangeStart == rangeStart
+            episodeRangeContainer.addView(
+                makeChromeButton(text = label, selected = selected) {
+                    episodeRangeStart = rangeStart
+                    // Jangan ganti selectedEpisode kecuali di luar rentang baru
+                    val stillVisible = selectedEpisode?.let { sel ->
+                        val idx = episodes.indexOfFirst {
+                            it.slug == sel.slug && it.episode == sel.episode
+                        }
+                        idx in rangeStart until (rangeStart + EPISODE_RANGE_SIZE).coerceAtMost(total)
+                    } == true
+                    if (!stillVisible) {
+                        selectedEpisode = episodes.getOrNull(rangeStart)
+                    }
                     bindEpisodes()
                     bindServers()
                     updatePlayButtonLabel()
-                }
-                if (selectedEpisode?.slug == ep.slug && selectedEpisode?.episode == ep.episode) {
-                    setBackgroundColor(getColor(R.color.wu_accent))
-                    setTextColor(getColor(R.color.wu_text))
+                    focusFirstEpisodeButton()
+                },
+            )
+            start += EPISODE_RANGE_SIZE
+        }
+    }
+
+    private fun selectEpisode(ep: Episode, focusEpisode: Boolean) {
+        selectedEpisode = ep
+        val episodes = sortedEpisodes()
+        if (usesEpisodeRanges(episodes)) {
+            val idx = episodes.indexOfFirst {
+                it.slug == ep.slug && it.episode == ep.episode && it.season == ep.season
+            }.takeIf { it >= 0 }
+                ?: episodes.indexOfFirst { it.episode == ep.episode }.takeIf { it >= 0 }
+                ?: 0
+            episodeRangeStart = (idx / EPISODE_RANGE_SIZE) * EPISODE_RANGE_SIZE
+        }
+        bindEpisodes()
+        bindServers()
+        updatePlayButtonLabel()
+        if (focusEpisode) focusSelectedEpisodeButton()
+    }
+
+    private fun makeEpisodeButton(
+        ep: Episode,
+        slug: String,
+        sessions: WatchSessionStore,
+    ): MaterialButton {
+        val watched = slug.isNotBlank() && sessions.isWatched(slug, ep.episode)
+        return MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            text = if (watched) {
+                getString(R.string.episode_watched, ep.displayTitle())
+            } else {
+                ep.displayTitle()
+            }
+            isFocusable = true
+            isAllCaps = false
+            if (watched) {
+                setTextColor(getColor(R.color.wu_text_dim))
+            }
+            setOnClickListener {
+                selectedEpisode = ep
+                bindEpisodes()
+                bindServers()
+                updatePlayButtonLabel()
+            }
+            if (selectedEpisode?.slug == ep.slug && selectedEpisode?.episode == ep.episode) {
+                setBackgroundColor(getColor(R.color.wu_accent))
+                setTextColor(getColor(R.color.wu_text))
+            }
+        }
+    }
+
+    private fun makeChromeButton(
+        text: String,
+        selected: Boolean,
+        onClick: () -> Unit,
+    ): MaterialButton =
+        MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            this.text = text
+            isFocusable = true
+            isAllCaps = false
+            setOnClickListener { onClick() }
+            if (selected) {
+                setBackgroundColor(getColor(R.color.wu_accent))
+                setTextColor(getColor(R.color.wu_text))
+            }
+        }
+
+    private fun focusFirstEpisodeButton() {
+        episodeContainer.post {
+            if (episodeContainer.childCount > 0) {
+                episodeContainer.getChildAt(0).requestFocus()
+            }
+        }
+    }
+
+    private fun focusSelectedEpisodeButton() {
+        episodeContainer.post {
+            val sel = selectedEpisode
+            for (i in 0 until episodeContainer.childCount) {
+                val child = episodeContainer.getChildAt(i)
+                val ep = child.tag as? Episode
+                if (sel != null && ep != null &&
+                    ep.episode == sel.episode && ep.season == sel.season &&
+                    (ep.slug == null || sel.slug == null || ep.slug == sel.slug)
+                ) {
+                    child.requestFocus()
+                    return@post
                 }
             }
-            episodeContainer.addView(btn)
+            focusFirstEpisodeButton()
         }
     }
 
@@ -230,9 +448,7 @@ class DetailActivity : AppCompatActivity() {
             Toast.makeText(this, R.string.error_no_players, Toast.LENGTH_SHORT).show()
             return
         }
-        val slug = item.slug?.takeIf { it.isNotBlank() }
-            ?: item.anime_slug?.takeIf { it.isNotBlank() }
-            ?: ""
+        val slug = contentSlug()
         val episodeNum = selectedEpisode?.episode
         val title = buildString {
             append(item.displayTitle())
@@ -266,5 +482,8 @@ class DetailActivity : AppCompatActivity() {
         const val EXTRA_SLUG = "slug"
         const val EXTRA_EPISODE = "episode"
         const val EXTRA_SEASON = "season"
+
+        private const val EPISODE_RANGE_THRESHOLD = 40
+        private const val EPISODE_RANGE_SIZE = 50
     }
 }

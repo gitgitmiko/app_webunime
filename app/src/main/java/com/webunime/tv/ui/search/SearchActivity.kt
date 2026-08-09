@@ -2,8 +2,8 @@ package com.webunime.tv.ui.search
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.fragment.app.FragmentActivity
 import android.view.KeyEvent
+import androidx.fragment.app.FragmentActivity
 import com.webunime.tv.R
 import com.webunime.tv.ui.detail.DetailActivity
 

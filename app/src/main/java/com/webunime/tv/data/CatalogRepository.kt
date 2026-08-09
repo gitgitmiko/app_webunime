@@ -11,6 +11,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
+import java.util.Calendar
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -31,6 +32,10 @@ class CatalogRepository(private val context: Context) {
 
     private val cacheDir: File
         get() = File(context.filesDir, "catalog").also { if (!it.exists()) it.mkdirs() }
+
+    private val prefs by lazy {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    }
 
     private val refreshMutex = Mutex()
     private val githubRefreshDone = AtomicBoolean(false)
@@ -58,6 +63,12 @@ class CatalogRepository(private val context: Context) {
                 context.assets.open("data/$name").use { it.available() > 2 }
             }.getOrDefault(false)
         }
+    }
+
+    /** True jika belum sync sukses hari ini, atau cache unduhan belum ada. */
+    fun needsGithubRefreshToday(): Boolean {
+        if (!hasDownloadedCache()) return true
+        return prefs.getString(KEY_LAST_SYNC_DAY, null) != todayKey()
     }
 
     suspend fun loadInitial(): CatalogSnapshot {
@@ -114,15 +125,24 @@ class CatalogRepository(private val context: Context) {
     }
 
     /**
-     * Unduh katalog dari GitHub paling banyak sekali per proses app.
-     * @return jumlah file OK; -1 = sudah pernah sync di proses ini; 0 = gagal total.
+     * Unduh katalog dari GitHub paling banyak sekali per hari (data sync tengah malam).
+     * Dalam satu proses app juga tidak diulang.
+     * @return jumlah file OK; -1 = dilewati (sudah sync hari ini); 0 = gagal total.
      */
     suspend fun refreshFromGithubOnce(): Int {
         if (githubRefreshDone.get()) return -1
         return refreshMutex.withLock {
             if (githubRefreshDone.get()) return@withLock -1
+            if (!needsGithubRefreshToday()) {
+                githubRefreshDone.set(true)
+                return@withLock -1
+            }
             val ok = refreshFromGithub()
-            githubRefreshDone.set(true)
+            if (ok > 0) {
+                prefs.edit().putString(KEY_LAST_SYNC_DAY, todayKey()).apply()
+                githubRefreshDone.set(true)
+            }
+            // Gagal total → jangan tandai hari ini, biar buka berikutnya coba lagi.
             ok
         }
     }
@@ -136,8 +156,25 @@ class CatalogRepository(private val context: Context) {
         for (name in CATALOG_FILES) {
             if (runCatching { downloadAndCache(name) }.isSuccess) ok++
         }
+        // Reset snapshot agar load ulang dari cache baru (bukan early-return data lama).
+        snapshot = CatalogSnapshot()
         loadInitial()
         ok
+    }
+
+    private fun hasDownloadedCache(): Boolean =
+        CATALOG_FILES.any { name ->
+            val f = File(cacheDir, name)
+            f.exists() && f.length() > 2
+        }
+
+    private fun todayKey(): String {
+        val c = Calendar.getInstance()
+        return "%04d-%02d-%02d".format(
+            c.get(Calendar.YEAR),
+            c.get(Calendar.MONTH) + 1,
+            c.get(Calendar.DAY_OF_MONTH),
+        )
     }
 
     /**
@@ -303,6 +340,9 @@ class CatalogRepository(private val context: Context) {
     companion object {
         const val GITHUB_RAW_BASE =
             "https://raw.githubusercontent.com/gitgitmiko/WEBUNIME/main/public/data/"
+
+        private const val PREFS_NAME = "catalog_sync"
+        private const val KEY_LAST_SYNC_DAY = "last_github_sync_day"
 
         private val CATALOG_FILES = listOf(
             "movies.json",

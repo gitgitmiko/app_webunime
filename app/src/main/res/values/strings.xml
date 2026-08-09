@@ -25,6 +25,9 @@
     <string name="resume_play">▶  Lanjutkan</string>
     <string name="failover_server">Server bermasalah · coba %1$s</string>
     <string name="episodes">Episode</string>
+    <string name="episode_jump_continue">Lanjutkan</string>
+    <string name="episode_jump_latest">Terbaru</string>
+    <string name="episode_range">%1$d–%2$d</string>
     <string name="episode_watched">✓  %1$s</string>
     <string name="episode_next">Episode berikutnya · %1$s</string>
     <string name="episode_prev">Episode sebelumnya · %1$s</string>
@@ -36,6 +39,7 @@
     <string name="servers">Audio &amp; Server</string>
     <string name="loading">Memuat katalog…</string>
     <string name="updating">Memperbarui dari GitHub…</string>
+    <string name="loading_catalog">Memuat katalog…</string>
     <string name="loading_local_fallback">GitHub gagal · memuat data lokal…</string>
     <string name="update_title">Update tersedia</string>
     <string name="update_message">Versi %1$s siap diunduh.\n%2$s</string>

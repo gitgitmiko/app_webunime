@@ -1,6 +1,6 @@
 {
-  "versionCode": 205,
-  "versionName": "1.10.5",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.5/WEBUNIME-TV-v1.10.5.apk",
-  "changelog": "Baris Series Terbaru (update per episode dari LK21), di atas list Series — mirip Anime Terbaru."
+  "versionCode": 206,
+  "versionName": "1.10.6",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.6/WEBUNIME-TV-v1.10.6.apk",
+  "changelog": "Sync katalog GitHub 1×/hari. Navigasi episode rentang + Terbaru/Lanjutkan. Perbaikan fokus saat kembali dari search."
 }

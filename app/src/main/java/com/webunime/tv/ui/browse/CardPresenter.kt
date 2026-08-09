@@ -1,5 +1,6 @@
 package com.webunime.tv.ui.browse
 
+import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -177,7 +178,13 @@ class CardPresenter : Presenter() {
             else -> Color.argb(0xE6, 0x2F, 0x2F, 0x2F)
         }
 
+        private fun canUseGlide(context: Context): Boolean {
+            val activity = context as? Activity ?: return true
+            return !activity.isFinishing && !activity.isDestroyed
+        }
+
         private fun bindPoster(card: ImageCardView, movie: CatalogItem, force: Boolean) {
+            if (!canUseGlide(card.context)) return
             val focused = card.hasFocus()
             val (width, height) = cardSizeFor(focused)
             val sizeKey = "${width}x$height"
@@ -205,7 +212,7 @@ class CardPresenter : Presenter() {
             card.mainImageView.setTag(R.id.tag_thumb_url, nextUrl)
 
             val placeholder = ColorDrawable(ContextCompat.getColor(card.context, R.color.wu_bg))
-            Glide.with(card.context).clear(card.mainImageView)
+            runCatching { Glide.with(card.context).clear(card.mainImageView) }
             card.mainImage = placeholder
             if (nextUrl == null) return
 
@@ -226,6 +233,7 @@ class CardPresenter : Presenter() {
             height: Int,
             badge: String,
         ) {
+            if (!canUseGlide(card.context)) return
             if (index >= urls.size) {
                 card.mainImage = placeholder
                 return
@@ -240,6 +248,7 @@ class CardPresenter : Presenter() {
                         resource: Bitmap,
                         transition: Transition<in Bitmap>?,
                     ) {
+                        if (!canUseGlide(card.context)) return
                         if (card.getTag(R.id.tag_thumb_url) != urls.firstOrNull()) return
                         val stamped = withPosterBadge(resource, card.context, badge)
                         card.mainImage = BitmapDrawable(card.resources, stamped)
@@ -250,6 +259,7 @@ class CardPresenter : Presenter() {
                     }
 
                     override fun onLoadFailed(errorDrawable: Drawable?) {
+                        if (!canUseGlide(card.context)) return
                         if (card.getTag(R.id.tag_thumb_url) != urls.firstOrNull()) return
                         loadIntoCard(card, urls, index + 1, options, placeholder, width, height, badge)
                     }
@@ -269,7 +279,7 @@ class CardPresenter : Presenter() {
             setOnFocusChangeListener { _, hasFocus ->
                 val item = getTag(R.id.tag_catalog_item) as? CatalogItem
                 applyCardSize(this, hasFocus)
-                if (item != null) {
+                if (item != null && canUseGlide(context)) {
                     bindPoster(this, item, force = true)
                 }
 
