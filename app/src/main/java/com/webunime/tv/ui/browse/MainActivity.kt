@@ -203,11 +203,14 @@ class MainActivity : FragmentActivity() {
         )
     }
 
-    fun openDetail(slug: String, episode: Int? = null) {
+    fun openDetail(slug: String, episode: Int? = null, season: Int? = null) {
         val intent = Intent(this, DetailActivity::class.java)
             .putExtra(DetailActivity.EXTRA_SLUG, slug)
         if (episode != null && episode > 0) {
             intent.putExtra(DetailActivity.EXTRA_EPISODE, episode)
+        }
+        if (season != null && season > 0) {
+            intent.putExtra(DetailActivity.EXTRA_SEASON, season)
         }
         startActivity(intent)
     }

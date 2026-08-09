@@ -6,6 +6,7 @@
     <string name="row_movies_year">Film %1$d</string>
     <string name="row_family">Family</string>
     <string name="row_series">Series</string>
+    <string name="row_series_latest">Series Terbaru</string>
     <string name="row_horror">Horor</string>
     <string name="row_indonesia">Film Indonesia</string>
     <string name="row_anime_latest">Anime Terbaru</string>

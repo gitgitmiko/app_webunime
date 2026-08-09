@@ -55,7 +55,14 @@ class CardPresenter : Presenter() {
         card.titleText = movie.displayTitle()
         val ep = movie.episode
         card.contentText = when {
-            ep != null && ep > 0 && movie.anime_slug != null -> "Episode $ep"
+            ep != null && ep > 0 && (movie.anime_slug != null || movie.series_slug != null) -> {
+                val season = movie.season?.takeIf { it > 0 }
+                if (movie.series_slug != null && season != null && season > 1) {
+                    "S$season · Episode $ep"
+                } else {
+                    "Episode $ep"
+                }
+            }
             else -> movie.displayMeta().ifBlank { movie.type?.replace('-', ' ')?.uppercase().orEmpty() }
         }
         card.badgeImage = null

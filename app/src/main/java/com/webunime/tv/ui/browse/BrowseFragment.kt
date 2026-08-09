@@ -160,8 +160,9 @@ class BrowseFragment : BrowseSupportFragment() {
         }
         val slug = catalog.slug?.takeIf { it.isNotBlank() }
             ?: catalog.anime_slug?.takeIf { it.isNotBlank() }
+            ?: catalog.series_slug?.takeIf { it.isNotBlank() }
             ?: return
-        (activity as? MainActivity)?.openDetail(slug, catalog.episode)
+        (activity as? MainActivity)?.openDetail(slug, catalog.episode, catalog.season)
     }
 
     private fun focusRowsGrid() {
@@ -283,6 +284,7 @@ class BrowseFragment : BrowseSupportFragment() {
         addCardRow(getString(R.string.row_movies_year, currentYear), yearMovies)
         addCardRow(R.string.row_family, familyMovies)
         addCardRow(R.string.row_horror, snap.horror)
+        addCardRow(R.string.row_series_latest, snap.seriesLatest)
         addCardRow(R.string.row_series, snap.series)
         addCardRow(R.string.row_anime_latest, snap.animeLatest)
         addCardRow(R.string.row_anime, snap.anime)

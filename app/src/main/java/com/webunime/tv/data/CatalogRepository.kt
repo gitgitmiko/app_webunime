@@ -42,6 +42,7 @@ class CatalogRepository(private val context: Context) {
     fun isSnapshotReady(): Boolean =
         snapshot.movies.isNotEmpty() ||
             snapshot.series.isNotEmpty() ||
+            snapshot.seriesLatest.isNotEmpty() ||
             snapshot.horror.isNotEmpty() ||
             snapshot.indonesia.isNotEmpty() ||
             snapshot.anime.isNotEmpty() ||
@@ -64,11 +65,12 @@ class CatalogRepository(private val context: Context) {
         return loadHeavyCatalog()
     }
 
-    /** Film / horror / indonesia / anime terbaru — cepat, cukup untuk isi layar pertama. */
+    /** Film / horror / indonesia / feed terbaru — cepat, cukup untuk isi layar pertama. */
     suspend fun loadBrowseFirst(): CatalogSnapshot = withContext(Dispatchers.IO) {
         if (snapshot.movies.isNotEmpty() || snapshot.horror.isNotEmpty() ||
             snapshot.indonesia.isNotEmpty() ||
-            snapshot.animeMovies.isNotEmpty() || snapshot.animeLatest.isNotEmpty()
+            snapshot.animeMovies.isNotEmpty() || snapshot.animeLatest.isNotEmpty() ||
+            snapshot.seriesLatest.isNotEmpty()
         ) {
             return@withContext snapshot
         }
@@ -77,6 +79,7 @@ class CatalogRepository(private val context: Context) {
         val indonesia = readList("indonesia.json")
         val animeMovies = readList("anime-movies.json")
         val animeLatest = readList("anime-latest.json")
+        val seriesLatest = readList("series-latest.json")
         snapshot = enrichThumbnails(
             snapshot.copy(
                 movies = movies,
@@ -84,6 +87,7 @@ class CatalogRepository(private val context: Context) {
                 indonesia = indonesia,
                 animeMovies = animeMovies,
                 animeLatest = animeLatest,
+                seriesLatest = seriesLatest,
             )
         )
         snapshot
@@ -137,13 +141,17 @@ class CatalogRepository(private val context: Context) {
     }
 
     /**
-     * Anime Terbaru = feed per episode → thumbnail episode tetap primary.
-     * Poster katalog hanya cadangan jika screenshot episode gagal load (404/SSL).
+     * Feed terbaru (anime/series) → thumbnail feed primary;
+     * poster katalog hanya cadangan jika screenshot gagal load.
      */
     private fun enrichThumbnails(snap: CatalogSnapshot): CatalogSnapshot {
         val animeBySlug = HashMap<String, CatalogItem>(snap.anime.size * 2)
         for (item in snap.anime) {
             item.slug?.takeIf { it.isNotBlank() }?.let { animeBySlug[it] = item }
+        }
+        val seriesBySlug = HashMap<String, CatalogItem>(snap.series.size * 2)
+        for (item in snap.series) {
+            item.slug?.takeIf { it.isNotBlank() }?.let { seriesBySlug[it] = item }
         }
 
         val feedThumbBySlug = HashMap<String, String>(snap.animeLatest.size)
@@ -172,7 +180,24 @@ class CatalogRepository(private val context: Context) {
             item.copy(thumbnailAlt = alt)
         }
 
-        return snap.copy(anime = enrichedAnime, animeLatest = enrichedLatest)
+        val enrichedSeriesLatest = snap.seriesLatest.map { feed ->
+            val parent = feed.series_slug?.let { seriesBySlug[it] }
+            val parentThumb = parent?.thumbnail?.takeIf { it.isNotBlank() }
+            val parentLand = parent?.thumbnail_landscape?.takeIf { it.isNotBlank() }
+            val feedThumb = feed.thumbnail?.takeIf { it.isNotBlank() }
+            feed.copy(
+                thumbnail = feedThumb ?: parentThumb,
+                thumbnailAlt = parentThumb?.takeIf { it != feedThumb },
+                thumbnail_landscape = feed.thumbnail_landscape?.takeIf { it.isNotBlank() }
+                    ?: parentLand,
+            )
+        }
+
+        return snap.copy(
+            anime = enrichedAnime,
+            animeLatest = enrichedLatest,
+            seriesLatest = enrichedSeriesLatest,
+        )
     }
 
     private fun readList(fileName: String): List<CatalogItem> {
@@ -282,6 +307,7 @@ class CatalogRepository(private val context: Context) {
         private val CATALOG_FILES = listOf(
             "movies.json",
             "series.json",
+            "series-latest.json",
             "horror.json",
             "indonesia.json",
             "anime.json",

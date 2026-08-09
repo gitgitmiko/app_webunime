@@ -27,8 +27,9 @@ class SearchFragment : SearchSupportFragment(), SearchSupportFragment.SearchResu
             val catalog = item as? CatalogItem ?: return@OnItemViewClickedListener
             val slug = catalog.slug?.takeIf { it.isNotBlank() }
                 ?: catalog.anime_slug?.takeIf { it.isNotBlank() }
+                ?: catalog.series_slug?.takeIf { it.isNotBlank() }
                 ?: return@OnItemViewClickedListener
-            (activity as? SearchActivity)?.openDetail(slug, catalog.episode)
+            (activity as? SearchActivity)?.openDetail(slug, catalog.episode, catalog.season)
         })
     }
 

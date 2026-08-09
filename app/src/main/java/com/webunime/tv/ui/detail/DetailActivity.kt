@@ -35,6 +35,7 @@ class DetailActivity : AppCompatActivity() {
 
         val slug = intent.getStringExtra(EXTRA_SLUG).orEmpty()
         val preferEpisode = intent.getIntExtra(EXTRA_EPISODE, -1).takeIf { it > 0 }
+        val preferSeason = intent.getIntExtra(EXTRA_SEASON, -1).takeIf { it > 0 }
         val found = (application as WebunimeApp).catalogRepository.snapshot.findBySlug(slug)
         if (found == null) {
             Toast.makeText(this, "Judul tidak ditemukan", Toast.LENGTH_SHORT).show()
@@ -68,7 +69,11 @@ class DetailActivity : AppCompatActivity() {
 
         selectedEpisode = when {
             preferEpisode != null ->
-                item.episodes?.firstOrNull { it.episode == preferEpisode }
+                item.episodes?.firstOrNull { ep ->
+                    ep.episode == preferEpisode &&
+                        (preferSeason == null || ep.season == null || ep.season == preferSeason)
+                }
+                    ?: item.episodes?.firstOrNull { it.episode == preferEpisode }
                     ?: item.episodes?.firstOrNull()
             else -> item.episodes?.firstOrNull()
         }
@@ -260,5 +265,6 @@ class DetailActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_SLUG = "slug"
         const val EXTRA_EPISODE = "episode"
+        const val EXTRA_SEASON = "season"
     }
 }

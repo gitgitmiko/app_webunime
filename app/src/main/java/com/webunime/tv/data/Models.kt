@@ -33,7 +33,11 @@ data class CatalogItem(
     val episodes: List<Episode>? = null,
     val episodes_count: Int? = null,
     val anime_slug: String? = null,
+    /** Feed Series Terbaru — slug parent di series.json. */
+    val series_slug: String? = null,
     val episode: Int? = null,
+    /** Season untuk feed series / episode multi-season. */
+    val season: Int? = null,
     val episode_source: String? = null,
     /** MyAnimeList id (hasil enrich AniSkip di WEBUNIME). */
     val mal_id: Int? = null,
@@ -92,9 +96,10 @@ data class CatalogItem(
         return episodes_count?.takeIf { it > 0 }
     }
 
-    /** Badge "N EPS" untuk baris Series / Anime (bukan feed Anime Terbaru per-episode). */
+    /** Badge "N EPS" untuk baris Series / Anime (bukan feed terbaru per-episode). */
     fun showsEpisodeCountBadge(): Boolean {
         if (anime_slug != null && episode != null && episodes.isNullOrEmpty()) return false
+        if (series_slug != null && episode != null && episodes.isNullOrEmpty()) return false
         if (type == "series" || type == "anime") return totalEpisodes() != null
         return !episodes.isNullOrEmpty() && (totalEpisodes() ?: 0) > 1
     }
@@ -168,6 +173,7 @@ data class Episode(
 data class CatalogSnapshot(
     val movies: List<CatalogItem> = emptyList(),
     val series: List<CatalogItem> = emptyList(),
+    val seriesLatest: List<CatalogItem> = emptyList(),
     val horror: List<CatalogItem> = emptyList(),
     val indonesia: List<CatalogItem> = emptyList(),
     val anime: List<CatalogItem> = emptyList(),
@@ -181,6 +187,8 @@ data class CatalogSnapshot(
         // Feed anime-terbaru: hanya anime_slug — ambil entri penuh dari katalog anime
         anime.firstOrNull { it.slug == slug || it.anime_slug == slug }?.let { return it }
         animeMovies.firstOrNull { it.slug == slug || it.anime_slug == slug }?.let { return it }
+        // Feed series-terbaru: series_slug → entri penuh di series.json
+        series.firstOrNull { it.slug == slug || it.series_slug == slug }?.let { return it }
         return null
     }
 

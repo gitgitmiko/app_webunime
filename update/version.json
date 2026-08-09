@@ -1,6 +1,6 @@
 {
-  "versionCode": 204,
-  "versionName": "1.10.4",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.4/WEBUNIME-TV-v1.10.4.apk",
-  "changelog": "Hapus trailer YouTube (hemat RAM). Hero random rating>7. Buffer Exo lebih kecil agar 1080p lebih lancar di TV."
+  "versionCode": 205,
+  "versionName": "1.10.5",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.5/WEBUNIME-TV-v1.10.5.apk",
+  "changelog": "Baris Series Terbaru (update per episode dari LK21), di atas list Series — mirip Anime Terbaru."
 }
