@@ -136,6 +136,49 @@
             app:layout_constraintStart_toEndOf="@id/detailPoster"
             app:layout_constraintTop_toBottomOf="@id/detailSynopsis" />
 
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/detailHeaderBarrier"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="detailPoster,playButton" />
+
+        <TextView
+            android:id="@+id/detailCreditsLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="36dp"
+            android:layout_marginTop="24dp"
+            android:text="@string/detail_credits"
+            android:textColor="@color/wu_row_header"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/detailHeaderBarrier" />
+
+        <TextView
+            android:id="@+id/detailCredits"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="36dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="36dp"
+            android:lineSpacingExtra="4dp"
+            android:textColor="@color/wu_text_dim"
+            android:textSize="14sp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/detailCreditsLabel" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/detailCreditsBarrier"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="detailHeaderBarrier,detailCreditsLabel,detailCredits" />
+
         <TextView
             android:id="@+id/episodeLabel"
             android:layout_width="wrap_content"
@@ -147,7 +190,7 @@
             android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/detailPoster" />
+            app:layout_constraintTop_toBottomOf="@id/detailCreditsBarrier" />
 
         <LinearLayout
             android:id="@+id/episodeSection"

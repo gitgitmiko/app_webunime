@@ -189,7 +189,7 @@ class HeroCarouselController(
         badge?.text = badgeLabel(item)
         title?.text = item.displayTitle()
         meta?.text = buildMeta(item)
-        val syn = item.sinopsis?.trim().orEmpty()
+        val syn = item.parsedSinopsis().plot.trim()
         synopsis?.text = syn
         synopsis?.visibility = if (syn.isBlank()) View.GONE else View.VISIBLE
 

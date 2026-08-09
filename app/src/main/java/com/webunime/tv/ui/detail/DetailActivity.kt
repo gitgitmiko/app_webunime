@@ -70,7 +70,19 @@ class DetailActivity : AppCompatActivity() {
 
         title.text = item.displayTitle()
         meta.text = item.displayMeta()
-        synopsis.text = item.sinopsis ?: ""
+        val parsed = item.parsedSinopsis()
+        synopsis.text = parsed.plot
+        val creditsLabel = findViewById<TextView>(R.id.detailCreditsLabel)
+        val credits = findViewById<TextView>(R.id.detailCredits)
+        val creditsText = parsed.creditsText()
+        if (creditsText.isNotBlank()) {
+            creditsLabel.visibility = View.VISIBLE
+            credits.visibility = View.VISIBLE
+            credits.text = creditsText
+        } else {
+            creditsLabel.visibility = View.GONE
+            credits.visibility = View.GONE
+        }
         val thumb = item.thumbnail
         val thumbAlt = item.thumbnailAlt
         val posterReq = Glide.with(this).load(thumb).centerCrop()

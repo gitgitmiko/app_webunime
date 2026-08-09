@@ -37,6 +37,7 @@
     <string name="skip_opening">OK  ·  Lewati Opening</string>
     <string name="skip_next_episode">OK  ·  Episode Berikutnya (otomatis)</string>
     <string name="servers">Audio &amp; Server</string>
+    <string name="detail_credits">Informasi</string>
     <string name="loading">Memuat katalog…</string>
     <string name="updating">Memperbarui dari GitHub…</string>
     <string name="loading_catalog">Memuat katalog…</string>

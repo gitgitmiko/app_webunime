@@ -112,6 +112,86 @@ data class CatalogItem(
         }
         return quality?.trim()?.takeIf { it.isNotBlank() }?.uppercase()
     }
+
+    /** Sinopsis yang sudah dipisah dari blok metadata scraper (Sutradara, Negara, dll). */
+    fun parsedSinopsis(): SinopsisMeta = SinopsisMeta.parse(sinopsis)
+}
+
+/**
+ * Metadata yang biasanya digabung di teks [CatalogItem.sinopsis] oleh scraper LK21.
+ */
+data class SinopsisMeta(
+    val plot: String,
+    val sutradara: String? = null,
+    val bintangFilm: String? = null,
+    val negara: String? = null,
+    val release: String? = null,
+    val updated: String? = null,
+) {
+    fun hasCredits(): Boolean =
+        !sutradara.isNullOrBlank() ||
+            !bintangFilm.isNullOrBlank() ||
+            !negara.isNullOrBlank() ||
+            !release.isNullOrBlank() ||
+            !updated.isNullOrBlank()
+
+    /** Baris kredit untuk layar detail (kosong jika tidak ada field). */
+    fun creditsText(): String {
+        if (!hasCredits()) return ""
+        return buildString {
+            sutradara?.let { append("Sutradara: ").append(it).append('\n') }
+            bintangFilm?.let { append("Bintang Film: ").append(it).append('\n') }
+            negara?.let { append("Negara: ").append(it).append('\n') }
+            release?.let { append("Release: ").append(it).append('\n') }
+            updated?.let { append("Updated: ").append(it) }
+        }.trimEnd()
+    }
+
+    companion object {
+        private val META_LABELS = listOf(
+            "Awards",
+            "Budget",
+            "Worldwide Gross",
+            "Soundtrack",
+            "Subtitle",
+            "Sutradara",
+            "Bintang Film",
+            "Negara",
+            "Votes",
+            "Release",
+            "Updated",
+        )
+
+        private val META_LINE = Regex(
+            """(?m)^(?:${META_LABELS.joinToString("|") { Regex.escape(it) }}):""",
+        )
+
+        fun parse(raw: String?): SinopsisMeta {
+            val text = raw?.trim().orEmpty()
+            if (text.isEmpty()) return SinopsisMeta("")
+
+            fun extract(label: String): String? {
+                val re = Regex("""(?m)^${Regex.escape(label)}:\s*(.+)$""")
+                return re.find(text)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() }
+            }
+
+            val metaStart = META_LINE.find(text)?.range?.first
+            val plot = if (metaStart != null) {
+                text.substring(0, metaStart).trim()
+            } else {
+                text
+            }
+
+            return SinopsisMeta(
+                plot = plot.ifBlank { text },
+                sutradara = extract("Sutradara"),
+                bintangFilm = extract("Bintang Film"),
+                negara = extract("Negara"),
+                release = extract("Release"),
+                updated = extract("Updated"),
+            )
+        }
+    }
 }
 
 @JsonClass(generateAdapter = false)
