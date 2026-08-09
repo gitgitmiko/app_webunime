@@ -18,11 +18,15 @@ import androidx.leanback.widget.OnItemViewSelectedListener
 import androidx.leanback.widget.Presenter
 import androidx.leanback.widget.RowHeaderPresenter
 import androidx.leanback.widget.VerticalGridView
+import androidx.lifecycle.lifecycleScope
 import com.webunime.tv.R
 import com.webunime.tv.WebunimeApp
 import com.webunime.tv.data.CatalogItem
+import com.webunime.tv.data.CatalogSection
 import com.webunime.tv.data.CatalogSnapshot
 import com.webunime.tv.ui.search.SearchActivity
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import java.util.Calendar
 
 /**
@@ -45,6 +49,12 @@ class BrowseFragment : BrowseSupportFragment() {
     /** True hanya sekali setelah kembali dari Detail/Player. */
     private var pendingPositionRestore: Boolean = false
     private var restoreRetries: Int = 0
+
+    /** Spesifikasi baris yang belum ditampilkan (lazy vertikal). */
+    private var deferredRowSpecs: List<DeferredRowSpec> = emptyList()
+    private var deferredRowIndex: Int = 0
+    private var appendRowsJob: Job? = null
+    private var keepItemForDeferred: Int = 0
 
     private val restoreSelectionRunnable = Runnable { restoreBrowseSelection() }
     private val focusGridRunnable = Runnable { focusRowsGrid() }
@@ -106,12 +116,15 @@ class BrowseFragment : BrowseSupportFragment() {
             val listRow = row as? ListRow ?: return@OnItemViewSelectedListener
             if (listRow is HeroListRow) {
                 lastItemIndex = 0
+                // Prefetch baris berikutnya saat masih di hero/continue
+                maybeAppendDeferredRows()
                 return@OnItemViewSelectedListener
             }
             val selectedIndex =
                 (rowViewHolder as? ListRowPresenter.ViewHolder)?.selectedPosition ?: -1
             if (selectedIndex >= 0) lastItemIndex = selectedIndex
             maybeLoadMore(listRow.headerItem.id, selectedIndex)
+            maybeAppendDeferredRows()
         }
     }
 
@@ -234,42 +247,22 @@ class BrowseFragment : BrowseSupportFragment() {
 
     fun reloadRows() {
         if (!this::rowsAdapter.isInitialized || !isAdded) return
-        val snap = (requireActivity().application as WebunimeApp).catalogRepository.snapshot
+        val repo = (requireActivity().application as WebunimeApp).catalogRepository
+        val snap = repo.snapshot
         val keepRow = lastRowIndex
         val keepItem = lastItemIndex
+        keepItemForDeferred = keepItem
+        appendRowsJob?.cancel()
+        appendRowsJob = null
+
         rowsAdapter.clear()
         rowPaging.clear()
         continueRowIndex = -1
         heroRowIndex = -1
-
-        fun addCardRow(title: String, items: List<CatalogItem>, isContinue: Boolean = false) {
-            if (items.isEmpty()) return
-            val list = ArrayObjectAdapter(cardPresenter)
-            val rowId = rowsAdapter.size().toLong()
-            val want = if (keepItem > 0 && title != getString(R.string.row_continue)) {
-                (keepItem + PAGE_SIZE).coerceAtMost(items.size)
-            } else {
-                items.size.coerceAtMost(PAGE_SIZE)
-            }.coerceAtLeast(1.coerceAtMost(items.size))
-            val initialCount = want.coerceAtMost(items.size)
-            for (i in 0 until initialCount) {
-                list.add(items[i])
-            }
-            rowPaging[rowId] = RowPagingState(allItems = items, adapter = list, loadedCount = initialCount)
-            if (isContinue) continueRowIndex = rowsAdapter.size()
-            rowsAdapter.add(ListRow(HeaderItem(rowId, title), list))
-        }
-
-        fun addCardRow(titleRes: Int, items: List<CatalogItem>, isContinue: Boolean = false) =
-            addCardRow(getString(titleRes), items, isContinue)
+        deferredRowIndex = 0
 
         val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-        val yearMovies = snap.movies.filter { it.tahun == currentYear.toString() }
-        val familyMovies = snap.movies.filter { item ->
-            item.genre.orEmpty().any { it.equals("Family", ignoreCase = true) }
-        }
         val featured = buildFeaturedCarousel(snap)
-
         hero?.setFeatured(featured)
         if (featured.isNotEmpty()) {
             heroRowIndex = rowsAdapter.size()
@@ -280,23 +273,66 @@ class BrowseFragment : BrowseSupportFragment() {
             )
         }
 
-        addCardRow(R.string.row_continue, buildContinueItems(), isContinue = true)
-        addCardRow(
-            R.string.row_indonesia,
-            snap.indonesia.sortedWith(
-                compareByDescending<CatalogItem> { it.releaseSortKey() }
-                    .thenByDescending { it.tahun?.toIntOrNull() ?: 0 }
-                    .thenBy { it.displayTitle() }
+        addCardRow(getString(R.string.row_continue), buildContinueItems(), isContinue = true)
+
+        // Baris lain: lazy saat geser bawah (+ prefetch 1 baris).
+        deferredRowSpecs = listOf(
+            DeferredRowSpec(
+                title = getString(R.string.row_indonesia),
+                sections = listOf(CatalogSection.INDONESIA),
+                items = { s ->
+                    s.indonesia.sortedWith(
+                        compareByDescending<CatalogItem> { it.releaseSortKey() }
+                            .thenByDescending { it.tahun?.toIntOrNull() ?: 0 }
+                            .thenBy { it.displayTitle() },
+                    )
+                },
+            ),
+            DeferredRowSpec(
+                title = getString(R.string.row_movies_year, currentYear),
+                sections = listOf(CatalogSection.MOVIES),
+                items = { s -> s.movies.filter { it.tahun == currentYear.toString() } },
+            ),
+            DeferredRowSpec(
+                title = getString(R.string.row_family),
+                sections = listOf(CatalogSection.MOVIES),
+                items = { s ->
+                    s.movies.filter { item ->
+                        item.genre.orEmpty().any { it.equals("Family", ignoreCase = true) }
+                    }
+                },
+            ),
+            DeferredRowSpec(
+                title = getString(R.string.row_horror),
+                sections = listOf(CatalogSection.HORROR),
+                items = { s -> s.horror },
+            ),
+            DeferredRowSpec(
+                title = getString(R.string.row_series_latest),
+                sections = listOf(CatalogSection.SERIES_LATEST, CatalogSection.SERIES),
+                items = { s -> s.seriesLatest },
+            ),
+            DeferredRowSpec(
+                title = getString(R.string.row_series),
+                sections = listOf(CatalogSection.SERIES),
+                items = { s -> s.series },
+            ),
+            DeferredRowSpec(
+                title = getString(R.string.row_anime_latest),
+                sections = listOf(CatalogSection.ANIME_LATEST, CatalogSection.ANIME),
+                items = { s -> s.animeLatest },
+            ),
+            DeferredRowSpec(
+                title = getString(R.string.row_anime),
+                sections = listOf(CatalogSection.ANIME),
+                items = { s -> s.anime },
+            ),
+            DeferredRowSpec(
+                title = getString(R.string.row_anime_movies),
+                sections = listOf(CatalogSection.ANIME_MOVIES),
+                items = { s -> s.animeMovies },
             ),
         )
-        addCardRow(getString(R.string.row_movies_year, currentYear), yearMovies)
-        addCardRow(R.string.row_family, familyMovies)
-        addCardRow(R.string.row_horror, snap.horror)
-        addCardRow(R.string.row_series_latest, snap.seriesLatest)
-        addCardRow(R.string.row_series, snap.series)
-        addCardRow(R.string.row_anime_latest, snap.animeLatest)
-        addCardRow(R.string.row_anime, snap.anime)
-        addCardRow(R.string.row_anime_movies, snap.animeMovies)
 
         rowsBuilt = rowsAdapter.size() > 0
         if (rowsBuilt) {
@@ -306,6 +342,67 @@ class BrowseFragment : BrowseSupportFragment() {
             view?.let { clearOpaqueBackgrounds(it) }
             restoreRetries = 0
             view?.post(restoreSelectionRunnable)
+            // Prefetch baris pertama di antrean (Indonesia) agar Down pertama terasa cepat.
+            view?.post { maybeAppendDeferredRows(force = true) }
+        }
+    }
+
+    private fun addCardRow(
+        title: String,
+        items: List<CatalogItem>,
+        isContinue: Boolean = false,
+        preferItemIndex: Int = 0,
+    ) {
+        if (items.isEmpty()) return
+        val list = ArrayObjectAdapter(cardPresenter)
+        val rowId = rowsAdapter.size().toLong()
+        val want = if (preferItemIndex > 0 && !isContinue) {
+            (preferItemIndex + PAGE_SIZE).coerceAtMost(items.size)
+        } else {
+            items.size.coerceAtMost(PAGE_SIZE)
+        }.coerceAtLeast(1.coerceAtMost(items.size))
+        val initialCount = want.coerceAtMost(items.size)
+        for (i in 0 until initialCount) {
+            list.add(items[i])
+        }
+        rowPaging[rowId] = RowPagingState(allItems = items, adapter = list, loadedCount = initialCount)
+        if (isContinue) continueRowIndex = rowsAdapter.size()
+        rowsAdapter.add(ListRow(HeaderItem(rowId, title), list))
+    }
+
+    /**
+     * Append baris berikutnya jika fokus mendekati akhir, atau [force] (prefetch).
+     */
+    private fun maybeAppendDeferredRows(force: Boolean = false) {
+        if (!isAdded || !this::rowsAdapter.isInitialized) return
+        if (deferredRowIndex >= deferredRowSpecs.size) return
+        if (appendRowsJob?.isActive == true) return
+
+        val nearEnd = selectedPosition >= rowsAdapter.size() - ROW_PREFETCH
+        if (!force && !nearEnd) return
+
+        val repo = (requireActivity().application as WebunimeApp).catalogRepository
+        val prefetchOnly = force
+        appendRowsJob = viewLifecycleOwner.lifecycleScope.launch {
+            var appended = 0
+            val maxBatch = if (prefetchOnly) 1 else 2
+            while (
+                deferredRowIndex < deferredRowSpecs.size &&
+                appended < maxBatch
+            ) {
+                if (!prefetchOnly && selectedPosition < rowsAdapter.size() - ROW_PREFETCH && appended > 0) {
+                    break
+                }
+                val spec = deferredRowSpecs[deferredRowIndex]
+                deferredRowIndex++
+                runCatching { repo.ensureSections(spec.sections) }
+                if (!isAdded) return@launch
+                val items = spec.items(repo.snapshot)
+                if (items.isEmpty()) continue
+                addCardRow(spec.title, items, preferItemIndex = keepItemForDeferred)
+                appended++
+                if (prefetchOnly) break
+            }
         }
     }
 
@@ -448,9 +545,17 @@ class BrowseFragment : BrowseSupportFragment() {
         var loadedCount: Int,
     )
 
+    private data class DeferredRowSpec(
+        val title: String,
+        val sections: List<CatalogSection>,
+        val items: (CatalogSnapshot) -> List<CatalogItem>,
+    )
+
     companion object {
         private const val PAGE_SIZE = 10
         private const val PREFETCH_THRESHOLD = 3
+        /** Prefetch baris vertikal saat fokus mendekati N baris dari akhir. */
+        private const val ROW_PREFETCH = 2
         private const val FEATURED_LIMIT = 10
         private const val FEATURED_MIN_RATING = 7.0
         const val TYPE_CONTINUE = "continue"

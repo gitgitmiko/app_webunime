@@ -4,18 +4,28 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
 import com.webunime.tv.R
+import com.webunime.tv.WebunimeApp
 import com.webunime.tv.ui.detail.DetailActivity
+import kotlinx.coroutines.launch
 
 class SearchActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_search)
-        if (savedInstanceState == null) {
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.search_fragment, SearchFragment())
-                .commitNow()
+
+        lifecycleScope.launch {
+            // Search butuh seluruh katalog — load on-demand di sini saja.
+            runCatching {
+                (application as WebunimeApp).catalogRepository.ensureAllSections()
+            }
+            if (savedInstanceState == null && !isFinishing) {
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.search_fragment, SearchFragment())
+                    .commitNow()
+            }
         }
     }
 

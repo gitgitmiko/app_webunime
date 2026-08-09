@@ -44,8 +44,8 @@ class MainActivity : FragmentActivity() {
         val loadingText = findViewById<TextView>(R.id.catalogLoadingText)
 
         lifecycleScope.launch {
-            // Sync GitHub paling banyak 1× per hari (katalog update tengah malam).
-            // Buka ulang di hari yang sama → pakai cache lokal.
+            // Sync GitHub 1×/hari (unduh file). Parse ringan saja → hero + continue cepat.
+            // Baris lain + series/anime di-load saat digeser (lazy).
             loading.visibility = View.VISIBLE
             val needRemote = repo.needsGithubRefreshToday()
             if (needRemote) {
@@ -57,13 +57,14 @@ class MainActivity : FragmentActivity() {
 
             if (!repo.isSnapshotReady()) {
                 if (needRemote) loadingText.setText(R.string.loading_local_fallback)
-                repo.loadInitial()
+                repo.loadStartupShell()
             }
 
             loading.visibility = View.GONE
             if (!isFinishing) {
                 browseFragment()?.reloadRows()
             }
+
             checkForAppUpdate()
         }
     }
@@ -210,54 +211,61 @@ class MainActivity : FragmentActivity() {
     }
 
     fun openDetail(slug: String, episode: Int? = null, season: Int? = null) {
-        val intent = Intent(this, DetailActivity::class.java)
-            .putExtra(DetailActivity.EXTRA_SLUG, slug)
-        if (episode != null && episode > 0) {
-            intent.putExtra(DetailActivity.EXTRA_EPISODE, episode)
+        lifecycleScope.launch {
+            val repo = (application as WebunimeApp).catalogRepository
+            repo.findBySlugEnsured(slug)
+            if (isFinishing) return@launch
+            val intent = Intent(this@MainActivity, DetailActivity::class.java)
+                .putExtra(DetailActivity.EXTRA_SLUG, slug)
+            if (episode != null && episode > 0) {
+                intent.putExtra(DetailActivity.EXTRA_EPISODE, episode)
+            }
+            if (season != null && season > 0) {
+                intent.putExtra(DetailActivity.EXTRA_SEASON, season)
+            }
+            startActivity(intent)
         }
-        if (season != null && season > 0) {
-            intent.putExtra(DetailActivity.EXTRA_SEASON, season)
-        }
-        startActivity(intent)
     }
 
     /** Dari baris Lanjutkan: langsung putar dengan resume + fallback server. */
     fun openContinueWatch(card: CatalogItem) {
-        val app = application as WebunimeApp
         val slug = card.slug?.takeIf { it.isNotBlank() } ?: return
         val episodeNum = card.episode?.takeIf { it > 0 }
-        val found = app.catalogRepository.snapshot.findBySlug(slug) ?: run {
-            Toast.makeText(this, "Judul tidak ditemukan di katalog", Toast.LENGTH_SHORT).show()
-            openDetail(slug, episodeNum)
-            return
+        lifecycleScope.launch {
+            val app = application as WebunimeApp
+            val found = app.catalogRepository.findBySlugEnsured(slug) ?: run {
+                Toast.makeText(this@MainActivity, "Judul tidak ditemukan di katalog", Toast.LENGTH_SHORT).show()
+                openDetail(slug, episodeNum)
+                return@launch
+            }
+            val episode = episodeNum?.let { ep ->
+                found.episodes?.firstOrNull { it.episode == ep }
+            }
+            val players = PlayerRouter.preferredPlayers(found, episode)
+            if (players.isEmpty()) {
+                Toast.makeText(this@MainActivity, R.string.error_no_players, Toast.LENGTH_SHORT).show()
+                openDetail(slug, episodeNum)
+                return@launch
+            }
+            val session = app.watchSessions.get(slug, episodeNum)
+            val title = buildString {
+                append(found.displayTitle())
+                episode?.let { append(" · ").append(it.displayTitle()) }
+                    ?: episodeNum?.let { append(" · E$it") }
+            }
+            startActivity(
+                Intent(this@MainActivity, PlayerActivity::class.java)
+                    .putExtra(PlayerActivity.EXTRA_URL, players.first().url)
+                    .putExtra(PlayerActivity.EXTRA_TITLE, title)
+                    .putExtra(PlayerActivity.EXTRA_SERVER, players.first().displayName())
+                    .putExtra(PlayerActivity.EXTRA_SERVER_URLS, players.mapNotNull { it.url }.toTypedArray())
+                    .putExtra(PlayerActivity.EXTRA_SERVER_LABELS, players.map { it.displayName() }.toTypedArray())
+                    .putExtra(PlayerActivity.EXTRA_SLUG, slug)
+                    .putExtra(PlayerActivity.EXTRA_EPISODE, episodeNum ?: -1)
+                    .putExtra(PlayerActivity.EXTRA_THUMBNAIL, found.thumbnail ?: card.thumbnail)
+                    .putExtra(PlayerActivity.EXTRA_RESUME_MS, session?.positionMs ?: 0L)
+            )
         }
-        val episode = episodeNum?.let { ep ->
-            found.episodes?.firstOrNull { it.episode == ep }
-        }
-        val players = PlayerRouter.preferredPlayers(found, episode)
-        if (players.isEmpty()) {
-            Toast.makeText(this, R.string.error_no_players, Toast.LENGTH_SHORT).show()
-            openDetail(slug, episodeNum)
-            return
-        }
-        val session = app.watchSessions.get(slug, episodeNum)
-        val title = buildString {
-            append(found.displayTitle())
-            episode?.let { append(" · ").append(it.displayTitle()) }
-                ?: episodeNum?.let { append(" · E$it") }
-        }
-        startActivity(
-            Intent(this, PlayerActivity::class.java)
-                .putExtra(PlayerActivity.EXTRA_URL, players.first().url)
-                .putExtra(PlayerActivity.EXTRA_TITLE, title)
-                .putExtra(PlayerActivity.EXTRA_SERVER, players.first().displayName())
-                .putExtra(PlayerActivity.EXTRA_SERVER_URLS, players.mapNotNull { it.url }.toTypedArray())
-                .putExtra(PlayerActivity.EXTRA_SERVER_LABELS, players.map { it.displayName() }.toTypedArray())
-                .putExtra(PlayerActivity.EXTRA_SLUG, slug)
-                .putExtra(PlayerActivity.EXTRA_EPISODE, episodeNum ?: -1)
-                .putExtra(PlayerActivity.EXTRA_THUMBNAIL, found.thumbnail ?: card.thumbnail)
-                .putExtra(PlayerActivity.EXTRA_RESUME_MS, session?.positionMs ?: 0L)
-        )
     }
 
     private fun browseFragment(): BrowseFragment? =

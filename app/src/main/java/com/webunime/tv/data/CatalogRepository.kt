@@ -38,7 +38,9 @@ class CatalogRepository(private val context: Context) {
     }
 
     private val refreshMutex = Mutex()
+    private val sectionMutex = Mutex()
     private val githubRefreshDone = AtomicBoolean(false)
+    private val loadedSections = mutableSetOf<CatalogSection>()
 
     @Volatile
     var snapshot: CatalogSnapshot = CatalogSnapshot()
@@ -53,6 +55,8 @@ class CatalogRepository(private val context: Context) {
             snapshot.anime.isNotEmpty() ||
             snapshot.animeMovies.isNotEmpty() ||
             snapshot.animeLatest.isNotEmpty()
+
+    fun isSectionLoaded(section: CatalogSection): Boolean = section in loadedSections
 
     /** Ada cache lokal atau assets bawaan — boleh tampil browse tanpa tunggu GitHub. */
     fun hasLocalCatalog(): Boolean {
@@ -71,48 +75,82 @@ class CatalogRepository(private val context: Context) {
         return prefs.getString(KEY_LAST_SYNC_DAY, null) != todayKey()
     }
 
+    /**
+     * Cold start: parse file ringan saja (movies/indonesia/horror) untuk hero.
+     * Series/anime di-load saat baris digeser atau search dibuka.
+     */
+    suspend fun loadStartupShell(): CatalogSnapshot {
+        for (section in CatalogSection.STARTUP) {
+            ensureSection(section)
+        }
+        return snapshot
+    }
+
     suspend fun loadInitial(): CatalogSnapshot {
-        loadBrowseFirst()
-        return loadHeavyCatalog()
+        loadStartupShell()
+        return ensureAllSections()
     }
 
-    /** Film / horror / indonesia / feed terbaru — cepat, cukup untuk isi layar pertama. */
-    suspend fun loadBrowseFirst(): CatalogSnapshot = withContext(Dispatchers.IO) {
-        if (snapshot.movies.isNotEmpty() || snapshot.horror.isNotEmpty() ||
-            snapshot.indonesia.isNotEmpty() ||
-            snapshot.animeMovies.isNotEmpty() || snapshot.animeLatest.isNotEmpty() ||
-            snapshot.seriesLatest.isNotEmpty()
-        ) {
-            return@withContext snapshot
+    /** @deprecated gunakan [loadStartupShell] — tetap ada agar pemanggil lama aman. */
+    suspend fun loadBrowseFirst(): CatalogSnapshot = loadStartupShell()
+
+    suspend fun loadHeavyCatalog(): CatalogSnapshot {
+        ensureSection(CatalogSection.SERIES)
+        ensureSection(CatalogSection.ANIME)
+        return snapshot
+    }
+
+    /** Pastikan satu bagian katalog ter-parse ke [snapshot]. */
+    suspend fun ensureSection(section: CatalogSection): CatalogSnapshot = sectionMutex.withLock {
+        withContext(Dispatchers.IO) {
+            if (section in loadedSections) return@withContext snapshot
+            val list = readList(section.fileName)
+            loadedSections.add(section)
+            snapshot = when (section) {
+                CatalogSection.MOVIES -> snapshot.copy(movies = list)
+                CatalogSection.INDONESIA -> snapshot.copy(indonesia = list)
+                CatalogSection.HORROR -> snapshot.copy(horror = list)
+                CatalogSection.SERIES_LATEST -> snapshot.copy(seriesLatest = list)
+                CatalogSection.SERIES -> snapshot.copy(series = list)
+                CatalogSection.ANIME_LATEST -> snapshot.copy(animeLatest = list)
+                CatalogSection.ANIME -> snapshot.copy(anime = list)
+                CatalogSection.ANIME_MOVIES -> snapshot.copy(animeMovies = list)
+            }
+            snapshot = enrichThumbnails(snapshot)
+            snapshot
         }
-        val movies = readList("movies.json")
-        val horror = readList("horror.json")
-        val indonesia = readList("indonesia.json")
-        val animeMovies = readList("anime-movies.json")
-        val animeLatest = readList("anime-latest.json")
-        val seriesLatest = readList("series-latest.json")
-        snapshot = enrichThumbnails(
-            snapshot.copy(
-                movies = movies,
-                horror = horror,
-                indonesia = indonesia,
-                animeMovies = animeMovies,
-                animeLatest = animeLatest,
-                seriesLatest = seriesLatest,
-            )
+    }
+
+    suspend fun ensureSections(sections: Collection<CatalogSection>): CatalogSnapshot {
+        for (section in sections) ensureSection(section)
+        return snapshot
+    }
+
+    suspend fun ensureAllSections(): CatalogSnapshot =
+        ensureSections(CatalogSection.ALL)
+
+    /**
+     * Cari judul; jika belum ketemu, load section yang mungkin punya slug itu.
+     */
+    suspend fun findBySlugEnsured(slug: String): CatalogItem? {
+        if (slug.isBlank()) return null
+        snapshot.findBySlug(slug)?.let { return it }
+        val order = listOf(
+            CatalogSection.MOVIES,
+            CatalogSection.INDONESIA,
+            CatalogSection.HORROR,
+            CatalogSection.SERIES,
+            CatalogSection.ANIME,
+            CatalogSection.ANIME_MOVIES,
+            CatalogSection.SERIES_LATEST,
+            CatalogSection.ANIME_LATEST,
         )
-        snapshot
-    }
-
-    /** Series + anime penuh (~20MB) — setelah browse sudah tampil. */
-    suspend fun loadHeavyCatalog(): CatalogSnapshot = withContext(Dispatchers.IO) {
-        if (snapshot.series.isNotEmpty() && snapshot.anime.isNotEmpty()) {
-            return@withContext snapshot
+        for (section in order) {
+            if (section in loadedSections) continue
+            ensureSection(section)
+            snapshot.findBySlug(slug)?.let { return it }
         }
-        val series = if (snapshot.series.isEmpty()) readList("series.json") else snapshot.series
-        val anime = if (snapshot.anime.isEmpty()) readList("anime.json") else snapshot.anime
-        snapshot = enrichThumbnails(snapshot.copy(series = series, anime = anime))
-        snapshot
+        return snapshot.findBySlug(slug)
     }
 
     /**
@@ -121,7 +159,7 @@ class CatalogRepository(private val context: Context) {
      */
     suspend fun ensureLocalLoaded(): CatalogSnapshot {
         if (isSnapshotReady()) return snapshot
-        return loadInitial()
+        return loadStartupShell()
     }
 
     /**
@@ -148,7 +186,7 @@ class CatalogRepository(private val context: Context) {
     }
 
     /**
-     * Unduh katalog dari GitHub dulu, lalu muat snapshot.
+     * Unduh file katalog dari GitHub, lalu parse shell ringan saja.
      * @return jumlah file yang berhasil diunduh (0 = gagal total → pakai lokal).
      */
     suspend fun refreshFromGithub(): Int = withContext(Dispatchers.IO) {
@@ -156,9 +194,10 @@ class CatalogRepository(private val context: Context) {
         for (name in CATALOG_FILES) {
             if (runCatching { downloadAndCache(name) }.isSuccess) ok++
         }
-        // Reset snapshot agar load ulang dari cache baru (bukan early-return data lama).
+        // Reset agar load ulang dari cache baru.
         snapshot = CatalogSnapshot()
-        loadInitial()
+        loadedSections.clear()
+        loadStartupShell()
         ok
     }
 
