@@ -47,9 +47,14 @@ class AppUpdateChecker(private val context: Context) {
     private val adapter = moshi.adapter(AppUpdateInfo::class.java)
 
     suspend fun fetchAvailableUpdate(): AppUpdateInfo? = withContext(Dispatchers.IO) {
+        // Cache-bust: raw.githubusercontent.com / CDN sering menahan version.json
+        // sampai ~5 menit, sehingga TV bisa “naik tangga” 1.10.10 → 11 → 12.
+        val url = "$VERSION_JSON_URL?t=${System.currentTimeMillis()}"
         val request = Request.Builder()
-            .url(VERSION_JSON_URL)
+            .url(url)
             .header("User-Agent", "WEBUNIME-TV/${BuildConfig.VERSION_NAME}")
+            .header("Cache-Control", "no-cache")
+            .header("Pragma", "no-cache")
             .build()
         val body = client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) return@withContext null

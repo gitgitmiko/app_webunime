@@ -138,9 +138,19 @@ class MainActivity : FragmentActivity() {
     private fun startUpdateDownload(info: AppUpdateInfo) {
         pendingUpdateInfo = info
         lifecycleScope.launch {
+            // Ambil ulang version.json sebelum unduh → langsung loncat ke APK terbaru
+            // (bukan versi yang sempat tampil di dialog karena CDN basi).
+            val latest = runCatching { updateChecker.fetchAvailableUpdate() }.getOrNull()
+            val toInstall = when {
+                latest == null -> info
+                latest.versionCode >= info.versionCode -> latest
+                else -> info
+            }
+            pendingUpdateInfo = toInstall
+
             val progressToast = Toast.makeText(this@MainActivity, "", Toast.LENGTH_SHORT)
             val apk = runCatching {
-                updateChecker.downloadApk(info) { pct ->
+                updateChecker.downloadApk(toInstall) { pct ->
                     runOnUiThread {
                         progressToast.setText(getString(R.string.update_downloading, pct))
                         progressToast.show()
