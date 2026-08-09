@@ -2,6 +2,7 @@ package com.webunime.tv.ui.browse
 
 import android.app.Activity
 import android.content.Context
+import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.view.KeyEvent
@@ -31,10 +32,10 @@ class HeroCarouselController(
 
     private var panel: View? = null
     private var badge: TextView? = null
+    private var quality: TextView? = null
     private var title: TextView? = null
     private var meta: TextView? = null
     private var synopsis: TextView? = null
-    private var hint: TextView? = null
     private var dots: LinearLayout? = null
 
     private val keyListener = View.OnKeyListener { _, keyCode, event ->
@@ -60,10 +61,10 @@ class HeroCarouselController(
         unbindHeroView(panel)
         panel = view
         badge = view.findViewById(R.id.browseHeroBadge)
+        quality = view.findViewById(R.id.browseHeroQuality)
         title = view.findViewById(R.id.browseHeroTitle)
         meta = view.findViewById(R.id.browseHeroMeta)
         synopsis = view.findViewById(R.id.browseHeroSynopsis)
-        hint = view.findViewById(R.id.browseHeroHint)
         dots = view.findViewById(R.id.browseHeroDots)
 
         view.setOnKeyListener(keyListener)
@@ -74,7 +75,6 @@ class HeroCarouselController(
         view.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
                 showFeaturedMode()
-                hint?.visibility = if (featured.size > 1) View.VISIBLE else View.GONE
             }
         }
 
@@ -89,10 +89,10 @@ class HeroCarouselController(
         view.onFocusChangeListener = null
         panel = null
         badge = null
+        quality = null
         title = null
         meta = null
         synopsis = null
-        hint = null
         dots = null
     }
 
@@ -173,8 +173,6 @@ class HeroCarouselController(
     private fun updateChrome() {
         val showDots = featuredMode && featured.size > 1
         dots?.visibility = if (showDots) View.VISIBLE else View.INVISIBLE
-        hint?.visibility =
-            if (showDots && panel?.hasFocus() == true) View.VISIBLE else View.GONE
     }
 
     private fun refreshBoundPanel() {
@@ -187,6 +185,7 @@ class HeroCarouselController(
     private fun showItem(item: CatalogItem, updateDots: Boolean) {
         current = item
         badge?.text = badgeLabel(item)
+        bindQuality(item)
         title?.text = item.displayTitle()
         meta?.text = buildMeta(item)
         val syn = item.parsedSinopsis().plot.trim()
@@ -198,6 +197,33 @@ class HeroCarouselController(
         loadBackdrop(url)
 
         if (updateDots) updateDots()
+    }
+
+    private fun bindQuality(item: CatalogItem) {
+        val label = item.quality?.trim()?.takeIf { it.isNotBlank() }?.uppercase()
+        val view = quality ?: return
+        if (label == null) {
+            view.visibility = View.GONE
+            return
+        }
+        view.visibility = View.VISIBLE
+        view.text = label
+        val bg = (view.background as? GradientDrawable)?.mutate() as? GradientDrawable
+            ?: GradientDrawable().apply {
+                cornerRadius = 3f * context.resources.displayMetrics.density
+                view.background = this
+            }
+        bg.setColor(qualityBadgeColor(label))
+    }
+
+    private fun qualityBadgeColor(label: String): Int = when {
+        label.contains("CAM") || label.contains("TS") || label.contains("TC") ->
+            Color.argb(0xE6, 0xB2, 0x5B, 0x00)
+        label.contains("4K") || label.contains("UHD") || label.contains("BLU") ->
+            Color.argb(0xE6, 0xE5, 0x09, 0x14)
+        label == "HD" || label.contains("1080") || label.contains("720") ->
+            Color.argb(0xE6, 0x1A, 0x1A, 0x1A)
+        else -> Color.argb(0xE6, 0x2F, 0x2F, 0x2F)
     }
 
     private fun loadBackdrop(url: String?) {

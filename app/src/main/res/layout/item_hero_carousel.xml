@@ -15,19 +15,43 @@
     android:paddingEnd="56dp"
     android:paddingBottom="16dp">
 
-    <TextView
-        android:id="@+id/browseHeroBadge"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_hero_badge"
         android:focusable="false"
-        android:paddingLeft="10dp"
-        android:paddingTop="4dp"
-        android:paddingRight="10dp"
-        android:paddingBottom="4dp"
-        android:textColor="@color/wu_text"
-        android:textSize="11sp"
-        android:textStyle="bold" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/browseHeroBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_hero_badge"
+            android:focusable="false"
+            android:paddingLeft="10dp"
+            android:paddingTop="4dp"
+            android:paddingRight="10dp"
+            android:paddingBottom="4dp"
+            android:textColor="@color/wu_text"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/browseHeroQuality"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_hero_quality"
+            android:focusable="false"
+            android:paddingLeft="10dp"
+            android:paddingTop="4dp"
+            android:paddingRight="10dp"
+            android:paddingBottom="4dp"
+            android:textColor="@color/wu_text"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/browseHeroTitle"
@@ -63,16 +87,6 @@
         android:maxLines="3"
         android:textColor="@color/wu_text_dim"
         android:textSize="14sp" />
-
-    <TextView
-        android:id="@+id/browseHeroHint"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:focusable="false"
-        android:text="@string/hero_nav_hint"
-        android:textColor="@color/wu_text_muted"
-        android:textSize="12sp" />
 
     <LinearLayout
         android:id="@+id/browseHeroDots"

@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.leanback.app.BrowseSupportFragment
 import androidx.leanback.widget.ArrayObjectAdapter
+import androidx.leanback.widget.BrowseFrameLayout
 import androidx.leanback.widget.ClassPresenterSelector
 import androidx.leanback.widget.FocusHighlight
 import androidx.leanback.widget.HeaderItem
@@ -73,6 +74,26 @@ class BrowseFragment : BrowseSupportFragment() {
         title.setOnSettingsClickedListener {
             startActivity(Intent(requireActivity(), SettingsActivity::class.java))
         }
+        installTitleOrbFocusFix()
+    }
+
+    /**
+     * Leanback selalu mengarahkan panah kanan dari title ke baris konten.
+     * Bungkus listener supaya Search ↔ Settings tetap bisa digeser.
+     */
+    private fun installTitleOrbFocusFix() {
+        if (!isAdded) return
+        val root = view ?: return
+        val frame = root.findViewById<BrowseFrameLayout>(androidx.leanback.R.id.browse_frame)
+            ?: return
+        if (frame.getTag(R.id.tag_orb_focus_fixed) == true) return
+        val title = titleView as? WebunimeTitleView ?: return
+        val previous = frame.onFocusSearchListener
+        frame.setTag(R.id.tag_orb_focus_fixed, true)
+        frame.setOnFocusSearchListener { focused, direction ->
+            title.interceptFocusSearch(focused, direction)
+                ?: previous?.onFocusSearch(focused, direction)
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -83,7 +104,10 @@ class BrowseFragment : BrowseSupportFragment() {
             view.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
         }
         clearOpaqueBackgrounds(view)
-        view.post { clearOpaqueBackgrounds(view) }
+        view.post {
+            clearOpaqueBackgrounds(view)
+            installTitleOrbFocusFix()
+        }
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {

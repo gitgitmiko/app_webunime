@@ -76,8 +76,42 @@ class WebunimeTitleView @JvmOverloads constructor(
         settingsOrbView.orbIcon = ContextCompat.getDrawable(context, R.drawable.ic_settings)
         settingsOrbView.contentDescription = context.getString(R.string.settings)
 
+        // Bantu D-pad lokal; Leanback BrowseFrameLayout tetap perlu di-intercept di fragment.
+        searchOrbView.nextFocusRightId = R.id.settings_orb
+        settingsOrbView.nextFocusLeftId = R.id.title_orb
+
         clipToPadding = false
         clipChildren = false
+    }
+
+    /**
+     * Leanback [BrowseFrameLayout] mengarahkan FOCUS_RIGHT dari title ke konten utama.
+     * Intersep agar Search → Settings / Settings → Search tetap jalan.
+     */
+    fun interceptFocusSearch(focused: View?, direction: Int): View? {
+        if (focused == null) return null
+        if (!hasSearchListener || !hasSettingsListener) return null
+        if (searchOrbView.visibility != VISIBLE || settingsOrbView.visibility != VISIBLE) return null
+
+        val onSearch = isWithin(searchOrbView, focused)
+        val onSettings = isWithin(settingsOrbView, focused)
+
+        if (onSearch && direction == FOCUS_RIGHT) {
+            return settingsOrbView
+        }
+        if (onSettings && direction == FOCUS_LEFT) {
+            return searchOrbView
+        }
+        return null
+    }
+
+    private fun isWithin(root: View, focused: View): Boolean {
+        var current: View? = focused
+        while (current != null) {
+            if (current === root) return true
+            current = current.parent as? View
+        }
+        return false
     }
 
     fun setTitle(titleText: CharSequence?) {

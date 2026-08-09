@@ -6,4 +6,5 @@
     <item name="tag_card_size" type="id" />
     <item name="tag_quality" type="id" />
     <item name="row_loading_label" type="id" />
+    <item name="tag_orb_focus_fixed" type="id" />
 </resources>
