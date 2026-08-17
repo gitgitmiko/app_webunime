@@ -21,6 +21,7 @@ import com.webunime.tv.data.Episode
 import com.webunime.tv.data.PlayerRouter
 import com.webunime.tv.data.PlayerServer
 import com.webunime.tv.data.WatchSessionStore
+import com.webunime.tv.ui.PosterGlide
 import com.webunime.tv.ui.player.PlayerActivity
 import kotlinx.coroutines.launch
 
@@ -105,11 +106,11 @@ class DetailActivity : AppCompatActivity() {
         }
         val thumb = item.thumbnail
         val thumbAlt = item.thumbnailAlt
-        val posterReq = Glide.with(this).load(thumb).centerCrop()
-        val backdropReq = Glide.with(this).load(thumb).centerCrop()
+        val posterReq = Glide.with(this).load(thumb?.let { PosterGlide.model(it) }).centerCrop()
+        val backdropReq = Glide.with(this).load(thumb?.let { PosterGlide.model(it) }).centerCrop()
         if (!thumbAlt.isNullOrBlank() && thumbAlt != thumb) {
-            posterReq.error(Glide.with(this).load(thumbAlt).centerCrop())
-            backdropReq.error(Glide.with(this).load(thumbAlt).centerCrop())
+            posterReq.error(Glide.with(this).load(PosterGlide.model(thumbAlt)).centerCrop())
+            backdropReq.error(Glide.with(this).load(PosterGlide.model(thumbAlt)).centerCrop())
         }
         posterReq.into(poster)
         backdropReq.into(backdrop)

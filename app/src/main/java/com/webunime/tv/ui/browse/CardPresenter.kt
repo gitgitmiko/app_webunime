@@ -29,6 +29,7 @@ import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
 import com.webunime.tv.R
 import com.webunime.tv.data.CatalogItem
+import com.webunime.tv.ui.PosterGlide
 import java.security.MessageDigest
 
 /**
@@ -251,15 +252,21 @@ class CardPresenter(
             val portrait = movie.thumbnail?.takeIf { it.isNotBlank() }
             val landscape = movie.thumbnail_landscape?.takeIf { it.isNotBlank() }
             val alt = movie.thumbnailAlt?.takeIf { it.isNotBlank() && it != portrait }
-            val urls = listOfNotNull(portrait, alt, landscape).distinct()
-            val nextUrl = urls.firstOrNull()
+            val sourceUrls = listOfNotNull(portrait, alt, landscape).distinct()
+            val urls = sourceUrls.flatMap { PosterGlide.fallbackModels(it) }.distinct()
+            val nextUrl = sourceUrls.firstOrNull()
             val bindKey = listOf(movie.slug.orEmpty(), nextUrl.orEmpty(), sizeKey, badge)
                 .joinToString("|")
 
-            if (!force && card.getTag(R.id.tag_bind_key) == bindKey) return
+            if (!force && card.getTag(R.id.tag_bind_key) == bindKey) {
+                if (card.getTag(R.id.tag_poster_ok) == bindKey) return
+                if (card.getTag(R.id.tag_poster_loading) == bindKey) return
+            }
 
             cancelPosterRequest(card)
             card.setTag(R.id.tag_bind_key, bindKey)
+            card.setTag(R.id.tag_poster_ok, null)
+            card.setTag(R.id.tag_poster_loading, bindKey)
             card.setTag(R.id.tag_thumb_url, nextUrl)
             card.setTag(R.id.tag_card_size, sizeKey)
             card.setTag(R.id.tag_quality, badge)
@@ -267,7 +274,10 @@ class CardPresenter(
 
             val placeholder = ColorDrawable(ContextCompat.getColor(card.context, R.color.wu_surface))
             card.mainImage = placeholder
-            if (nextUrl.isNullOrBlank()) return
+            if (nextUrl.isNullOrBlank()) {
+                card.setTag(R.id.tag_poster_loading, null)
+                return
+            }
 
             val corner = (4f * card.resources.displayMetrics.density).toInt().coerceAtLeast(4)
             val options = RequestOptions()
@@ -289,6 +299,8 @@ class CardPresenter(
             cancelPosterRequest(card)
             card.mainImage = ColorDrawable(ContextCompat.getColor(card.context, R.color.wu_surface))
             card.setTag(R.id.tag_bind_key, null)
+            card.setTag(R.id.tag_poster_ok, null)
+            card.setTag(R.id.tag_poster_loading, null)
             card.setTag(R.id.tag_thumb_url, null)
             card.mainImageView?.setTag(R.id.tag_thumb_url, null)
         }
@@ -299,7 +311,7 @@ class CardPresenter(
             runCatching {
                 val (w, h) = sizePx(context)
                 Glide.with(context)
-                    .load(src)
+                    .load(PosterGlide.model(src))
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .preload(w, h)
             }
@@ -308,7 +320,7 @@ class CardPresenter(
         private fun loadIntoCard(
             card: ImageCardView,
             bindKey: String,
-            urls: List<String>,
+            urls: List<Any>,
             index: Int,
             options: RequestOptions,
             placeholder: Drawable,
@@ -319,6 +331,8 @@ class CardPresenter(
             if (!canUseGlide(card.context)) return
             if (index >= urls.size) {
                 if (card.getTag(R.id.tag_bind_key) == bindKey) {
+                    card.setTag(R.id.tag_poster_loading, null)
+                    card.setTag(R.id.tag_poster_ok, null)
                     card.mainImage = placeholder
                 }
                 return
@@ -358,7 +372,12 @@ class CardPresenter(
                         target: Target<Drawable>?,
                         dataSource: DataSource,
                         isFirstResource: Boolean,
-                    ): Boolean = card.getTag(R.id.tag_bind_key) != bindKey
+                    ): Boolean {
+                        if (card.getTag(R.id.tag_bind_key) != bindKey) return true
+                        card.setTag(R.id.tag_poster_ok, bindKey)
+                        card.setTag(R.id.tag_poster_loading, null)
+                        return false
+                    }
                 })
                 .into(iv)
         }

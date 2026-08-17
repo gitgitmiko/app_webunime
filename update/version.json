@@ -1,6 +1,6 @@
 {
-  "versionCode": 231,
-  "versionName": "1.11.11",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.11/WEBUNIME-TV-v1.11.11.apk",
-  "changelog": "OTA tidak tertahan cache GitHub; backdrop, badge negara, cover paging."
+  "versionCode": 232,
+  "versionName": "1.11.12",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.12/WEBUNIME-TV-v1.11.12.apk",
+  "changelog": "Film Indonesia: cover tidak abu-abu saat geser kanan; baris dipindah di atas Anime Terbaru."
 }

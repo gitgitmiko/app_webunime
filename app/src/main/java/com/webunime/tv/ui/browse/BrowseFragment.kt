@@ -371,13 +371,13 @@ class BrowseFragment : BrowseSupportFragment() {
         addLocalCardRow(getString(R.string.row_favorites), buildFavoriteItems(), isFavorites = true)
 
         deferredRowSpecs = listOf(
-            DeferredRowSpec(getString(R.string.row_indonesia), "indonesia"),
             DeferredRowSpec(getString(R.string.row_movies), "movies"),
             DeferredRowSpec(getString(R.string.row_action), "movies", genre = "Action,Adventure,Thriller"),
             DeferredRowSpec(getString(R.string.row_drama), "movies", genre = "Drama,Romance"),
             DeferredRowSpec(getString(R.string.row_horror), "horror"),
             DeferredRowSpec(getString(R.string.row_series_latest), "series-latest"),
             DeferredRowSpec(getString(R.string.row_series), "series"),
+            DeferredRowSpec(getString(R.string.row_indonesia), "indonesia"),
             DeferredRowSpec(getString(R.string.row_anime_latest), "anime-latest"),
             DeferredRowSpec(getString(R.string.row_anime_top), "anime", sort = "rating"),
             DeferredRowSpec(getString(R.string.row_anime_hot), "anime", sort = "hot"),
@@ -792,6 +792,7 @@ class BrowseFragment : BrowseSupportFragment() {
                 state.adapter.add(item)
             }
             state.loadedCount = state.allItems.size
+            next.items.forEach { CardPresenter.preload(requireContext(), it.thumbnail) }
         }
     }
 

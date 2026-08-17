@@ -11,8 +11,8 @@ android {
         applicationId = "com.webunime.tv"
         minSdk = 21
         targetSdk = 34
-        versionCode = 231
-        versionName = "1.11.11"
+        versionCode = 232
+        versionName = "1.11.12"
 
         buildConfigField("String", "API_BASE_URL", "\"https://gitgitmiko.my.id\"")
 
@@ -60,6 +60,7 @@ dependencies {
 
     implementation("com.google.android.material:material:1.12.0")
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation("com.github.bumptech.glide:okhttp3-integration:4.16.0")
 
     implementation("androidx.media3:media3-exoplayer:1.5.1")
     implementation("androidx.media3:media3-exoplayer-hls:1.5.1")

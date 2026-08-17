@@ -8,6 +8,7 @@ import com.webunime.tv.data.WatchSessionStore
 import com.webunime.tv.data.api.ApiClient
 import com.webunime.tv.data.api.PrefsCookieJar
 import com.webunime.tv.data.api.SessionStore
+import com.webunime.tv.ui.PosterGlide
 
 class WebunimeApp : Application() {
     lateinit var sessionStore: SessionStore
@@ -25,6 +26,7 @@ class WebunimeApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        PosterGlide.install(this)
         sessionStore = SessionStore(this)
         apiClient = ApiClient(sessionStore, PrefsCookieJar(this))
         authRepository = AuthRepository(apiClient, sessionStore)

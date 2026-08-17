@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.webunime.tv.R
 import com.webunime.tv.data.CatalogItem
+import com.webunime.tv.ui.PosterGlide
 
 /**
  * Hero carousel: backdrop landscape + teks di baris Leanback.
@@ -305,7 +306,7 @@ class HeroCarouselController(
         if (url == lastBackdropUrl) return
         lastBackdropUrl = url
         Glide.with(backdrop)
-            .load(url)
+            .load(PosterGlide.model(url))
             .centerCrop()
             .placeholder(ColorDrawable(ContextCompat.getColor(context, R.color.wu_bg)))
             .error(ColorDrawable(ContextCompat.getColor(context, R.color.wu_bg)))
