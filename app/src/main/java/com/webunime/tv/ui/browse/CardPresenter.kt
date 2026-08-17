@@ -7,7 +7,6 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
-import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.text.TextUtils
@@ -18,14 +17,19 @@ import androidx.core.content.ContextCompat
 import androidx.leanback.widget.ImageCardView
 import androidx.leanback.widget.Presenter
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool
+import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
+import com.bumptech.glide.request.target.Target
 import com.webunime.tv.R
 import com.webunime.tv.data.CatalogItem
+import java.security.MessageDigest
 
 /**
  * Kartu browse/search: poster 2:3 seukuran web (~6 per baris).
@@ -98,8 +102,7 @@ class CardPresenter(
         card.setTag(R.id.tag_catalog_item, null)
         card.setOnLongClickListener(null)
         card.setOnKeyListener(null)
-        // Jangan Glide.clear + mainImage=null: recycle kartu akan load ulang dari jaringan
-        // dan cover terlihat blank beberapa detik saat scroll balik.
+        clearPosterRequest(card)
     }
 
     private fun bindLibraryLongPress(card: ImageCardView, movie: CatalogItem) {
@@ -183,13 +186,12 @@ class CardPresenter(
         /** Gambar badge (kualitas / total EPS) di pojok kanan atas bitmap poster. */
         private fun withPosterBadge(
             src: Bitmap,
-            context: Context,
+            density: Float,
             badge: String?,
         ): Bitmap {
             val label = badge?.trim()?.takeIf { it.isNotBlank() } ?: return src
             val out = src.copy(Bitmap.Config.ARGB_8888, true) ?: return src
             val canvas = Canvas(out)
-            val density = context.resources.displayMetrics.density
             val textSizePx = 13f * density
             val padH = 10f * density
             val padV = 5f * density
@@ -249,36 +251,46 @@ class CardPresenter(
             val portrait = movie.thumbnail?.takeIf { it.isNotBlank() }
             val landscape = movie.thumbnail_landscape?.takeIf { it.isNotBlank() }
             val alt = movie.thumbnailAlt?.takeIf { it.isNotBlank() && it != portrait }
-            // Kartu selalu portrait. Landscape hanya untuk background hero (HeroCarouselController).
             val urls = listOfNotNull(portrait, alt, landscape).distinct()
             val nextUrl = urls.firstOrNull()
-            val prevUrl = card.mainImageView.getTag(R.id.tag_thumb_url) as? String
-            val prevSize = card.getTag(R.id.tag_card_size) as? String
-            val prevBadge = card.getTag(R.id.tag_quality) as? String
+            val bindKey = listOf(movie.slug.orEmpty(), nextUrl.orEmpty(), sizeKey, badge)
+                .joinToString("|")
 
-            if (!force && prevUrl == nextUrl && prevSize == sizeKey && prevBadge == badge) return
+            if (!force && card.getTag(R.id.tag_bind_key) == bindKey) return
 
+            cancelPosterRequest(card)
+            card.setTag(R.id.tag_bind_key, bindKey)
             card.setTag(R.id.tag_thumb_url, nextUrl)
             card.setTag(R.id.tag_card_size, sizeKey)
             card.setTag(R.id.tag_quality, badge)
             card.mainImageView.setTag(R.id.tag_thumb_url, nextUrl)
 
-            val keep = card.mainImage
-            val placeholder = keep ?: ColorDrawable(ContextCompat.getColor(card.context, R.color.wu_surface))
-            if (nextUrl.isNullOrBlank()) {
-                card.mainImage = placeholder
-                return
-            }
+            val placeholder = ColorDrawable(ContextCompat.getColor(card.context, R.color.wu_surface))
+            card.mainImage = placeholder
+            if (nextUrl.isNullOrBlank()) return
 
+            val corner = (4f * card.resources.displayMetrics.density).toInt().coerceAtLeast(4)
             val options = RequestOptions()
                 .dontAnimate()
                 .skipMemoryCache(false)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .transform(
-                    CenterCrop(),
-                    RoundedCorners((4f * card.resources.displayMetrics.density).toInt().coerceAtLeast(4)),
-                )
-            loadIntoCard(card, urls, 0, options, placeholder, width, height, badge)
+                .override(width, height)
+            loadIntoCard(card, bindKey, urls, 0, options, placeholder, corner, badge)
+        }
+
+        private fun cancelPosterRequest(card: ImageCardView) {
+            val iv = card.mainImageView ?: return
+            if (canUseGlide(card.context)) {
+                runCatching { Glide.with(iv).clear(iv) }
+            }
+        }
+
+        private fun clearPosterRequest(card: ImageCardView) {
+            cancelPosterRequest(card)
+            card.mainImage = ColorDrawable(ContextCompat.getColor(card.context, R.color.wu_surface))
+            card.setTag(R.id.tag_bind_key, null)
+            card.setTag(R.id.tag_thumb_url, null)
+            card.mainImageView?.setTag(R.id.tag_thumb_url, null)
         }
 
         fun preload(context: Context, url: String?) {
@@ -295,46 +307,85 @@ class CardPresenter(
 
         private fun loadIntoCard(
             card: ImageCardView,
+            bindKey: String,
             urls: List<String>,
             index: Int,
             options: RequestOptions,
             placeholder: Drawable,
-            width: Int,
-            height: Int,
+            corner: Int,
             badge: String,
         ) {
+            val iv = card.mainImageView ?: return
             if (!canUseGlide(card.context)) return
             if (index >= urls.size) {
-                card.mainImage = placeholder
+                if (card.getTag(R.id.tag_bind_key) == bindKey) {
+                    card.mainImage = placeholder
+                }
                 return
             }
             val url = urls[index]
-            Glide.with(card.context)
-                .asBitmap()
+            val transforms = buildList {
+                add(CenterCrop())
+                add(RoundedCorners(corner))
+                if (badge.isNotBlank()) {
+                    add(PosterBadgeTransform(badge, card.resources.displayMetrics.density))
+                }
+            }
+            Glide.with(iv)
                 .load(url)
                 .apply(options)
+                .transform(*transforms.toTypedArray())
                 .placeholder(placeholder)
-                .into(object : CustomTarget<Bitmap>(width, height) {
+                .listener(object : RequestListener<Drawable> {
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<Drawable>,
+                        isFirstResource: Boolean,
+                    ): Boolean {
+                        if (!canUseGlide(card.context)) return true
+                        if (card.getTag(R.id.tag_bind_key) != bindKey) return true
+                        loadIntoCard(
+                            card, bindKey, urls, index + 1,
+                            options, placeholder, corner, badge,
+                        )
+                        return true
+                    }
+
                     override fun onResourceReady(
-                        resource: Bitmap,
-                        transition: Transition<in Bitmap>?,
-                    ) {
-                        if (!canUseGlide(card.context)) return
-                        if (card.getTag(R.id.tag_thumb_url) != urls.firstOrNull()) return
-                        val stamped = withPosterBadge(resource, card.context, badge)
-                        card.mainImage = BitmapDrawable(card.resources, stamped)
-                    }
-
-                    override fun onLoadCleared(placeholderDrawable: Drawable?) {
-                        /* no-op */
-                    }
-
-                    override fun onLoadFailed(errorDrawable: Drawable?) {
-                        if (!canUseGlide(card.context)) return
-                        if (card.getTag(R.id.tag_thumb_url) != urls.firstOrNull()) return
-                        loadIntoCard(card, urls, index + 1, options, placeholder, width, height, badge)
-                    }
+                        resource: Drawable,
+                        model: Any,
+                        target: Target<Drawable>?,
+                        dataSource: DataSource,
+                        isFirstResource: Boolean,
+                    ): Boolean = card.getTag(R.id.tag_bind_key) != bindKey
                 })
+                .into(iv)
+        }
+
+        private class PosterBadgeTransform(
+            private val badge: String,
+            private val density: Float,
+        ) : BitmapTransformation() {
+            override fun transform(
+                pool: BitmapPool,
+                toTransform: Bitmap,
+                outWidth: Int,
+                outHeight: Int,
+            ): Bitmap = withPosterBadge(toTransform, density, badge)
+
+            override fun equals(other: Any?): Boolean =
+                other is PosterBadgeTransform && other.badge == badge
+
+            override fun hashCode(): Int = ID.hashCode() * 31 + badge.hashCode()
+
+            override fun updateDiskCacheKey(messageDigest: MessageDigest) {
+                messageDigest.update((ID + badge).toByteArray(Charsets.UTF_8))
+            }
+
+            companion object {
+                private const val ID = "com.webunime.tv.poster-badge"
+            }
         }
 
         private fun ImageCardView.titleTextView(): TextView? =

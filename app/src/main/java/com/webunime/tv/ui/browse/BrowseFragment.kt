@@ -299,10 +299,7 @@ class BrowseFragment : BrowseSupportFragment() {
         val h = hero ?: return
         when (item) {
             is HeroCarouselItem -> h.resumeRotate()
-            is CatalogItem -> {
-                if (item.type == TYPE_CONTINUE) h.resumeRotate()
-                else h.onBrowseItemFocused(item)
-            }
+            is CatalogItem -> h.onBrowseItemFocused(item)
             else -> h.resumeRotate()
         }
     }

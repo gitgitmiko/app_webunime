@@ -21,6 +21,8 @@ data class CatalogItem(
     val thumbnailAlt: String? = null,
     val rating: String? = null,
     val quality: String? = null,
+    /** Negara produksi (field API); fallback parse dari sinopsis jika kosong. */
+    val negara: String? = null,
     /** True jika judul/feed baru di-scrape pada sync terakhir (badge NEW di TV). */
     val is_new: Boolean? = null,
     val durasi: String? = null,
@@ -47,6 +49,10 @@ data class CatalogItem(
     val mal_id: Int? = null,
 ) {
     fun displayTitle(): String = judul?.takeIf { it.isNotBlank() } ?: nama ?: slug ?: "Tanpa judul"
+
+    fun displayCountry(): String? =
+        negara?.trim()?.takeIf { it.isNotBlank() }
+            ?: parsedSinopsis().negara?.trim()?.takeIf { it.isNotBlank() }
 
     fun displayMeta(): String {
         val parts = mutableListOf<String>()

@@ -119,9 +119,13 @@ class HeroCarouselController(
 
     fun currentItem(): CatalogItem? = current
 
-    fun onBrowseItemFocused(_item: CatalogItem?) {
-        // Carousel hero tetap 10 slide. Fokus kartu di baris bawah
-        // tidak mengganti judul/dot hero (itu yang terasa “film-nya banyak”).
+    fun onBrowseItemFocused(item: CatalogItem?) {
+        if (item == null) return
+        featuredMode = false
+        updateChrome()
+        val url = item.thumbnail_landscape?.takeIf { it.isNotBlank() }
+            ?: item.thumbnail?.takeIf { it.isNotBlank() }
+        loadBackdrop(url)
     }
 
     fun showFeaturedMode() {
@@ -220,7 +224,7 @@ class HeroCarouselController(
 
     private fun bindCountry(item: CatalogItem) {
         val view = country ?: return
-        val raw = item.parsedSinopsis().negara?.trim()?.takeIf { it.isNotBlank() }
+        val raw = item.displayCountry()
         if (raw == null) {
             view.visibility = View.GONE
             return
