@@ -1,8 +1,10 @@
 package com.webunime.tv.ui.settings
 
+import android.content.Intent
 import android.content.Context
 import android.os.Bundle
 import android.view.KeyEvent
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -16,13 +18,14 @@ import com.webunime.tv.WebunimeApp
 import com.webunime.tv.data.AppUpdateChecker
 import com.webunime.tv.data.AppUpdateInfo
 import com.webunime.tv.data.ScrapeTriggerClient
+import com.webunime.tv.ui.auth.LoginActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * Pengaturan: OTA APK + scrape manual + sync katalog dari GitHub.
+ * Pengaturan: akun, OTA APK, scrape manual, dan refresh katalog dari API.
  */
 class SettingsActivity : AppCompatActivity() {
 
@@ -53,6 +56,19 @@ class SettingsActivity : AppCompatActivity() {
         catalogStatusView = findViewById(R.id.settingsCatalogStatus)
         startScrapeBtn = findViewById(R.id.settingsStartScrape)
         refreshCatalogBtn = findViewById(R.id.settingsRefreshCatalog)
+
+        val auth = (application as WebunimeApp).authRepository
+        val user = auth.currentUser()
+        findViewById<TextView>(R.id.settingsAccountName).text = getString(
+            R.string.settings_logged_in_as,
+            user?.displayLabel() ?: "-",
+        )
+        val displayNameInput = findViewById<EditText>(R.id.settingsDisplayName)
+        displayNameInput.setText(user?.displayName.orEmpty())
+        findViewById<MaterialButton>(R.id.settingsSaveProfile).setOnClickListener {
+            saveProfile(displayNameInput.text?.toString().orEmpty())
+        }
+        findViewById<MaterialButton>(R.id.settingsLogout).setOnClickListener { logout() }
 
         val checkBtn = findViewById<MaterialButton>(R.id.settingsCheckUpdate)
         checkBtn.setOnClickListener { checkForUpdate() }
@@ -211,17 +227,17 @@ class SettingsActivity : AppCompatActivity() {
             }
 
             Toast.makeText(this@SettingsActivity, R.string.settings_catalog_updating, Toast.LENGTH_SHORT).show()
-            val ok = runCatching { catalogRepo.forceRefreshFromGithub() }.getOrDefault(0)
+            val ok = runCatching { catalogRepo.forceRefreshFromApi() }.getOrDefault(0)
             catalogBusy = false
             if (isFinishing) return@launch
             if (ok > 0) {
                 setScrapeLocked(false)
                 Toast.makeText(
                     this@SettingsActivity,
-                    getString(R.string.settings_catalog_updated, ok),
+                    R.string.settings_catalog_updated,
                     Toast.LENGTH_LONG,
                 ).show()
-                catalogStatusView.text = getString(R.string.settings_catalog_updated, ok)
+                catalogStatusView.setText(R.string.settings_catalog_updated)
                 startScrapeBtn.requestFocus()
             } else {
                 Toast.makeText(
@@ -310,6 +326,37 @@ class SettingsActivity : AppCompatActivity() {
                         ).show()
                     }
             }
+        }
+    }
+
+    private fun saveProfile(name: String) {
+        if (name.isBlank()) {
+            Toast.makeText(this, R.string.settings_display_name, Toast.LENGTH_SHORT).show()
+            return
+        }
+        lifecycleScope.launch {
+            runCatching { (application as WebunimeApp).authRepository.updateProfile(name) }
+                .onSuccess {
+                    findViewById<TextView>(R.id.settingsAccountName).text =
+                        getString(R.string.settings_logged_in_as, it.displayLabel())
+                    Toast.makeText(this@SettingsActivity, R.string.settings_profile_saved, Toast.LENGTH_SHORT).show()
+                }
+                .onFailure {
+                    Toast.makeText(this@SettingsActivity, it.message ?: "Gagal menyimpan", Toast.LENGTH_LONG).show()
+                }
+        }
+    }
+
+    private fun logout() {
+        lifecycleScope.launch {
+            runCatching { (application as WebunimeApp).authRepository.logout() }
+            (application as WebunimeApp).libraryRepository.clear()
+            if (isFinishing) return@launch
+            startActivity(
+                Intent(this@SettingsActivity, LoginActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
+            )
+            finish()
         }
     }
 

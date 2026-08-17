@@ -61,6 +61,8 @@ class PlayerActivity : AppCompatActivity() {
     private var contentSlug: String = ""
     private var contentEpisode: Int? = null
     private var contentThumb: String? = null
+    private var contentCollection: String? = null
+    private var contentEpisodeSlug: String? = null
     private var resumePositionMs: Long = 0L
     private var failoverInProgress = false
     private var playJobGeneration = 0
@@ -171,6 +173,8 @@ class PlayerActivity : AppCompatActivity() {
         contentSlug = intent.getStringExtra(EXTRA_SLUG).orEmpty()
         contentEpisode = intent.getIntExtra(EXTRA_EPISODE, -1).takeIf { it > 0 }
         contentThumb = intent.getStringExtra(EXTRA_THUMBNAIL)
+        contentCollection = intent.getStringExtra(EXTRA_COLLECTION)
+        contentEpisodeSlug = intent.getStringExtra(EXTRA_EPISODE_SLUG)
         resumePositionMs = intent.getLongExtra(EXTRA_RESUME_MS, 0L).coerceAtLeast(0L)
 
         serverUrls = intent.getStringArrayExtra(EXTRA_SERVER_URLS)?.toList().orEmpty()
@@ -204,22 +208,33 @@ class PlayerActivity : AppCompatActivity() {
 
         serverIndex = 0
         loadEpisodeContext()
+        if (catalogItem == null && contentSlug.isNotBlank()) {
+            lifecycleScope.launch {
+                val found = (application as WebunimeApp).catalogRepository
+                    .findBySlugEnsured(contentSlug, contentCollection)
+                if (isFinishing || found == null) return@launch
+                catalogItem = found
+                if (contentCollection.isNullOrBlank()) contentCollection = found.detailCollection()
+                episodeList = found.episodes.orEmpty()
+                    .sortedWith(compareBy({ it.season ?: 0 }, { it.episode ?: 0 }))
+                episodeIndex = resolveEpisodeIndex(contentEpisode, contentEpisodeSlug)
+                prepareAnimeSkipTimes()
+            }
+        }
         prepareAnimeSkipTimes()
         playCurrentServer()
     }
 
     private fun loadEpisodeContext() {
-        if (contentSlug.isBlank()) {
-            catalogItem = null
-            episodeList = emptyList()
-            episodeIndex = -1
-            return
-        }
-        val item = (application as WebunimeApp).catalogRepository.snapshot.findBySlug(contentSlug)
+        if (contentSlug.isBlank()) return
+        val item = (application as WebunimeApp).catalogRepository.cachedItem(
+            contentCollection ?: "movies",
+            contentSlug,
+        ) ?: (application as WebunimeApp).catalogRepository.snapshot.findBySlug(contentSlug)
         catalogItem = item
         episodeList = item?.episodes.orEmpty()
             .sortedWith(compareBy({ it.season ?: 0 }, { it.episode ?: 0 }))
-        episodeIndex = resolveEpisodeIndex(contentEpisode, selectedEpisodeSlug = null)
+        episodeIndex = resolveEpisodeIndex(contentEpisode, contentEpisodeSlug)
     }
 
     /** Cocokkan episode aktif (angka + season bila ada) agar series multi-season aman. */
@@ -613,13 +628,7 @@ class PlayerActivity : AppCompatActivity() {
                 if (playbackState == Player.STATE_ENDED && contentSlug.isNotBlank()) {
                     val p = exoPlayer
                     val dur = p?.duration?.takeIf { it > 0 } ?: p?.currentPosition ?: 0L
-                    (application as WebunimeApp).watchSessions.markFinished(
-                        slug = contentSlug,
-                        episode = contentEpisode,
-                        title = titleView.text?.toString().orEmpty(),
-                        thumbnail = contentThumb,
-                        durationMs = dur,
-                    )
+                    persistWatch(dur, dur, finished = true, flush = true)
                     scheduleAutoNextEpisode()
                 }
             }
@@ -679,12 +688,7 @@ class PlayerActivity : AppCompatActivity() {
         @android.webkit.JavascriptInterface
         fun onEnded() {
             if (contentSlug.isBlank()) return
-            (application as WebunimeApp).watchSessions.markFinished(
-                slug = contentSlug,
-                episode = contentEpisode,
-                title = titleView.text?.toString().orEmpty(),
-                thumbnail = contentThumb,
-            )
+            persistWatch(positionMs = 1L, durationMs = 1L, finished = true, flush = true)
             setTitleBarVisible(true)
             runOnUiThread { scheduleAutoNextEpisode() }
         }
@@ -715,16 +719,7 @@ class PlayerActivity : AppCompatActivity() {
             // Jangan tulis SharedPreferences tiap detik — picu I/O berat di TV.
             if (now - lastWebProgressSaveAt < PROGRESS_TICK_MS) return
             lastWebProgressSaveAt = now
-            (application as WebunimeApp).watchSessions.save(
-                WatchSession(
-                    slug = contentSlug,
-                    episode = contentEpisode,
-                    title = titleView.text?.toString().orEmpty(),
-                    thumbnail = contentThumb,
-                    positionMs = pos,
-                    durationMs = dur.coerceAtLeast(0L),
-                )
-            )
+            persistWatch(pos, dur.coerceAtLeast(0L))
         }
     }
 
@@ -936,15 +931,50 @@ class PlayerActivity : AppCompatActivity() {
         val pos = player.currentPosition
         val dur = player.duration.takeIf { it > 0 } ?: 0L
         if (pos < WatchSessionStore.MIN_SAVE_MS) return
-        (application as WebunimeApp).watchSessions.save(
-            WatchSession(
+        persistWatch(pos, dur, flush = true)
+    }
+
+    private fun persistWatch(
+        positionMs: Long,
+        durationMs: Long,
+        finished: Boolean = false,
+        flush: Boolean = false,
+    ) {
+        if (contentSlug.isBlank()) return
+        val app = application as WebunimeApp
+        val collection = contentCollection ?: catalogItem?.detailCollection()
+        val episodeSlug = contentEpisodeSlug ?: episodeList.getOrNull(episodeIndex)?.slug
+        val title = titleView.text?.toString().orEmpty()
+        if (finished) {
+            app.watchSessions.markFinished(
                 slug = contentSlug,
                 episode = contentEpisode,
-                title = titleView.text?.toString().orEmpty(),
+                title = title,
                 thumbnail = contentThumb,
-                positionMs = pos,
-                durationMs = dur,
+                durationMs = durationMs,
             )
+        } else {
+            app.watchSessions.save(
+                WatchSession(
+                    slug = contentSlug,
+                    episode = contentEpisode,
+                    title = title,
+                    thumbnail = contentThumb,
+                    positionMs = positionMs,
+                    durationMs = durationMs,
+                    collection = collection,
+                    episodeSlug = episodeSlug,
+                ),
+            )
+        }
+        app.libraryRepository.scheduleHistoryUpsert(
+            collection = collection,
+            slug = contentSlug,
+            title = title,
+            thumbnail = contentThumb,
+            episodeSlug = episodeSlug,
+            progressSeconds = (if (finished) (durationMs / 1000L).coerceAtLeast(1L) else positionMs / 1000L),
+            flushNow = flush || finished,
         )
     }
 
@@ -1496,6 +1526,9 @@ class PlayerActivity : AppCompatActivity() {
         const val EXTRA_EPISODE = "episode"
         const val EXTRA_THUMBNAIL = "thumbnail"
         const val EXTRA_RESUME_MS = "resume_ms"
+        const val EXTRA_COLLECTION = "collection"
+        const val EXTRA_EPISODE_SLUG = "episode_slug"
+
         private const val TITLE_AUTO_HIDE_MS = 4_000L
         private const val WEB_FAIL_TIMEOUT_MS = 32_000L
         /** Mega error page biasanya cepat; jangan tunggu 32 dtk. */

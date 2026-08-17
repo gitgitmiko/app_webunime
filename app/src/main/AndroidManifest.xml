@@ -26,16 +26,24 @@
         android:usesCleartextTraffic="true">
 
         <activity
-            android:name=".ui.browse.MainActivity"
+            android:name=".ui.auth.LoginActivity"
             android:exported="true"
             android:banner="@drawable/app_banner"
             android:logo="@drawable/app_banner"
-            android:screenOrientation="landscape">
+            android:screenOrientation="landscape"
+            android:theme="@style/Theme.WebunimeTv.Detail">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".ui.browse.MainActivity"
+            android:exported="false"
+            android:banner="@drawable/app_banner"
+            android:logo="@drawable/app_banner"
+            android:screenOrientation="landscape" />
 
         <activity
             android:name=".ui.detail.DetailActivity"

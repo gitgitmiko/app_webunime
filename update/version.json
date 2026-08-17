@@ -1,6 +1,6 @@
 {
-  "versionCode": 219,
-  "versionName": "1.10.19",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.10.19/WEBUNIME-TV-v1.10.19.apk",
-  "changelog": "Kartu fokus tetap portrait; gambar landscape hanya untuk background hero."
+  "versionCode": 220,
+  "versionName": "1.11.0",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.0/WEBUNIME-TV-v1.11.0.apk",
+  "changelog": "Katalog, favorit, dan lanjut menonton dari API gitgitmiko.my.id. Wajib login akun WEBUNIME."
 }

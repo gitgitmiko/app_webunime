@@ -125,6 +125,7 @@
             android:focusable="true"
             android:minWidth="160dp"
             android:nextFocusDown="@id/episodeSection"
+            android:nextFocusRight="@id/favoriteButton"
             android:paddingStart="28dp"
             android:paddingEnd="28dp"
             android:text="@string/play"
@@ -136,12 +137,41 @@
             app:layout_constraintStart_toEndOf="@id/detailPoster"
             app:layout_constraintTop_toBottomOf="@id/detailSynopsis" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/favoriteButton"
+            style="@style/Wu.Button.Outlined"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginStart="12dp"
+            android:focusable="true"
+            android:minWidth="160dp"
+            android:nextFocusLeft="@id/playButton"
+            android:nextFocusDown="@id/episodeSection"
+            android:text="@string/favorite_add"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            app:cornerRadius="4dp"
+            app:layout_constraintBottom_toBottomOf="@id/playButton"
+            app:layout_constraintStart_toEndOf="@id/playButton"
+            app:layout_constraintTop_toTopOf="@id/playButton" />
+
+        <ProgressBar
+            android:id="@+id/detailLoading"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:indeterminate="true"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <androidx.constraintlayout.widget.Barrier
             android:id="@+id/detailHeaderBarrier"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:barrierDirection="bottom"
-            app:constraint_referenced_ids="detailPoster,playButton" />
+            app:constraint_referenced_ids="detailPoster,playButton,favoriteButton" />
 
         <TextView
             android:id="@+id/detailCreditsLabel"

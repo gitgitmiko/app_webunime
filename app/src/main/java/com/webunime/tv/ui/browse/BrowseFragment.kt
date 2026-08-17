@@ -24,13 +24,11 @@ import androidx.lifecycle.lifecycleScope
 import com.webunime.tv.R
 import com.webunime.tv.WebunimeApp
 import com.webunime.tv.data.CatalogItem
-import com.webunime.tv.data.CatalogSection
-import com.webunime.tv.data.CatalogSnapshot
+import com.webunime.tv.data.api.CatalogPage
 import com.webunime.tv.ui.search.SearchActivity
 import com.webunime.tv.ui.settings.SettingsActivity
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import java.util.Calendar
 
 /**
  * Browse: baris hero carousel (ikut scroll) + backdrop + baris katalog.
@@ -49,6 +47,7 @@ class BrowseFragment : BrowseSupportFragment() {
     private var lastRowIndex: Int = 0
     private var lastItemIndex: Int = 0
     private var continueRowIndex: Int = -1
+    private var favoritesRowIndex: Int = -1
     private var rowsBuilt: Boolean = false
     /** True hanya sekali setelah kembali dari Detail/Player/Search/Settings. */
     private var pendingPositionRestore: Boolean = false
@@ -200,13 +199,25 @@ class BrowseFragment : BrowseSupportFragment() {
             // Cukup pastikan fokus ada di grid jika benar-benar hilang.
             suppressDeferredAppend = true
             view?.removeCallbacks(endSuppressDeferredRunnable)
-            refreshContinueRowOnly(allowFullReload = false)
+            viewLifecycleOwner.lifecycleScope.launch {
+                runCatching { (requireActivity().application as WebunimeApp).libraryRepository.refresh() }
+                if (isAdded) {
+                    refreshContinueRowOnly(allowFullReload = false)
+                    refreshFavoritesRowOnly(allowFullReload = false)
+                }
+            }
             view?.post {
                 if (isAdded) softRestoreFocusOnly()
             }
             view?.postDelayed(endSuppressDeferredRunnable, 600)
         } else {
-            refreshContinueRowOnly(allowFullReload = true)
+            viewLifecycleOwner.lifecycleScope.launch {
+                runCatching { (requireActivity().application as WebunimeApp).libraryRepository.refresh() }
+                if (isAdded) {
+                    refreshContinueRowOnly(allowFullReload = true)
+                    refreshFavoritesRowOnly(allowFullReload = true)
+                }
+            }
         }
     }
 
@@ -237,11 +248,8 @@ class BrowseFragment : BrowseSupportFragment() {
             (activity as? MainActivity)?.openContinueWatch(catalog)
             return
         }
-        val slug = catalog.slug?.takeIf { it.isNotBlank() }
-            ?: catalog.anime_slug?.takeIf { it.isNotBlank() }
-            ?: catalog.series_slug?.takeIf { it.isNotBlank() }
-            ?: return
-        (activity as? MainActivity)?.openDetail(slug, catalog.episode, catalog.season)
+        val slug = catalog.detailSlug().takeIf { it.isNotBlank() } ?: return
+        (activity as? MainActivity)?.openDetail(slug, catalog.episode, catalog.season, catalog.detailCollection())
     }
 
     private fun focusRowsGrid() {
@@ -306,7 +314,6 @@ class BrowseFragment : BrowseSupportFragment() {
     fun reloadRows() {
         if (!this::rowsAdapter.isInitialized || !isAdded) return
         val repo = (requireActivity().application as WebunimeApp).catalogRepository
-        val snap = repo.snapshot
         val keepRow = lastRowIndex
         val keepItem = lastItemIndex
         keepItemForDeferred = keepItem
@@ -316,11 +323,11 @@ class BrowseFragment : BrowseSupportFragment() {
         rowsAdapter.clear()
         rowPaging.clear()
         continueRowIndex = -1
+        favoritesRowIndex = -1
         heroRowIndex = -1
         deferredRowIndex = 0
 
-        val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-        val featured = buildFeaturedCarousel(snap)
+        val featured = repo.heroItems
         hero?.setFeatured(featured)
         if (featured.isNotEmpty()) {
             heroRowIndex = rowsAdapter.size()
@@ -331,71 +338,22 @@ class BrowseFragment : BrowseSupportFragment() {
             )
         }
 
-        addCardRow(getString(R.string.row_continue), buildContinueItems(), isContinue = true)
+        addLocalCardRow(getString(R.string.row_continue), buildContinueItems(), isContinue = true)
+        addLocalCardRow(getString(R.string.row_favorites), buildFavoriteItems(), isFavorites = true)
 
-        // Baris lain: lazy saat geser bawah (+ prefetch 1 baris).
         deferredRowSpecs = listOf(
-            DeferredRowSpec(
-                title = getString(R.string.row_indonesia),
-                sections = listOf(CatalogSection.INDONESIA),
-                items = { s ->
-                    withNewFirst(
-                        s.indonesia.sortedWith(
-                            compareByDescending<CatalogItem> { it.releaseSortKey() }
-                                .thenByDescending { it.tahun?.toIntOrNull() ?: 0 }
-                                .thenBy { it.displayTitle() },
-                        ),
-                    )
-                },
-            ),
-            DeferredRowSpec(
-                title = getString(R.string.row_movies_year, currentYear),
-                sections = listOf(CatalogSection.MOVIES),
-                items = { s ->
-                    withNewFirst(s.movies.filter { it.tahun == currentYear.toString() })
-                },
-            ),
-            DeferredRowSpec(
-                title = getString(R.string.row_family),
-                sections = listOf(CatalogSection.MOVIES),
-                items = { s ->
-                    withNewFirst(
-                        s.movies.filter { item ->
-                            item.genre.orEmpty().any { it.equals("Family", ignoreCase = true) }
-                        },
-                    )
-                },
-            ),
-            DeferredRowSpec(
-                title = getString(R.string.row_horror),
-                sections = listOf(CatalogSection.HORROR),
-                items = { s -> withNewFirst(s.horror) },
-            ),
-            DeferredRowSpec(
-                title = getString(R.string.row_series_latest),
-                sections = listOf(CatalogSection.SERIES_LATEST, CatalogSection.SERIES),
-                items = { s -> withNewFirst(s.seriesLatest) },
-            ),
-            DeferredRowSpec(
-                title = getString(R.string.row_series),
-                sections = listOf(CatalogSection.SERIES),
-                items = { s -> withNewFirst(s.series) },
-            ),
-            DeferredRowSpec(
-                title = getString(R.string.row_anime_latest),
-                sections = listOf(CatalogSection.ANIME_LATEST, CatalogSection.ANIME),
-                items = { s -> withNewFirst(s.animeLatest) },
-            ),
-            DeferredRowSpec(
-                title = getString(R.string.row_anime),
-                sections = listOf(CatalogSection.ANIME),
-                items = { s -> withNewFirst(s.anime) },
-            ),
-            DeferredRowSpec(
-                title = getString(R.string.row_anime_movies),
-                sections = listOf(CatalogSection.ANIME_MOVIES),
-                items = { s -> withNewFirst(s.animeMovies) },
-            ),
+            DeferredRowSpec(getString(R.string.row_indonesia), "indonesia"),
+            DeferredRowSpec(getString(R.string.row_movies), "movies"),
+            DeferredRowSpec(getString(R.string.row_action), "movies", genre = "Action,Adventure,Thriller"),
+            DeferredRowSpec(getString(R.string.row_drama), "movies", genre = "Drama,Romance"),
+            DeferredRowSpec(getString(R.string.row_horror), "horror"),
+            DeferredRowSpec(getString(R.string.row_series_latest), "series-latest"),
+            DeferredRowSpec(getString(R.string.row_series), "series"),
+            DeferredRowSpec(getString(R.string.row_anime_latest), "anime-latest"),
+            DeferredRowSpec(getString(R.string.row_anime_top), "anime", sort = "rating"),
+            DeferredRowSpec(getString(R.string.row_anime_hot), "anime", sort = "hot"),
+            DeferredRowSpec(getString(R.string.row_anime), "anime"),
+            DeferredRowSpec(getString(R.string.row_anime_movies), "anime-movies"),
         )
 
         rowsBuilt = rowsAdapter.size() > 0
@@ -406,37 +364,51 @@ class BrowseFragment : BrowseSupportFragment() {
             view?.let { clearOpaqueBackgrounds(it) }
             restoreRetries = 0
             view?.post(restoreSelectionRunnable)
-            // Prefetch baris pertama di antrean (Indonesia) agar Down pertama terasa cepat.
             view?.post { maybeAppendDeferredRows(force = true) }
         }
     }
 
-    private fun addCardRow(
+    private fun addLocalCardRow(
         title: String,
         items: List<CatalogItem>,
         isContinue: Boolean = false,
-        preferItemIndex: Int = 0,
+        isFavorites: Boolean = false,
     ) {
         if (items.isEmpty()) return
         val list = ArrayObjectAdapter(cardPresenter)
+        items.forEach { list.add(it) }
         val rowId = rowsAdapter.size().toLong()
-        val want = if (preferItemIndex > 0 && !isContinue) {
-            (preferItemIndex + PAGE_SIZE).coerceAtMost(items.size)
-        } else {
-            items.size.coerceAtMost(PAGE_SIZE)
-        }.coerceAtLeast(1.coerceAtMost(items.size))
-        val initialCount = want.coerceAtMost(items.size)
-        for (i in 0 until initialCount) {
-            list.add(items[i])
-        }
-        rowPaging[rowId] = RowPagingState(allItems = items, adapter = list, loadedCount = initialCount)
+        rowPaging[rowId] = RowPagingState(
+            allItems = items.toMutableList(),
+            adapter = list,
+            loadedCount = items.size,
+            collection = "",
+        )
         if (isContinue) continueRowIndex = rowsAdapter.size()
+        if (isFavorites) favoritesRowIndex = rowsAdapter.size()
         rowsAdapter.add(ListRow(HeaderItem(rowId, title), list))
+    }
+
+    private fun addApiCardRow(spec: DeferredRowSpec, page: CatalogPage) {
+        if (page.items.isEmpty()) return
+        val list = ArrayObjectAdapter(cardPresenter)
+        page.items.forEach { list.add(it) }
+        val rowId = rowsAdapter.size().toLong()
+        rowPaging[rowId] = RowPagingState(
+            allItems = page.items.toMutableList(),
+            adapter = list,
+            loadedCount = page.items.size,
+            collection = spec.collection,
+            genre = spec.genre,
+            sort = spec.sort,
+            page = page.page,
+            total = page.total,
+        )
+        rowsAdapter.add(ListRow(HeaderItem(rowId, spec.title), list))
     }
 
     /**
      * Append baris berikutnya jika fokus mendekati akhir, atau [force] (prefetch).
-     * Series/Anime (~10MB) menampilkan baris loading + spinner saat JSON di-parse.
      */
     private fun maybeAppendDeferredRows(force: Boolean = false) {
         if (!isAdded || !this::rowsAdapter.isInitialized) return
@@ -462,23 +434,21 @@ class BrowseFragment : BrowseSupportFragment() {
                 val spec = deferredRowSpecs[deferredRowIndex]
                 deferredRowIndex++
 
-                val needsParse = spec.sections.any { !repo.isSectionLoaded(it) }
-                var loadingRowPos = -1
-                if (needsParse) {
-                    loadingRowPos = rowsAdapter.size()
-                    addLoadingRow(spec.title)
-                }
+                val loadingRowPos = rowsAdapter.size()
+                addLoadingRow(spec.title)
 
-                runCatching { repo.ensureSections(spec.sections) }
+                val page = runCatching {
+                    repo.listCollectionPage(
+                        collection = spec.collection,
+                        page = 1,
+                        genre = spec.genre,
+                        sort = spec.sort,
+                    )
+                }.getOrNull()
                 if (!isAdded) return@launch
-
-                if (loadingRowPos >= 0) {
-                    removeLoadingRowAt(loadingRowPos)
-                }
-
-                val items = spec.items(repo.snapshot)
-                if (items.isEmpty()) continue
-                addCardRow(spec.title, items, preferItemIndex = keepItemForDeferred)
+                removeLoadingRowAt(loadingRowPos)
+                if (page == null || page.items.isEmpty()) continue
+                addApiCardRow(spec, page)
                 appended++
                 if (prefetchOnly) break
             }
@@ -503,79 +473,81 @@ class BrowseFragment : BrowseSupportFragment() {
         }
     }
 
-    private fun buildFeaturedCarousel(snap: CatalogSnapshot): List<CatalogItem> {
-        fun keyOf(item: CatalogItem): String =
-            item.slug?.takeIf { it.isNotBlank() } ?: item.displayTitle()
-
-        val pool = (snap.movies + snap.series + snap.indonesia + snap.horror)
-            .asSequence()
-            .filter { !isAnimeCatalog(it) }
-            .distinctBy { keyOf(it) }
-            .toList()
-
-        // NEW selalu masuk dulu (meski rating ≤ 7), prefer yang punya landscape.
-        val news = pool.filter { it.showsNewBadge() }.let { list ->
-            val withLand = list.filter { !it.thumbnail_landscape.isNullOrBlank() }
-            val without = list.filter { it.thumbnail_landscape.isNullOrBlank() }
-            withLand + without
+    private fun buildContinueItems(): List<CatalogItem> {
+        val app = requireActivity().application as WebunimeApp
+        val local = app.watchSessions.continueWatching()
+        val fromLocal = local.map { session ->
+            CatalogItem(
+                type = TYPE_CONTINUE,
+                judul = session.title,
+                thumbnail = session.thumbnail,
+                slug = session.slug,
+                catalog = session.collection,
+                episode = session.episode,
+                episode_source = session.episodeSlug,
+                durasi = formatContinueMeta(session.positionMs, session.durationMs),
+            )
         }
-
-        val ratedPool = pool
-            .filter { !it.showsNewBadge() }
-            .filter { ratingValue(it) > FEATURED_MIN_RATING }
-        val ratedWithLandscape = ratedPool.filter { !it.thumbnail_landscape.isNullOrBlank() }
-        val ratedSource = (ratedWithLandscape.ifEmpty { ratedPool }).shuffled()
-
-        val out = ArrayList<CatalogItem>(FEATURED_LIMIT)
-        val seen = HashSet<String>()
-        for (item in news) {
-            if (out.size >= FEATURED_LIMIT) break
-            if (!seen.add(keyOf(item))) continue
-            out.add(item)
+        val seen = fromLocal.mapNotNull { it.slug }.toMutableSet()
+        val fromApi = app.libraryRepository.history.mapNotNull { entry ->
+            if (entry.slug in seen) return@mapNotNull null
+            val localSession = app.watchSessions.get(entry.slug, null)
+                ?: app.watchSessions.all().firstOrNull { it.slug == entry.slug }
+            if (localSession?.isFinished() == true) return@mapNotNull null
+            seen.add(entry.slug)
+            val durasi = localSession?.let { formatContinueMeta(it.positionMs, it.durationMs) }
+                ?: entry.toCatalogItem().durasi
+            entry.toCatalogItem(TYPE_CONTINUE).copy(
+                episode = localSession?.episode,
+                episode_source = entry.episodeSlug ?: localSession?.episodeSlug,
+                durasi = durasi,
+            )
         }
-        for (item in ratedSource) {
-            if (out.size >= FEATURED_LIMIT) break
-            if (!seen.add(keyOf(item))) continue
-            out.add(item)
-        }
-        return out
+        return (fromLocal + fromApi).take(20)
     }
 
-    /** Item is_new di depan; urutan relatif dalam tiap grup tetap. */
-    private fun withNewFirst(items: List<CatalogItem>): List<CatalogItem> {
-        if (items.isEmpty() || items.none { it.showsNewBadge() }) return items
-        val (news, rest) = items.partition { it.showsNewBadge() }
-        return news + rest
-    }
-
-    private fun buildContinueItems(): List<CatalogItem> =
+    private fun buildFavoriteItems(): List<CatalogItem> =
         (requireActivity().application as WebunimeApp)
-            .watchSessions
-            .continueWatching()
-            .map { session ->
-                CatalogItem(
-                    type = TYPE_CONTINUE,
-                    judul = session.title,
-                    thumbnail = session.thumbnail,
-                    slug = session.slug,
-                    episode = session.episode,
-                    durasi = formatContinueMeta(session.positionMs, session.durationMs),
-                )
-            }
+            .libraryRepository
+            .favorites
+            .map { it.toCatalogItem() }
 
     private fun refreshContinueRowOnly(allowFullReload: Boolean = true) {
+        refreshLocalRow(
+            index = continueRowIndex,
+            items = buildContinueItems(),
+            allowFullReload = allowFullReload,
+        )
+    }
+
+    private fun refreshFavoritesRowOnly(allowFullReload: Boolean = true) {
+        refreshLocalRow(
+            index = favoritesRowIndex,
+            items = buildFavoriteItems(),
+            allowFullReload = allowFullReload,
+        )
+    }
+
+    private fun refreshLocalRow(
+        index: Int,
+        items: List<CatalogItem>,
+        allowFullReload: Boolean,
+    ) {
         if (!this::rowsAdapter.isInitialized || !isAdded) return
-        val items = buildContinueItems()
-        if (continueRowIndex in 0 until rowsAdapter.size()) {
-            val listRow = rowsAdapter.get(continueRowIndex) as? ListRow ?: return
+        if (index in 0 until rowsAdapter.size()) {
+            val listRow = rowsAdapter.get(index) as? ListRow ?: return
             if (listRow is HeroListRow) return
             val adapter = listRow.adapter as? ArrayObjectAdapter ?: return
-            // Hindari clear+re-add jika isi sama — itu mencuri fokus / memicu bounce.
             if (continueItemsEqual(adapter, items)) return
             adapter.clear()
             items.forEach { adapter.add(it) }
             val rowId = listRow.headerItem.id
-            rowPaging[rowId] = RowPagingState(items, adapter, items.size)
+            rowPaging[rowId] = RowPagingState(
+                allItems = items.toMutableList(),
+                adapter = adapter,
+                loadedCount = items.size,
+                collection = "",
+            )
             if (items.isEmpty() && allowFullReload) {
                 reloadRows()
             }
@@ -661,65 +633,63 @@ class BrowseFragment : BrowseSupportFragment() {
         return false
     }
 
-    private fun ensureLoadedUntil(rowId: Long, index: Int) {
-        val state = rowPaging[rowId] ?: return
-        while (state.loadedCount <= index && state.loadedCount < state.allItems.size) {
-            appendNextPage(state)
-        }
-    }
-
     private fun maybeLoadMore(rowId: Long, selectedIndex: Int) {
         if (selectedIndex < 0) return
         val state = rowPaging[rowId] ?: return
-        if (state.loadedCount >= state.allItems.size) return
+        if (state.collection.isBlank()) return
+        if (state.loadingMore) return
+        if (state.total > 0 && state.allItems.size >= state.total) return
         if (selectedIndex < state.loadedCount - PREFETCH_THRESHOLD) return
-        appendNextPage(state)
-    }
-
-    private fun appendNextPage(state: RowPagingState) {
-        val nextEnd = (state.loadedCount + PAGE_SIZE).coerceAtMost(state.allItems.size)
-        if (nextEnd <= state.loadedCount) return
-        for (i in state.loadedCount until nextEnd) {
-            state.adapter.add(state.allItems[i])
+        state.loadingMore = true
+        val repo = (requireActivity().application as WebunimeApp).catalogRepository
+        viewLifecycleOwner.lifecycleScope.launch {
+            val next = runCatching {
+                repo.listCollectionPage(
+                    collection = state.collection,
+                    page = state.page + 1,
+                    genre = state.genre,
+                    sort = state.sort,
+                )
+            }.getOrNull()
+            state.loadingMore = false
+            if (!isAdded || next == null || next.items.isEmpty()) {
+                if (next != null) state.total = state.allItems.size
+                return@launch
+            }
+            state.page = next.page
+            state.total = next.total
+            for (item in next.items) {
+                state.allItems.add(item)
+                state.adapter.add(item)
+            }
+            state.loadedCount = state.allItems.size
         }
-        state.loadedCount = nextEnd
     }
 
     private class RowPagingState(
-        val allItems: List<CatalogItem>,
+        val allItems: MutableList<CatalogItem>,
         val adapter: ArrayObjectAdapter,
         var loadedCount: Int,
+        val collection: String,
+        val genre: String = "",
+        val sort: String = "",
+        var page: Int = 1,
+        var total: Int = allItems.size,
+        var loadingMore: Boolean = false,
     )
 
     private data class DeferredRowSpec(
         val title: String,
-        val sections: List<CatalogSection>,
-        val items: (CatalogSnapshot) -> List<CatalogItem>,
+        val collection: String,
+        val genre: String = "",
+        val sort: String = "",
     )
 
     companion object {
-        private const val PAGE_SIZE = 10
         private const val PREFETCH_THRESHOLD = 3
         /** Prefetch baris vertikal saat fokus mendekati N baris dari akhir. */
         private const val ROW_PREFETCH = 2
-        private const val FEATURED_LIMIT = 10
-        private const val FEATURED_MIN_RATING = 7.0
         const val TYPE_CONTINUE = "continue"
-
-        private fun isAnimeCatalog(item: CatalogItem): Boolean {
-            val t = item.type?.lowercase().orEmpty()
-            if (t.contains("anime")) return true
-            if (!item.anime_slug.isNullOrBlank()) return true
-            return false
-        }
-
-        private fun ratingValue(item: CatalogItem): Double {
-            val raw = item.rating?.trim().orEmpty()
-            if (raw.isEmpty()) return 0.0
-            return raw.replace(',', '.')
-                .replace(Regex("""[^\d.]"""), "")
-                .toDoubleOrNull() ?: 0.0
-        }
 
         private fun formatContinueMeta(positionMs: Long, durationMs: Long): String {
             fun mmss(ms: Long): String {

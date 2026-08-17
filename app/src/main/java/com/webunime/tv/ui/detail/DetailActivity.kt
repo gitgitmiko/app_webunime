@@ -7,9 +7,11 @@ import android.view.View
 import android.widget.HorizontalScrollView
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.google.android.material.button.MaterialButton
 import com.webunime.tv.R
@@ -20,6 +22,7 @@ import com.webunime.tv.data.PlayerRouter
 import com.webunime.tv.data.PlayerServer
 import com.webunime.tv.data.WatchSessionStore
 import com.webunime.tv.ui.player.PlayerActivity
+import kotlinx.coroutines.launch
 
 class DetailActivity : AppCompatActivity() {
 
@@ -38,22 +41,37 @@ class DetailActivity : AppCompatActivity() {
     private lateinit var episodeSection: View
     private lateinit var serverContainer: LinearLayout
     private lateinit var playButton: MaterialButton
+    private lateinit var favoriteButton: MaterialButton
+    private var isFavorite: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_detail)
 
         val slug = intent.getStringExtra(EXTRA_SLUG).orEmpty()
+        val collectionHint = intent.getStringExtra(EXTRA_COLLECTION)
         val preferEpisode = intent.getIntExtra(EXTRA_EPISODE, -1).takeIf { it > 0 }
         val preferSeason = intent.getIntExtra(EXTRA_SEASON, -1).takeIf { it > 0 }
-        val found = (application as WebunimeApp).catalogRepository.snapshot.findBySlug(slug)
-        if (found == null) {
-            Toast.makeText(this, "Judul tidak ditemukan", Toast.LENGTH_SHORT).show()
-            finish()
-            return
-        }
-        item = found
+        val loading = findViewById<ProgressBar>(R.id.detailLoading)
+        loading.visibility = View.VISIBLE
 
+        lifecycleScope.launch {
+            val found = (application as WebunimeApp).catalogRepository
+                .findBySlugEnsured(slug, collectionHint)
+            if (isFinishing) return@launch
+            loading.visibility = View.GONE
+            if (found == null) {
+                Toast.makeText(this@DetailActivity, "Judul tidak ditemukan", Toast.LENGTH_SHORT).show()
+                finish()
+                return@launch
+            }
+            item = found
+            bindDetail(preferEpisode, preferSeason)
+            refreshFavoriteState()
+        }
+    }
+
+    private fun bindDetail(preferEpisode: Int?, preferSeason: Int?) {
         val poster = findViewById<ImageView>(R.id.detailPoster)
         val backdrop = findViewById<ImageView>(R.id.detailBackdrop)
         val title = findViewById<TextView>(R.id.detailTitle)
@@ -67,6 +85,8 @@ class DetailActivity : AppCompatActivity() {
         episodeContainer = findViewById(R.id.episodeContainer)
         serverContainer = findViewById(R.id.serverContainer)
         playButton = findViewById(R.id.playButton)
+        favoriteButton = findViewById(R.id.favoriteButton)
+        favoriteButton.setOnClickListener { toggleFavorite() }
 
         title.text = item.displayTitle()
         meta.text = item.displayMeta()
@@ -126,14 +146,47 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun updatePlayButtonLabel() {
-        val slug = item.slug?.takeIf { it.isNotBlank() }
-            ?: item.anime_slug?.takeIf { it.isNotBlank() }
-            ?: return
+        if (!::playButton.isInitialized) return
+        val slug = item.detailSlug().takeIf { it.isNotBlank() } ?: return
         val session = (application as WebunimeApp).watchSessions.get(slug, selectedEpisode?.episode)
         playButton.text = if (session != null && !session.isFinished() && session.positionMs >= 30_000L) {
             getString(R.string.resume_play)
         } else {
             getString(R.string.play)
+        }
+    }
+
+    private fun refreshFavoriteState() {
+        if (!::favoriteButton.isInitialized) return
+        val col = item.detailCollection()
+        val slug = item.detailSlug()
+        lifecycleScope.launch {
+            isFavorite = runCatching {
+                (application as WebunimeApp).libraryRepository.isFavorite(col, slug)
+            }.getOrDefault(false)
+            if (!isFinishing && ::favoriteButton.isInitialized) bindFavoriteLabel()
+        }
+    }
+
+    private fun bindFavoriteLabel() {
+        favoriteButton.text = getString(if (isFavorite) R.string.favorite_on else R.string.favorite_add)
+    }
+
+    private fun toggleFavorite() {
+        if (!::item.isInitialized) return
+        val col = item.detailCollection()
+        val slug = item.detailSlug()
+        val repo = (application as WebunimeApp).libraryRepository
+        lifecycleScope.launch {
+            runCatching {
+                if (isFavorite) repo.removeFavorite(col, slug)
+                else repo.addFavorite(col, slug, item.displayTitle(), item.thumbnail)
+            }.onSuccess {
+                isFavorite = !isFavorite
+                bindFavoriteLabel()
+            }.onFailure {
+                Toast.makeText(this@DetailActivity, it.message ?: "Gagal favorit", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -167,10 +220,7 @@ class DetailActivity : AppCompatActivity() {
         return super.dispatchKeyEvent(normalized)
     }
 
-    private fun contentSlug(): String =
-        item.slug?.takeIf { it.isNotBlank() }
-            ?: item.anime_slug?.takeIf { it.isNotBlank() }
-            ?: ""
+    private fun contentSlug(): String = item.detailSlug()
 
     private fun sortedEpisodes(): List<Episode> =
         item.episodes.orEmpty().sortedWith(
@@ -487,11 +537,14 @@ class DetailActivity : AppCompatActivity() {
                 .putExtra(PlayerActivity.EXTRA_EPISODE, episodeNum ?: -1)
                 .putExtra(PlayerActivity.EXTRA_THUMBNAIL, item.thumbnail)
                 .putExtra(PlayerActivity.EXTRA_RESUME_MS, resume)
+                .putExtra(PlayerActivity.EXTRA_COLLECTION, item.detailCollection())
+                .putExtra(PlayerActivity.EXTRA_EPISODE_SLUG, selectedEpisode?.slug)
         )
     }
 
     companion object {
         const val EXTRA_SLUG = "slug"
+        const val EXTRA_COLLECTION = "collection"
         const val EXTRA_EPISODE = "episode"
         const val EXTRA_SEASON = "season"
 

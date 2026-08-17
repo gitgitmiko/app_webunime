@@ -35,6 +35,66 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="36dp"
+            android:text="@string/settings_section_account"
+            android:textColor="@color/wu_row_header"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/settingsAccountName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textColor="@color/wu_text_dim"
+            android:textSize="15sp" />
+
+        <EditText
+            android:id="@+id/settingsDisplayName"
+            android:layout_width="320dp"
+            android:layout_height="52dp"
+            android:layout_marginTop="12dp"
+            android:background="@color/wu_surface"
+            android:focusable="true"
+            android:hint="@string/settings_display_name"
+            android:importantForAutofill="no"
+            android:inputType="textPersonName"
+            android:maxLines="1"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textColor="@color/wu_text"
+            android:textColorHint="@color/wu_text_muted"
+            android:textSize="16sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/settingsSaveProfile"
+            style="@style/Wu.Button.Outlined"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:focusable="true"
+            android:minWidth="280dp"
+            android:text="@string/settings_save_profile"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            app:cornerRadius="4dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/settingsLogout"
+            style="@style/Wu.Button.Outlined"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:focusable="true"
+            android:minWidth="280dp"
+            android:text="@string/settings_logout"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            app:cornerRadius="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="36dp"
             android:text="@string/settings_section_update"
             android:textColor="@color/wu_row_header"
             android:textSize="18sp"

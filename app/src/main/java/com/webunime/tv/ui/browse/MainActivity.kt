@@ -16,6 +16,8 @@ import com.webunime.tv.data.AppUpdateChecker
 import com.webunime.tv.data.AppUpdateInfo
 import com.webunime.tv.data.CatalogItem
 import com.webunime.tv.data.PlayerRouter
+import com.webunime.tv.data.api.UnauthorizedException
+import com.webunime.tv.ui.auth.LoginActivity
 import com.webunime.tv.ui.detail.DetailActivity
 import com.webunime.tv.ui.player.PlayerActivity
 import kotlinx.coroutines.Dispatchers
@@ -42,6 +44,7 @@ class MainActivity : FragmentActivity() {
         }
 
         val repo = (application as WebunimeApp).catalogRepository
+        val library = (application as WebunimeApp).libraryRepository
         val loading = findViewById<View>(R.id.catalogLoading)
         val loadingText = findViewById<TextView>(R.id.catalogLoadingText)
 
@@ -52,17 +55,15 @@ class MainActivity : FragmentActivity() {
             }
 
             loading.visibility = View.VISIBLE
-            val needRemote = repo.needsGithubRefreshToday()
-            if (needRemote) {
-                loadingText.setText(R.string.updating)
-                runCatching { repo.refreshFromGithubOnce() }
-            } else {
-                loadingText.setText(R.string.loading_catalog)
+            loadingText.setText(R.string.updating)
+            val home = runCatching { repo.loadHome() }
+            if (home.exceptionOrNull() is UnauthorizedException) {
+                openLogin()
+                return@launch
             }
-
-            if (!repo.isSnapshotReady()) {
-                if (needRemote) loadingText.setText(R.string.loading_local_fallback)
-                repo.loadStartupShell()
+            runCatching { library.refresh() }
+            if (home.isFailure) {
+                loadingText.setText(R.string.loading_local_fallback)
             }
 
             loading.visibility = View.GONE
@@ -96,6 +97,10 @@ class MainActivity : FragmentActivity() {
         }
 
         val repo = (application as WebunimeApp).catalogRepository
+        if (!(application as WebunimeApp).authRepository.isLoggedIn()) {
+            openLogin()
+            return
+        }
         if (repo.consumeBrowseReloadRequest()) {
             browseFragment()?.reloadRows()
         }
@@ -225,49 +230,57 @@ class MainActivity : FragmentActivity() {
         )
     }
 
-    fun openDetail(slug: String, episode: Int? = null, season: Int? = null) {
-        lifecycleScope.launch {
-            val repo = (application as WebunimeApp).catalogRepository
-            repo.findBySlugEnsured(slug)
-            if (isFinishing) return@launch
-            val intent = Intent(this@MainActivity, DetailActivity::class.java)
-                .putExtra(DetailActivity.EXTRA_SLUG, slug)
-            if (episode != null && episode > 0) {
-                intent.putExtra(DetailActivity.EXTRA_EPISODE, episode)
-            }
-            if (season != null && season > 0) {
-                intent.putExtra(DetailActivity.EXTRA_SEASON, season)
-            }
-            startActivity(intent)
+    fun openDetail(
+        slug: String,
+        episode: Int? = null,
+        season: Int? = null,
+        collection: String? = null,
+    ) {
+        val intent = Intent(this@MainActivity, DetailActivity::class.java)
+            .putExtra(DetailActivity.EXTRA_SLUG, slug)
+        if (episode != null && episode > 0) {
+            intent.putExtra(DetailActivity.EXTRA_EPISODE, episode)
         }
+        if (season != null && season > 0) {
+            intent.putExtra(DetailActivity.EXTRA_SEASON, season)
+        }
+        if (!collection.isNullOrBlank()) {
+            intent.putExtra(DetailActivity.EXTRA_COLLECTION, collection)
+        }
+        startActivity(intent)
     }
 
     /** Dari baris Lanjutkan: langsung putar dengan resume + fallback server. */
     fun openContinueWatch(card: CatalogItem) {
-        val slug = card.slug?.takeIf { it.isNotBlank() } ?: return
+        val slug = card.detailSlug().takeIf { it.isNotBlank() } ?: return
         val episodeNum = card.episode?.takeIf { it > 0 }
         lifecycleScope.launch {
             val app = application as WebunimeApp
-            val found = app.catalogRepository.findBySlugEnsured(slug) ?: run {
+            val found = app.catalogRepository.findBySlugEnsured(slug, card.detailCollection()) ?: run {
                 Toast.makeText(this@MainActivity, "Judul tidak ditemukan di katalog", Toast.LENGTH_SHORT).show()
-                openDetail(slug, episodeNum)
+                openDetail(slug, episodeNum, null, card.detailCollection())
                 return@launch
             }
             val episode = episodeNum?.let { ep ->
                 found.episodes?.firstOrNull { it.episode == ep }
+            } ?: card.episode_source?.let { epSlug ->
+                found.episodes?.firstOrNull { it.slug == epSlug }
             }
             val players = PlayerRouter.preferredPlayers(found, episode)
             if (players.isEmpty()) {
                 Toast.makeText(this@MainActivity, R.string.error_no_players, Toast.LENGTH_SHORT).show()
-                openDetail(slug, episodeNum)
+                openDetail(slug, episodeNum, null, found.detailCollection())
                 return@launch
             }
-            val session = app.watchSessions.get(slug, episodeNum)
+            val session = app.watchSessions.get(slug, episodeNum ?: episode?.episode)
             val title = buildString {
                 append(found.displayTitle())
                 episode?.let { append(" · ").append(it.displayTitle()) }
                     ?: episodeNum?.let { append(" · E$it") }
             }
+            val resume = session?.positionMs
+                ?: (app.libraryRepository.history.firstOrNull { it.slug.equals(slug, true) }
+                    ?.progressSeconds?.times(1000L) ?: 0L)
             startActivity(
                 Intent(this@MainActivity, PlayerActivity::class.java)
                     .putExtra(PlayerActivity.EXTRA_URL, players.first().url)
@@ -276,11 +289,21 @@ class MainActivity : FragmentActivity() {
                     .putExtra(PlayerActivity.EXTRA_SERVER_URLS, players.mapNotNull { it.url }.toTypedArray())
                     .putExtra(PlayerActivity.EXTRA_SERVER_LABELS, players.map { it.displayName() }.toTypedArray())
                     .putExtra(PlayerActivity.EXTRA_SLUG, slug)
-                    .putExtra(PlayerActivity.EXTRA_EPISODE, episodeNum ?: -1)
+                    .putExtra(PlayerActivity.EXTRA_EPISODE, episodeNum ?: episode?.episode ?: -1)
                     .putExtra(PlayerActivity.EXTRA_THUMBNAIL, found.thumbnail ?: card.thumbnail)
-                    .putExtra(PlayerActivity.EXTRA_RESUME_MS, session?.positionMs ?: 0L)
+                    .putExtra(PlayerActivity.EXTRA_RESUME_MS, resume)
+                    .putExtra(PlayerActivity.EXTRA_COLLECTION, found.detailCollection())
+                    .putExtra(PlayerActivity.EXTRA_EPISODE_SLUG, episode?.slug ?: card.episode_source)
             )
         }
+    }
+
+    private fun openLogin() {
+        startActivity(
+            Intent(this, LoginActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
+        )
+        finish()
     }
 
     private fun browseFragment(): BrowseFragment? =

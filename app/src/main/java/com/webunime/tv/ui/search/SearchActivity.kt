@@ -4,11 +4,8 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.lifecycleScope
 import com.webunime.tv.R
-import com.webunime.tv.WebunimeApp
 import com.webunime.tv.ui.detail.DetailActivity
-import kotlinx.coroutines.launch
 
 class SearchActivity : FragmentActivity() {
 
@@ -16,20 +13,19 @@ class SearchActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_search)
 
-        lifecycleScope.launch {
-            // Search butuh seluruh katalog — load on-demand di sini saja.
-            runCatching {
-                (application as WebunimeApp).catalogRepository.ensureAllSections()
-            }
-            if (savedInstanceState == null && !isFinishing) {
-                supportFragmentManager.beginTransaction()
-                    .replace(R.id.search_fragment, SearchFragment())
-                    .commitNow()
-            }
+        if (savedInstanceState == null) {
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.search_fragment, SearchFragment())
+                .commitNow()
         }
     }
 
-    fun openDetail(slug: String, episode: Int? = null, season: Int? = null) {
+    fun openDetail(
+        slug: String,
+        episode: Int? = null,
+        season: Int? = null,
+        collection: String? = null,
+    ) {
         val intent = Intent(this, DetailActivity::class.java)
             .putExtra(DetailActivity.EXTRA_SLUG, slug)
         if (episode != null && episode > 0) {
@@ -37,6 +33,9 @@ class SearchActivity : FragmentActivity() {
         }
         if (season != null && season > 0) {
             intent.putExtra(DetailActivity.EXTRA_SEASON, season)
+        }
+        if (!collection.isNullOrBlank()) {
+            intent.putExtra(DetailActivity.EXTRA_COLLECTION, collection)
         }
         startActivity(intent)
     }

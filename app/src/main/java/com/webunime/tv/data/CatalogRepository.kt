@@ -4,121 +4,91 @@ import android.content.Context
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.webunime.tv.data.api.ApiClient
+import com.webunime.tv.data.api.ApiConfig
+import com.webunime.tv.data.api.CatalogPage
+import com.webunime.tv.data.api.UnauthorizedException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import java.io.File
-import java.util.Calendar
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
+import org.json.JSONArray
+import org.json.JSONObject
+import java.util.concurrent.ConcurrentHashMap
 
-class CatalogRepository(private val context: Context) {
-
+class CatalogRepository(
+    private val context: Context,
+    private val api: ApiClient,
+) {
     private val moshi: Moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
         .build()
 
     private val listType = Types.newParameterizedType(List::class.java, CatalogItem::class.java)
     private val listAdapter = moshi.adapter<List<CatalogItem>>(listType)
-
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(12, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .callTimeout(40, TimeUnit.SECONDS)
-        .build()
-
-    private val cacheDir: File
-        get() = File(context.filesDir, "catalog").also { if (!it.exists()) it.mkdirs() }
+    private val itemAdapter = moshi.adapter(CatalogItem::class.java)
 
     private val prefs by lazy {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
     private val refreshMutex = Mutex()
-    private val sectionMutex = Mutex()
-    private val githubRefreshDone = AtomicBoolean(false)
-    private val loadedSections = mutableSetOf<CatalogSection>()
+    private val itemCache = ConcurrentHashMap<String, CatalogItem>()
 
     @Volatile
     var snapshot: CatalogSnapshot = CatalogSnapshot()
         private set
 
+    @Volatile
+    var heroItems: List<CatalogItem> = emptyList()
+        private set
+
+    @Volatile
+    var homeLoaded: Boolean = false
+        private set
+
     fun isSnapshotReady(): Boolean =
-        snapshot.movies.isNotEmpty() ||
-            snapshot.series.isNotEmpty() ||
-            snapshot.seriesLatest.isNotEmpty() ||
-            snapshot.horror.isNotEmpty() ||
-            snapshot.indonesia.isNotEmpty() ||
-            snapshot.anime.isNotEmpty() ||
-            snapshot.animeMovies.isNotEmpty() ||
-            snapshot.animeLatest.isNotEmpty()
+        homeLoaded ||
+            heroItems.isNotEmpty() ||
+            snapshot.movies.isNotEmpty() ||
+            snapshot.indonesia.isNotEmpty()
 
-    fun isSectionLoaded(section: CatalogSection): Boolean = section in loadedSections
-
-    /** Ada cache lokal atau assets bawaan — boleh tampil browse tanpa tunggu GitHub. */
-    fun hasLocalCatalog(): Boolean {
-        return CATALOG_FILES.any { name ->
-            val cached = File(cacheDir, name)
-            if (cached.exists() && cached.length() > 2) return@any true
-            runCatching {
-                context.assets.open("data/$name").use { it.available() > 2 }
-            }.getOrDefault(false)
+    fun isSectionLoaded(section: CatalogSection): Boolean =
+        when (section) {
+            CatalogSection.MOVIES -> snapshot.movies.isNotEmpty()
+            CatalogSection.INDONESIA -> snapshot.indonesia.isNotEmpty()
+            CatalogSection.HORROR -> snapshot.horror.isNotEmpty()
+            CatalogSection.SERIES_LATEST -> snapshot.seriesLatest.isNotEmpty()
+            CatalogSection.SERIES -> snapshot.series.isNotEmpty()
+            CatalogSection.ANIME_LATEST -> snapshot.animeLatest.isNotEmpty()
+            CatalogSection.ANIME -> snapshot.anime.isNotEmpty()
+            CatalogSection.ANIME_MOVIES -> snapshot.animeMovies.isNotEmpty()
         }
+
+    suspend fun loadHome(): CatalogSnapshot = refreshMutex.withLock {
+        loadHomeUnlocked()
     }
 
-    /** True jika belum sync sukses hari ini, atau cache unduhan belum ada. */
-    fun needsGithubRefreshToday(): Boolean {
-        if (!hasDownloadedCache()) return true
-        return prefs.getString(KEY_LAST_SYNC_DAY, null) != todayKey()
+    private suspend fun loadHomeUnlocked(): CatalogSnapshot = withContext(Dispatchers.IO) {
+        api.get("/api/v1")
+        heroItems = try {
+            fetchHero()
+        } catch (err: UnauthorizedException) {
+            throw err
+        } catch (_: Exception) {
+            emptyList()
+        }
+        homeLoaded = true
+        snapshot
     }
 
-    /**
-     * Cold start: parse file ringan saja (movies/indonesia/horror) untuk hero.
-     * Series/anime di-load saat baris digeser atau search dibuka.
-     */
-    suspend fun loadStartupShell(): CatalogSnapshot {
-        for (section in CatalogSection.STARTUP) {
-            ensureSection(section)
-        }
+    suspend fun loadStartupShell(): CatalogSnapshot = loadHome()
+
+    suspend fun ensureSection(section: CatalogSection): CatalogSnapshot {
+        if (isSectionLoaded(section)) return snapshot
+        val page = listCollectionPage(section.apiName, page = 1, limit = 40)
+        mergeSection(section, page.items)
         return snapshot
-    }
-
-    suspend fun loadInitial(): CatalogSnapshot {
-        loadStartupShell()
-        return ensureAllSections()
-    }
-
-    /** @deprecated gunakan [loadStartupShell] — tetap ada agar pemanggil lama aman. */
-    suspend fun loadBrowseFirst(): CatalogSnapshot = loadStartupShell()
-
-    suspend fun loadHeavyCatalog(): CatalogSnapshot {
-        ensureSection(CatalogSection.SERIES)
-        ensureSection(CatalogSection.ANIME)
-        return snapshot
-    }
-
-    /** Pastikan satu bagian katalog ter-parse ke [snapshot]. */
-    suspend fun ensureSection(section: CatalogSection): CatalogSnapshot = sectionMutex.withLock {
-        withContext(Dispatchers.IO) {
-            if (section in loadedSections) return@withContext snapshot
-            val list = readList(section.fileName)
-            loadedSections.add(section)
-            snapshot = when (section) {
-                CatalogSection.MOVIES -> snapshot.copy(movies = list)
-                CatalogSection.INDONESIA -> snapshot.copy(indonesia = list)
-                CatalogSection.HORROR -> snapshot.copy(horror = list)
-                CatalogSection.SERIES_LATEST -> snapshot.copy(seriesLatest = list)
-                CatalogSection.SERIES -> snapshot.copy(series = list)
-                CatalogSection.ANIME_LATEST -> snapshot.copy(animeLatest = list)
-                CatalogSection.ANIME -> snapshot.copy(anime = list)
-                CatalogSection.ANIME_MOVIES -> snapshot.copy(animeMovies = list)
-            }
-            snapshot = enrichThumbnails(snapshot)
-            snapshot
-        }
     }
 
     suspend fun ensureSections(sections: Collection<CatalogSection>): CatalogSnapshot {
@@ -129,244 +99,184 @@ class CatalogRepository(private val context: Context) {
     suspend fun ensureAllSections(): CatalogSnapshot =
         ensureSections(CatalogSection.ALL)
 
-    /**
-     * Cari judul; jika belum ketemu, load section yang mungkin punya slug itu.
-     */
-    suspend fun findBySlugEnsured(slug: String): CatalogItem? {
-        if (slug.isBlank()) return null
-        snapshot.findBySlug(slug)?.let { return it }
-        val order = listOf(
-            CatalogSection.MOVIES,
-            CatalogSection.INDONESIA,
-            CatalogSection.HORROR,
-            CatalogSection.SERIES,
-            CatalogSection.ANIME,
-            CatalogSection.ANIME_MOVIES,
-            CatalogSection.SERIES_LATEST,
-            CatalogSection.ANIME_LATEST,
+    suspend fun listCollectionPage(
+        collection: String,
+        page: Int = 1,
+        limit: Int = PAGE_LIMIT,
+        q: String = "",
+        genre: String = "",
+        sort: String = "",
+    ): CatalogPage = withContext(Dispatchers.IO) {
+        val params = LinkedHashMap<String, String>()
+        params["page"] = page.coerceAtLeast(1).toString()
+        params["limit"] = limit.coerceIn(1, 80).toString()
+        if (q.isNotBlank()) params["q"] = q
+        if (genre.isNotBlank()) params["genre"] = genre
+        if (sort.isNotBlank()) params["sort"] = sort
+        val query = params.entries.joinToString("&") { (k, v) ->
+            "$k=${java.net.URLEncoder.encode(v, "UTF-8")}"
+        }
+        val raw = api.get("/api/v1/catalog/${enc(collection)}?$query")
+        val obj = JSONObject(raw)
+        val items = parseItemArray(obj.optJSONArray("items")).map {
+            remember(it.copy(catalog = it.catalog ?: collection), collection)
+        }
+        CatalogPage(
+            collection = obj.optString("collection").ifBlank { collection },
+            page = obj.optInt("page", page),
+            limit = obj.optInt("limit", limit),
+            total = obj.optInt("total", items.size),
+            items = items,
         )
-        for (section in order) {
-            if (section in loadedSections) continue
-            ensureSection(section)
-            snapshot.findBySlug(slug)?.let { return it }
+    }
+
+    suspend fun fetchHero(limit: Int = 12): List<CatalogItem> = withContext(Dispatchers.IO) {
+        val raw = api.get("/api/v1/hero?limit=$limit")
+        parseItemArray(JSONObject(raw).optJSONArray("items")).map { remember(it, it.detailCollection()) }
+    }
+
+    suspend fun search(query: String, limit: Int = 40): List<CatalogItem> = withContext(Dispatchers.IO) {
+        val q = query.trim()
+        if (q.length < 2) return@withContext emptyList()
+        val raw = api.get(
+            "/api/v1/search?q=${java.net.URLEncoder.encode(q, "UTF-8")}&limit=${limit.coerceIn(1, 80)}",
+        )
+        parseItemArray(JSONObject(raw).optJSONArray("items")).map {
+            remember(it, it.catalog ?: it.detailCollection())
+        }
+    }
+
+    suspend fun getItem(collection: String, slug: String): CatalogItem? = withContext(Dispatchers.IO) {
+        val col = collection.trim()
+        val s = slug.trim()
+        if (col.isBlank() || s.isBlank()) return@withContext null
+        val cached = itemCache["$col:${s.lowercase()}"]
+        if (cached != null && cached.isHydrated()) return@withContext cached
+        val raw = api.get("/api/v1/catalog/${enc(col)}/${enc(s)}")
+        val item = parseItem(raw)?.copy(catalog = col) ?: return@withContext cached
+        remember(item, col)
+    }
+
+    suspend fun findBySlugEnsured(
+        slug: String,
+        collectionHint: String? = null,
+    ): CatalogItem? {
+        if (slug.isBlank()) return null
+        val hint = collectionHint?.takeIf { it.isNotBlank() }
+        if (hint != null) {
+            runCatching { getItem(hint, slug) }.getOrNull()?.let { return it }
+            if (hint == "anime-latest") {
+                runCatching { getItem("anime", slug) }.getOrNull()?.let { return it }
+            }
+            if (hint == "series-latest") {
+                runCatching { getItem("series", slug) }.getOrNull()?.let { return it }
+            }
+        }
+        snapshot.findBySlug(slug)?.let { cached ->
+            if (cached.isHydrated()) return cached
+            return runCatching { getItem(cached.detailCollection(), cached.detailSlug()) }.getOrNull()
+                ?: cached
+        }
+        val order = listOf(
+            "movies", "indonesia", "horror", "series", "anime", "anime-movies",
+        )
+        for (col in order) {
+            val found = runCatching { getItem(col, slug) }.getOrNull()
+            if (found != null) return found
         }
         return snapshot.findBySlug(slug)
     }
 
-    /**
-     * Pastikan snapshot terisi dari cache/assets (cepat).
-     * Tidak mengunduh GitHub.
-     */
-    suspend fun ensureLocalLoaded(): CatalogSnapshot {
-        if (isSnapshotReady()) return snapshot
-        return loadStartupShell()
+    suspend fun fetchDoc(name: String): JSONObject? = withContext(Dispatchers.IO) {
+        if (name !in ApiConfig.DOC_NAMES) return@withContext null
+        val raw = api.get("/api/v1/docs/${enc(name)}")
+        runCatching { JSONObject(raw) }.getOrNull()
     }
 
-    /**
-     * Unduh katalog dari GitHub paling banyak sekali per hari (data sync tengah malam).
-     * Dalam satu proses app juga tidak diulang.
-     * @return jumlah file OK; -1 = dilewati (sudah sync hari ini); 0 = gagal total.
-     */
-    suspend fun refreshFromGithubOnce(): Int {
-        if (githubRefreshDone.get()) return -1
-        return refreshMutex.withLock {
-            if (githubRefreshDone.get()) return@withLock -1
-            if (!needsGithubRefreshToday()) {
-                githubRefreshDone.set(true)
-                return@withLock -1
-            }
-            val ok = refreshFromGithub()
-            if (ok > 0) {
-                prefs.edit().putString(KEY_LAST_SYNC_DAY, todayKey()).apply()
-                githubRefreshDone.set(true)
-            }
-            // Gagal total → jangan tandai hari ini, biar buka berikutnya coba lagi.
-            ok
-        }
+    suspend fun fetchSyncStatus(): CatalogSyncStatus? = withContext(Dispatchers.IO) {
+        runCatching {
+            val doc = fetchDoc("sync-status") ?: return@runCatching null
+            CatalogSyncStatus(
+                state = doc.optString("state").takeIf { it.isNotBlank() },
+                startedAt = doc.optString("startedAt").takeIf { it.isNotBlank() && it != "null" },
+                finishedAt = doc.optString("finishedAt").takeIf { it.isNotBlank() && it != "null" },
+                runId = if (doc.has("runId") && !doc.isNull("runId")) doc.optLong("runId") else null,
+                message = doc.optString("message").takeIf { it.isNotBlank() },
+            )
+        }.getOrNull()
     }
 
-    /**
-     * Unduh file katalog dari GitHub, lalu parse shell ringan saja.
-     * @return jumlah file yang berhasil diunduh (0 = gagal total → pakai lokal).
-     */
-    suspend fun refreshFromGithub(): Int = withContext(Dispatchers.IO) {
-        val ok = downloadCatalogFiles(cacheBust = false)
+    suspend fun forceRefreshFromApi(): Int = refreshMutex.withLock {
+        itemCache.clear()
         snapshot = CatalogSnapshot()
-        loadedSections.clear()
-        loadStartupShell()
-        ok
+        heroItems = emptyList()
+        homeLoaded = false
+        loadHomeUnlocked()
+        prefs.edit().putBoolean(KEY_RELOAD_BROWSE, true).apply()
+        if (heroItems.isNotEmpty() || homeLoaded) 1 else 0
     }
 
-    /**
-     * Sync manual dari Settings: bypass limit 1×/hari, cache-bust CDN raw GitHub.
-     * @return jumlah file OK; 0 = gagal total.
-     */
-    suspend fun forceRefreshFromGithub(): Int = refreshMutex.withLock {
-        val ok = withContext(Dispatchers.IO) {
-            downloadCatalogFiles(cacheBust = true)
-        }
-        snapshot = CatalogSnapshot()
-        loadedSections.clear()
-        loadStartupShell()
-        if (ok > 0) {
-            prefs.edit()
-                .putString(KEY_LAST_SYNC_DAY, todayKey())
-                .putBoolean(KEY_RELOAD_BROWSE, true)
-                .apply()
-            githubRefreshDone.set(true)
-        }
-        ok
-    }
+    /** @deprecated alias Settings/Main lama */
+    suspend fun forceRefreshFromGithub(): Int = forceRefreshFromApi()
 
-    /** True jika Settings baru saja sync katalog — MainActivity harus reloadRows. */
+    suspend fun refreshFromGithubOnce(): Int = forceRefreshFromApi()
+
     fun consumeBrowseReloadRequest(): Boolean {
         if (!prefs.getBoolean(KEY_RELOAD_BROWSE, false)) return false
         prefs.edit().putBoolean(KEY_RELOAD_BROWSE, false).apply()
         return true
     }
 
-    /** Baca sync-status.json publik (tanpa token), dengan cache-bust. */
-    suspend fun fetchSyncStatus(): CatalogSyncStatus? = withContext(Dispatchers.IO) {
-        val bust = System.currentTimeMillis()
-        val urls = listOf(
-            "$GITHUB_RAW_BASE$SYNC_STATUS_FILE?t=$bust",
-            "$GITHUB_JSDELIVR_BASE$SYNC_STATUS_FILE?t=$bust",
-        )
-        for (url in urls) {
-            val status = runCatching { fetchSyncStatusFrom(url) }.getOrNull()
-            if (status != null) return@withContext status
-        }
-        null
-    }
+    fun cachedItem(collection: String, slug: String): CatalogItem? =
+        itemCache["$collection:${slug.lowercase()}"]
 
-    private fun fetchSyncStatusFrom(url: String): CatalogSyncStatus? {
-        val request = Request.Builder()
-            .url(url)
-            .header("User-Agent", "WEBUNIME-TV/1.0")
-            .header("Cache-Control", "no-cache, no-store, must-revalidate")
-            .header("Pragma", "no-cache")
-            .get()
-            .build()
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) return null
-            val body = response.body?.string().orEmpty()
-            if (body.isBlank()) return null
-            return moshi.adapter(CatalogSyncStatus::class.java).fromJson(body)
-                ?: runCatching {
-                    val o = org.json.JSONObject(body.trim().removePrefix("\uFEFF"))
-                    CatalogSyncStatus(
-                        state = o.optString("state").takeIf { it.isNotBlank() },
-                        startedAt = o.optString("startedAt").takeIf { it.isNotBlank() && it != "null" },
-                        finishedAt = o.optString("finishedAt").takeIf { it.isNotBlank() && it != "null" },
-                        runId = if (o.has("runId") && !o.isNull("runId")) o.optLong("runId") else null,
-                        message = o.optString("message").takeIf { it.isNotBlank() },
-                    )
-                }.getOrNull()
+    private fun mergeSection(section: CatalogSection, items: List<CatalogItem>) {
+        snapshot = when (section) {
+            CatalogSection.MOVIES -> snapshot.copy(movies = mergeList(snapshot.movies, items))
+            CatalogSection.INDONESIA -> snapshot.copy(indonesia = mergeList(snapshot.indonesia, items))
+            CatalogSection.HORROR -> snapshot.copy(horror = mergeList(snapshot.horror, items))
+            CatalogSection.SERIES_LATEST -> snapshot.copy(seriesLatest = mergeList(snapshot.seriesLatest, items))
+            CatalogSection.SERIES -> snapshot.copy(series = mergeList(snapshot.series, items))
+            CatalogSection.ANIME_LATEST -> snapshot.copy(animeLatest = mergeList(snapshot.animeLatest, items))
+            CatalogSection.ANIME -> snapshot.copy(anime = mergeList(snapshot.anime, items))
+            CatalogSection.ANIME_MOVIES -> snapshot.copy(animeMovies = mergeList(snapshot.animeMovies, items))
         }
     }
 
-    private fun downloadCatalogFiles(cacheBust: Boolean): Int {
-        var ok = 0
-        for (name in CATALOG_FILES) {
-            if (runCatching { downloadAndCache(name, cacheBust) }.isSuccess) ok++
+    private fun mergeList(current: List<CatalogItem>, incoming: List<CatalogItem>): List<CatalogItem> {
+        if (current.isEmpty()) return incoming
+        val seen = current.mapNotNull { it.slug ?: it.anime_slug }.toMutableSet()
+        return current + incoming.filter { item ->
+            val key = item.slug ?: item.anime_slug ?: return@filter true
+            seen.add(key)
         }
-        return ok
     }
 
-    private fun hasDownloadedCache(): Boolean =
-        CATALOG_FILES.any { name ->
-            val f = File(cacheDir, name)
-            f.exists() && f.length() > 2
+    private fun remember(item: CatalogItem, collection: String): CatalogItem {
+        val normalized = normalizeCatalogUrls(item).let { it.copy(catalog = it.catalog ?: collection) }
+        val slug = normalized.slug?.lowercase()
+        if (!slug.isNullOrBlank()) itemCache["$collection:$slug"] = normalized
+        normalized.anime_slug?.lowercase()?.takeIf { it.isNotBlank() }?.let {
+            itemCache["anime:$it"] = normalized
         }
-
-    private fun todayKey(): String {
-        val c = Calendar.getInstance()
-        return "%04d-%02d-%02d".format(
-            c.get(Calendar.YEAR),
-            c.get(Calendar.MONTH) + 1,
-            c.get(Calendar.DAY_OF_MONTH),
-        )
+        normalized.series_slug?.lowercase()?.takeIf { it.isNotBlank() }?.let {
+            itemCache["series:$it"] = normalized
+        }
+        return normalized
     }
 
-    /**
-     * Feed terbaru (anime/series) → thumbnail feed primary;
-     * poster katalog hanya cadangan jika screenshot gagal load.
-     */
-    private fun enrichThumbnails(snap: CatalogSnapshot): CatalogSnapshot {
-        val animeBySlug = HashMap<String, CatalogItem>(snap.anime.size * 2)
-        for (item in snap.anime) {
-            item.slug?.takeIf { it.isNotBlank() }?.let { animeBySlug[it] = item }
-        }
-        val seriesBySlug = HashMap<String, CatalogItem>(snap.series.size * 2)
-        for (item in snap.series) {
-            item.slug?.takeIf { it.isNotBlank() }?.let { seriesBySlug[it] = item }
-        }
-
-        val feedThumbBySlug = HashMap<String, String>(snap.animeLatest.size)
-        for (feed in snap.animeLatest) {
-            val slug = feed.anime_slug?.takeIf { it.isNotBlank() } ?: continue
-            val thumb = feed.thumbnail?.takeIf { it.isNotBlank() } ?: continue
-            feedThumbBySlug.putIfAbsent(slug, thumb)
-        }
-
-        val enrichedLatest = snap.animeLatest.map { feed ->
-            val parent = feed.anime_slug?.let { animeBySlug[it] }
-            val parentThumb = parent?.thumbnail?.takeIf { it.isNotBlank() }
-            val parentLand = parent?.thumbnail_landscape?.takeIf { it.isNotBlank() }
-            val feedThumb = feed.thumbnail?.takeIf { it.isNotBlank() }
-            feed.copy(
-                thumbnail = feedThumb ?: parentThumb,
-                thumbnailAlt = parentThumb?.takeIf { it != feedThumb },
-                thumbnail_landscape = feed.thumbnail_landscape?.takeIf { it.isNotBlank() }
-                    ?: parentLand,
-            )
-        }
-
-        val enrichedAnime = snap.anime.map { item ->
-            val slug = item.slug?.takeIf { it.isNotBlank() } ?: return@map item
-            val alt = feedThumbBySlug[slug]?.takeIf { it != item.thumbnail } ?: return@map item
-            item.copy(thumbnailAlt = alt)
-        }
-
-        val enrichedSeriesLatest = snap.seriesLatest.map { feed ->
-            val parent = feed.series_slug?.let { seriesBySlug[it] }
-            val parentThumb = parent?.thumbnail?.takeIf { it.isNotBlank() }
-            val parentLand = parent?.thumbnail_landscape?.takeIf { it.isNotBlank() }
-            val feedThumb = feed.thumbnail?.takeIf { it.isNotBlank() }
-            feed.copy(
-                thumbnail = feedThumb ?: parentThumb,
-                thumbnailAlt = parentThumb?.takeIf { it != feedThumb },
-                thumbnail_landscape = feed.thumbnail_landscape?.takeIf { it.isNotBlank() }
-                    ?: parentLand,
-            )
-        }
-
-        return snap.copy(
-            anime = enrichedAnime,
-            animeLatest = enrichedLatest,
-            seriesLatest = enrichedSeriesLatest,
-        )
+    private fun parseItemArray(arr: JSONArray?): List<CatalogItem> {
+        if (arr == null) return emptyList()
+        return runCatching { listAdapter.fromJson(arr.toString()).orEmpty() }
+            .getOrDefault(emptyList())
     }
 
-    private fun readList(fileName: String): List<CatalogItem> {
-        val cached = File(cacheDir, fileName)
-        val json = when {
-            cached.exists() && cached.length() > 2 -> cached.readText(Charsets.UTF_8)
-            else -> runCatching {
-                context.assets.open("data/$fileName").bufferedReader().use { it.readText() }
-            }.getOrNull()
-        } ?: return emptyList()
+    private fun parseItem(raw: String): CatalogItem? =
+        runCatching { itemAdapter.fromJson(raw) }.getOrNull()
 
-        return runCatching {
-            listAdapter.fromJson(json).orEmpty().map { normalizeCatalogUrls(it) }
-        }.getOrDefault(emptyList())
-    }
+    private fun enc(value: String): String =
+        java.net.URLEncoder.encode(value, "UTF-8")
 
-    /**
-     * Normalisasi URL katalog:
-     * - poster/image.showcdnx → poster.lk21official (cover.showcdnx tetap)
-     * - host player lama → baru (lihat [PLAYER_HOST_ALIASES])
-     */
     private fun normalizeCatalogUrls(item: CatalogItem): CatalogItem {
         val thumb = rewriteDeadPosterHost(item.thumbnail)
         val land = rewriteDeadPosterHost(item.thumbnail_landscape)
@@ -409,10 +319,6 @@ class CatalogRepository(private val context: Context) {
             )
     }
 
-    /**
-     * Alias host player. Kalau domain berubah lagi, tambah entri di sini
-     * (sinkron dengan WEBUNIME scripts/lib/player-host-aliases.js).
-     */
     private val playerHostAliases = listOf(
         "playeriframe.sbs" to "videonode.de",
     )
@@ -430,64 +336,9 @@ class CatalogRepository(private val context: Context) {
         return out
     }
 
-    private fun downloadAndCache(fileName: String, cacheBust: Boolean = false) {
-        val bust = if (cacheBust) "?t=${System.currentTimeMillis()}" else ""
-        val urls = buildList {
-            add("$GITHUB_RAW_BASE$fileName$bust")
-            if (cacheBust) add("$GITHUB_JSDELIVR_BASE$fileName$bust")
-        }
-        var lastError: Throwable? = null
-        for (url in urls) {
-            val result = runCatching {
-                val request = Request.Builder()
-                    .url(url)
-                    .header("User-Agent", "WEBUNIME-TV/1.0")
-                    .apply {
-                        if (cacheBust) {
-                            header("Cache-Control", "no-cache, no-store, must-revalidate")
-                            header("Pragma", "no-cache")
-                        }
-                    }
-                    .build()
-                client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) error("HTTP ${response.code} for $fileName")
-                    val body = response.body?.string().orEmpty()
-                    if (body.length < 2) error("Empty body $fileName")
-                    // Validasi ringan saja — jangan parse penuh di sini (anime/series ~10MB,
-                    // double-parse di emulator membuat UI stuck hitam lama).
-                    val trimmed = body.trimStart()
-                    if (!trimmed.startsWith("[")) error("Invalid JSON root $fileName")
-                    File(cacheDir, fileName).writeText(body, Charsets.UTF_8)
-                }
-            }
-            if (result.isSuccess) return
-            lastError = result.exceptionOrNull()
-        }
-        throw lastError ?: error("Download failed $fileName")
-    }
-
     companion object {
-        const val GITHUB_RAW_BASE =
-            "https://raw.githubusercontent.com/gitgitmiko/WEBUNIME/main/public/data/"
-
-        const val GITHUB_JSDELIVR_BASE =
-            "https://cdn.jsdelivr.net/gh/gitgitmiko/WEBUNIME@main/public/data/"
-
-        const val SYNC_STATUS_FILE = "sync-status.json"
-
         private const val PREFS_NAME = "catalog_sync"
-        private const val KEY_LAST_SYNC_DAY = "last_github_sync_day"
         private const val KEY_RELOAD_BROWSE = "reload_browse_after_sync"
-
-        private val CATALOG_FILES = listOf(
-            "movies.json",
-            "series.json",
-            "series-latest.json",
-            "horror.json",
-            "indonesia.json",
-            "anime.json",
-            "anime-movies.json",
-            "anime-latest.json",
-        )
+        const val PAGE_LIMIT = 12
     }
 }

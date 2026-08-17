@@ -27,6 +27,8 @@ data class CatalogItem(
     val genre: List<String>? = null,
     val sinopsis: String? = null,
     val slug: String? = null,
+    /** Nama koleksi API (`movies`, `anime`, …). */
+    val catalog: String? = null,
     val source: String? = null,
     /** Tanggal rilis (teks/ISO) — dipakai sort Film Indonesia terbaru. */
     val rilis: String? = null,
@@ -120,6 +122,31 @@ data class CatalogItem(
 
     /** Sinopsis yang sudah dipisah dari blok metadata scraper (Sutradara, Negara, dll). */
     fun parsedSinopsis(): SinopsisMeta = SinopsisMeta.parse(sinopsis)
+
+    fun detailSlug(): String =
+        anime_slug?.takeIf { it.isNotBlank() }
+            ?: series_slug?.takeIf { it.isNotBlank() }
+            ?: slug.orEmpty()
+
+    fun detailCollection(): String {
+        val cat = catalog?.trim()?.lowercase().orEmpty()
+        if (cat == "anime-latest" || !anime_slug.isNullOrBlank() || type == "anime") return "anime"
+        if (cat == "series-latest" || !series_slug.isNullOrBlank() || type == "series") return "series"
+        if (type == "anime-movie" || cat == "anime-movies") return "anime-movies"
+        if (cat in PARENT_COLLECTIONS) return cat
+        return "movies"
+    }
+
+    fun isHydrated(): Boolean =
+        !players.isNullOrEmpty() ||
+            !episodes.isNullOrEmpty() ||
+            (sinopsis?.length ?: 0) > 320
+
+    companion object {
+        private val PARENT_COLLECTIONS = setOf(
+            "movies", "series", "horror", "indonesia", "anime", "anime-movies",
+        )
+    }
 }
 
 /**

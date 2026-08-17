@@ -3,15 +3,15 @@ package com.webunime.tv.data
 /**
  * Bagian katalog yang bisa di-load on-demand (satu file JSON).
  */
-enum class CatalogSection(val fileName: String) {
-    MOVIES("movies.json"),
-    INDONESIA("indonesia.json"),
-    HORROR("horror.json"),
-    SERIES_LATEST("series-latest.json"),
-    SERIES("series.json"),
-    ANIME_LATEST("anime-latest.json"),
-    ANIME("anime.json"),
-    ANIME_MOVIES("anime-movies.json"),
+enum class CatalogSection(val fileName: String, val apiName: String) {
+    MOVIES("movies.json", "movies"),
+    INDONESIA("indonesia.json", "indonesia"),
+    HORROR("horror.json", "horror"),
+    SERIES_LATEST("series-latest.json", "series-latest"),
+    SERIES("series.json", "series"),
+    ANIME_LATEST("anime-latest.json", "anime-latest"),
+    ANIME("anime.json", "anime"),
+    ANIME_MOVIES("anime-movies.json", "anime-movies"),
     ;
 
     companion object {

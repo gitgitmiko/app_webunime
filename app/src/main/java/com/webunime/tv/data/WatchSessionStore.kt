@@ -13,6 +13,8 @@ data class WatchSession(
     val positionMs: Long = 0L,
     val durationMs: Long = 0L,
     val updatedAt: Long = System.currentTimeMillis(),
+    val collection: String? = null,
+    val episodeSlug: String? = null,
 ) {
     val key: String get() = sessionKey(slug, episode)
 
