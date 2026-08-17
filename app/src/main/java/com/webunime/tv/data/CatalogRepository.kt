@@ -132,10 +132,10 @@ class CatalogRepository(
 
     suspend fun fetchHero(limit: Int = HERO_LIMIT): List<CatalogItem> = withContext(Dispatchers.IO) {
         val cap = limit.coerceIn(1, HERO_LIMIT)
-        val raw = api.get("/api/v1/hero?limit=$HERO_POOL")
+        val raw = api.get("/api/v1/hero?limit=$cap")
         val parsed = parseItemArray(JSONObject(raw).optJSONArray("items"))
             .map { remember(it, it.detailCollection()) }
-        selectHeroItems(parsed, cap)
+        takeHeroItems(parsed, cap)
     }
 
     suspend fun search(query: String, limit: Int = 40): List<CatalogItem> = withContext(Dispatchers.IO) {
@@ -339,26 +339,13 @@ class CatalogRepository(
         return out
     }
 
-    private fun selectHeroItems(items: List<CatalogItem>, limit: Int): List<CatalogItem> {
+    private fun takeHeroItems(items: List<CatalogItem>, limit: Int): List<CatalogItem> {
         val cap = limit.coerceIn(1, HERO_LIMIT)
         val seen = LinkedHashSet<String>()
-        fun key(item: CatalogItem): String =
-            item.slug?.lowercase()?.takeIf { it.isNotBlank() } ?: item.displayTitle()
-        val eligible = items.filter { item ->
-            val rating = heroRating(item) ?: return@filter false
-            if (rating < 7.0) return@filter false
-            if (item.thumbnail.isNullOrBlank() && item.thumbnail_landscape.isNullOrBlank()) return@filter false
-            seen.add(key(item))
-        }
-        val preferred = eligible.filter { !it.thumbnail_landscape.isNullOrBlank() }
-        val source = if (preferred.size >= cap) preferred else eligible
-        return source.shuffled().take(cap)
-    }
-
-    private fun heroRating(item: CatalogItem): Double? {
-        val raw = item.rating?.trim()?.replace(',', '.') ?: return null
-        if (raw.none { it.isDigit() }) return null
-        return raw.toDoubleOrNull()
+        return items.filter { item ->
+            val key = item.slug?.lowercase()?.takeIf { it.isNotBlank() } ?: item.displayTitle()
+            seen.add(key)
+        }.take(cap)
     }
 
     companion object {
@@ -366,6 +353,5 @@ class CatalogRepository(
         private const val KEY_RELOAD_BROWSE = "reload_browse_after_sync"
         const val PAGE_LIMIT = 12
         const val HERO_LIMIT = 10
-        private const val HERO_POOL = 12
     }
 }
