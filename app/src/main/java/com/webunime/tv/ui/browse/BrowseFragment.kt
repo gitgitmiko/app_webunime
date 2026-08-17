@@ -74,6 +74,9 @@ class BrowseFragment : BrowseSupportFragment() {
         savedInstanceState: Bundle?,
     ): View = inflater.inflate(R.layout.wu_browse_title, parent, false)
 
+    /** Badge acak sekali per sesi buka app, tidak berubah saat resume. */
+    private var sessionUserBadge: UserBadge? = null
+
     private fun bindUserTitle() {
         if (!isAdded) return
         val label = (requireActivity().application as WebunimeApp)
@@ -81,7 +84,13 @@ class BrowseFragment : BrowseSupportFragment() {
             .currentUser()
             ?.displayLabel()
             .orEmpty()
+        if (sessionUserBadge == null) {
+            sessionUserBadge = UserBadges.random()
+        }
         title = label
+        (titleView as? WebunimeTitleView)?.setUserBadge(
+            if (label.isBlank()) null else sessionUserBadge,
+        )
     }
 
     private fun bindSettingsOrb() {

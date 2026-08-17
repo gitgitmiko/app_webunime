@@ -2,9 +2,11 @@ package com.webunime.tv.ui.browse
 
 import android.content.Context
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
@@ -24,6 +26,7 @@ class WebunimeTitleView @JvmOverloads constructor(
 
     private val badgeView: ImageView
     private val textView: TextView
+    private val userBadgeView: TextView
     private val searchOrbView: SearchOrbView
     private val settingsOrbView: SearchOrbView
 
@@ -70,11 +73,13 @@ class WebunimeTitleView @JvmOverloads constructor(
         LayoutInflater.from(context).inflate(R.layout.wu_title_view, this, true)
         badgeView = findViewById(R.id.title_badge)
         textView = findViewById(R.id.title_text)
+        userBadgeView = findViewById(R.id.title_user_badge)
         searchOrbView = findViewById(R.id.title_orb)
         settingsOrbView = findViewById(R.id.settings_orb)
 
         settingsOrbView.orbIcon = ContextCompat.getDrawable(context, R.drawable.ic_settings)
         settingsOrbView.contentDescription = context.getString(R.string.settings)
+        badgeView.setImageResource(R.drawable.weeboonime)
 
         // Bantu D-pad lokal; Leanback BrowseFrameLayout tetap perlu di-intercept di fragment.
         searchOrbView.nextFocusRightId = R.id.settings_orb
@@ -83,6 +88,7 @@ class WebunimeTitleView @JvmOverloads constructor(
         clipToPadding = false
         clipChildren = false
         updateBadgeVisibility()
+        post { ensureFullWidth() }
     }
 
     /**
@@ -123,8 +129,22 @@ class WebunimeTitleView @JvmOverloads constructor(
     fun getTitle(): CharSequence? = textView.text
 
     fun setBadgeDrawable(drawable: Drawable?) {
-        badgeView.setImageDrawable(drawable)
+        // Leanback mengirim null saat setTitle — jangan sampai wordmark hilang.
+        badgeView.setImageResource(R.drawable.weeboonime)
         updateBadgeVisibility()
+    }
+
+    fun setUserBadge(badge: UserBadge?) {
+        if (badge == null || badge.label.isBlank()) {
+            userBadgeView.visibility = GONE
+            return
+        }
+        userBadgeView.text = badge.label
+        val bg = (userBadgeView.background?.mutate() as? GradientDrawable)
+            ?: GradientDrawable().also { userBadgeView.background = it }
+        bg.setColor(badge.color)
+        bg.cornerRadius = 4f * resources.displayMetrics.density
+        userBadgeView.visibility = if (textView.text.isNullOrBlank()) GONE else VISIBLE
     }
 
     fun getBadgeDrawable(): Drawable? = badgeView.drawable
@@ -162,6 +182,7 @@ class WebunimeTitleView @JvmOverloads constructor(
         } else {
             badgeView.visibility = GONE
             textView.visibility = GONE
+            userBadgeView.visibility = GONE
         }
         updateOrbVisibility()
     }
@@ -176,8 +197,24 @@ class WebunimeTitleView @JvmOverloads constructor(
     }
 
     private fun updateBadgeVisibility() {
-        badgeView.visibility = if (badgeView.drawable != null) VISIBLE else GONE
+        if (badgeView.drawable == null) {
+            badgeView.setImageResource(R.drawable.weeboonime)
+        }
+        badgeView.visibility = VISIBLE
         textView.visibility = if (textView.text.isNullOrBlank()) GONE else VISIBLE
+        if (userBadgeView.text.isNullOrBlank() || textView.visibility != VISIBLE) {
+            userBadgeView.visibility = GONE
+        } else {
+            userBadgeView.visibility = VISIBLE
+        }
+    }
+
+    private fun ensureFullWidth() {
+        val lp = layoutParams ?: return
+        if (lp.width != ViewGroup.LayoutParams.MATCH_PARENT) {
+            lp.width = ViewGroup.LayoutParams.MATCH_PARENT
+            layoutParams = lp
+        }
     }
 
     override fun getTitleViewAdapter(): TitleViewAdapter = titleViewAdapter
