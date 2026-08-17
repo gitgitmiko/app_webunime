@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">WEBUNIME</string>
-    <string name="browse_title">WEBUNIME</string>
+    <string name="brand_name">Weeboonime</string>
+    <string name="browse_title">Weeboonime</string>
     <string name="row_movies">Film</string>
     <string name="row_movies_year">Film %1$d</string>
     <string name="row_family">Family</string>
@@ -50,7 +51,7 @@
     <string name="updating">Memuat data dari server…</string>
     <string name="loading_catalog">Memuat katalog…</string>
     <string name="loading_local_fallback">Server gagal · coba lagi nanti.</string>
-    <string name="login_subtitle">Masuk dengan akun WEBUNIME</string>
+    <string name="login_subtitle">Masuk dengan akun Weeboonime</string>
     <string name="login_hint">Email atau username</string>
     <string name="login_password">Password</string>
     <string name="login_action">Masuk</string>

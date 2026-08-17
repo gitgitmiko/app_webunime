@@ -74,6 +74,16 @@ class BrowseFragment : BrowseSupportFragment() {
         savedInstanceState: Bundle?,
     ): View = inflater.inflate(R.layout.wu_browse_title, parent, false)
 
+    private fun bindUserTitle() {
+        if (!isAdded) return
+        val label = (requireActivity().application as WebunimeApp)
+            .authRepository
+            .currentUser()
+            ?.displayLabel()
+            .orEmpty()
+        title = label
+    }
+
     private fun bindSettingsOrb() {
         val title = titleView as? WebunimeTitleView ?: return
         title.setOnSettingsClickedListener {
@@ -126,7 +136,7 @@ class BrowseFragment : BrowseSupportFragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        title = getString(R.string.browse_title)
+        bindUserTitle()
         headersState = HEADERS_DISABLED
         isHeadersTransitionOnBackEnabled = false
         brandColor = Color.TRANSPARENT
@@ -199,6 +209,7 @@ class BrowseFragment : BrowseSupportFragment() {
 
     override fun onResume() {
         super.onResume()
+        bindUserTitle()
         if (!rowsBuilt) return
         if (pendingPositionRestore) {
             pendingPositionRestore = false

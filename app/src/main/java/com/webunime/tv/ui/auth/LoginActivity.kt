@@ -23,6 +23,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var loginButton: MaterialButton
     private lateinit var errorView: TextView
     private lateinit var progress: ProgressBar
+    private lateinit var splash: View
 
     private var busy = false
 
@@ -35,6 +36,7 @@ class LoginActivity : AppCompatActivity() {
         loginButton = findViewById(R.id.loginButton)
         errorView = findViewById(R.id.loginError)
         progress = findViewById(R.id.loginProgress)
+        splash = findViewById(R.id.loginSplash)
 
         loginButton.setOnClickListener { submit() }
         passwordInput.setOnEditorActionListener { _, _, _ ->
@@ -42,7 +44,7 @@ class LoginActivity : AppCompatActivity() {
             true
         }
 
-        progress.visibility = View.VISIBLE
+        splash.visibility = View.VISIBLE
         loginButton.isEnabled = false
         lifecycleScope.launch {
             val user = runCatching { (application as WebunimeApp).authRepository.restoreSession() }.getOrNull()
@@ -51,7 +53,7 @@ class LoginActivity : AppCompatActivity() {
                 openMain()
                 return@launch
             }
-            progress.visibility = View.GONE
+            splash.visibility = View.GONE
             loginButton.isEnabled = true
             loginInput.requestFocus()
         }

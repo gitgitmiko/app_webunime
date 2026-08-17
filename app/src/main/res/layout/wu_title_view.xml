@@ -1,30 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Title browse: SearchOrb + SettingsOrb di kiri, judul di kanan. -->
+<!-- Title browse: wordmark + nama user di kiri, Search/Settings di kanan. -->
 <merge xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <ImageView
-        android:id="@+id/title_badge"
-        style="?attr/browseTitleIconStyle"
+    <LinearLayout
+        android:id="@+id/title_brand_row"
         android:layout_width="wrap_content"
-        android:layout_height="@dimen/lb_browse_title_icon_height"
-        android:layout_gravity="center_vertical|end"
-        android:adjustViewBounds="true"
-        android:maxWidth="@dimen/lb_browse_title_icon_max_width"
-        android:src="@null"
-        android:visibility="gone" />
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical|start"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-    <TextView
-        android:id="@+id/title_text"
-        style="?attr/browseTitleTextStyle"
-        android:layout_width="wrap_content"
-        android:layout_height="@dimen/lb_browse_title_height"
-        android:layout_gravity="center_vertical|end" />
+        <ImageView
+            android:id="@+id/title_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/brand_name"
+            android:maxWidth="200dp"
+            android:scaleType="fitStart"
+            android:src="@drawable/brand_wordmark" />
+
+        <TextView
+            android:id="@+id/title_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
+            android:maxWidth="240dp"
+            android:maxLines="1"
+            android:textColor="@color/wu_text"
+            android:textSize="16sp" />
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/title_orb_row"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical|start"
+        android:layout_gravity="center_vertical|end"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 

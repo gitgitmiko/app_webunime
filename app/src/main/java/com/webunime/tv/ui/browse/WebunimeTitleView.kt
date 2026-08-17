@@ -14,7 +14,7 @@ import androidx.leanback.widget.TitleViewAdapter
 import com.webunime.tv.R
 
 /**
- * Title Leanback dengan SearchOrb + SettingsOrb (kanan search).
+ * Title Leanback: wordmark + nama user di kiri, SearchOrb + SettingsOrb di kanan.
  */
 class WebunimeTitleView @JvmOverloads constructor(
     context: Context,
@@ -82,6 +82,7 @@ class WebunimeTitleView @JvmOverloads constructor(
 
         clipToPadding = false
         clipChildren = false
+        updateBadgeVisibility()
     }
 
     /**
@@ -175,13 +176,8 @@ class WebunimeTitleView @JvmOverloads constructor(
     }
 
     private fun updateBadgeVisibility() {
-        if (badgeView.drawable != null) {
-            badgeView.visibility = VISIBLE
-            textView.visibility = GONE
-        } else {
-            badgeView.visibility = GONE
-            textView.visibility = VISIBLE
-        }
+        badgeView.visibility = if (badgeView.drawable != null) VISIBLE else GONE
+        textView.visibility = if (textView.text.isNullOrBlank()) GONE else VISIBLE
     }
 
     override fun getTitleViewAdapter(): TitleViewAdapter = titleViewAdapter
