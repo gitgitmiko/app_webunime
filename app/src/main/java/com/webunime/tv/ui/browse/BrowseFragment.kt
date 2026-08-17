@@ -28,6 +28,7 @@ import com.webunime.tv.data.api.CatalogPage
 import com.webunime.tv.ui.search.SearchActivity
 import com.webunime.tv.ui.settings.SettingsActivity
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -200,11 +201,14 @@ class BrowseFragment : BrowseSupportFragment() {
             suppressDeferredAppend = true
             view?.removeCallbacks(endSuppressDeferredRunnable)
             viewLifecycleOwner.lifecycleScope.launch {
-                runCatching { (requireActivity().application as WebunimeApp).libraryRepository.refresh() }
+                val lib = (requireActivity().application as WebunimeApp).libraryRepository
+                runCatching { lib.refresh() }
                 if (isAdded) {
                     refreshContinueRowOnly(allowFullReload = false)
                     refreshFavoritesRowOnly(allowFullReload = false)
                 }
+                delay(1_800)
+                if (isAdded) refreshContinueRowOnly(allowFullReload = false)
             }
             view?.post {
                 if (isAdded) softRestoreFocusOnly()

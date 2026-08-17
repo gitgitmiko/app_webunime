@@ -131,10 +131,11 @@ class CatalogRepository(
     }
 
     suspend fun fetchHero(limit: Int = HERO_LIMIT): List<CatalogItem> = withContext(Dispatchers.IO) {
-        val raw = api.get("/api/v1/hero?limit=$limit")
-        parseItemArray(JSONObject(raw).optJSONArray("items"))
+        val cap = limit.coerceIn(1, HERO_LIMIT)
+        val raw = api.get("/api/v1/hero?limit=$cap")
+        val parsed = parseItemArray(JSONObject(raw).optJSONArray("items"))
             .map { remember(it, it.detailCollection()) }
-            .take(limit.coerceAtLeast(1))
+        selectHeroItems(parsed, cap)
     }
 
     suspend fun search(query: String, limit: Int = 40): List<CatalogItem> = withContext(Dispatchers.IO) {
@@ -334,6 +335,22 @@ class CatalogRepository(
                 Regex("""(?i)https?://${Regex.escape(from)}"""),
                 "https://$to",
             )
+        }
+        return out
+    }
+
+    private fun selectHeroItems(items: List<CatalogItem>, limit: Int): List<CatalogItem> {
+        val cap = limit.coerceIn(1, HERO_LIMIT)
+        val seen = LinkedHashSet<String>()
+        fun key(item: CatalogItem): String =
+            item.slug?.lowercase()?.takeIf { it.isNotBlank() } ?: item.displayTitle()
+        val withLand = items.filter { !it.thumbnail_landscape.isNullOrBlank() }
+        val withoutLand = items.filter { it.thumbnail_landscape.isNullOrBlank() }
+        val out = ArrayList<CatalogItem>(cap)
+        for (item in withLand + withoutLand) {
+            if (!seen.add(key(item))) continue
+            out.add(item)
+            if (out.size >= cap) break
         }
         return out
     }

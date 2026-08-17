@@ -10,12 +10,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 class LibraryRepository(
     private val api: ApiClient,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val historyDirty = AtomicBoolean(false)
+    private val pendingHistoryWrites = AtomicInteger(0)
 
     @Volatile
     var favorites: List<LibraryEntry> = emptyList()
@@ -26,6 +28,11 @@ class LibraryRepository(
         private set
 
     suspend fun refresh(): Unit = withContext(Dispatchers.IO) {
+        var waited = 0
+        while (pendingHistoryWrites.get() > 0 && waited < 2_500) {
+            delay(50)
+            waited += 50
+        }
         favorites = runCatching { fetchFavorites() }.getOrDefault(favorites)
         history = runCatching { fetchHistory() }.getOrDefault(history)
     }
@@ -119,13 +126,29 @@ class LibraryRepository(
         flushNow: Boolean = false,
     ) {
         val col = collection?.takeIf { it.isNotBlank() } ?: return
-        if (slug.isBlank() || progressSeconds < 15) return
+        if (slug.isBlank() || progressSeconds < 5) return
+        history = listOf(
+            LibraryEntry(
+                collection = col,
+                slug = slug.lowercase(),
+                title = title,
+                thumbnail = thumbnail,
+                episodeSlug = episodeSlug,
+                progressSeconds = progressSeconds.coerceAtLeast(0L),
+            ),
+        ) + history.filterNot { it.collection == col && it.slug.equals(slug, true) }
         historyDirty.set(true)
+        pendingHistoryWrites.incrementAndGet()
         scope.launch {
-            if (!flushNow) delay(4_000)
-            if (!historyDirty.compareAndSet(true, false) && !flushNow) return@launch
-            runCatching {
-                upsertHistory(col, slug, title, thumbnail, episodeSlug, progressSeconds)
+            try {
+                if (!flushNow) delay(1_500)
+                if (!flushNow && !historyDirty.compareAndSet(true, false)) return@launch
+                historyDirty.set(false)
+                runCatching {
+                    upsertHistory(col, slug, title, thumbnail, episodeSlug, progressSeconds)
+                }
+            } finally {
+                pendingHistoryWrites.decrementAndGet()
             }
         }
     }

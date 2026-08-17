@@ -11,8 +11,8 @@ android {
         applicationId = "com.webunime.tv"
         minSdk = 21
         targetSdk = 34
-        versionCode = 221
-        versionName = "1.11.1"
+        versionCode = 222
+        versionName = "1.11.2"
 
         buildConfigField("String", "API_BASE_URL", "\"https://gitgitmiko.my.id\"")
 

@@ -120,8 +120,8 @@ class WatchSessionStore(context: Context) {
         /** Cukup untuk banyak episode series/anime + film. */
         private const val MAX_SESSIONS = 200
         /** Jangan simpan scrub awal yang terlalu pendek. */
-        const val MIN_SAVE_MS = 15_000L
+        const val MIN_SAVE_MS = 5_000L
         /** Minimal progress agar muncul di "Lanjutkan". */
-        const val MIN_RESUME_MS = 30_000L
+        const val MIN_RESUME_MS = 5_000L
     }
 }

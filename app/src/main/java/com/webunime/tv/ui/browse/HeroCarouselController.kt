@@ -119,14 +119,9 @@ class HeroCarouselController(
 
     fun currentItem(): CatalogItem? = current
 
-    fun onBrowseItemFocused(item: CatalogItem?) {
-        if (item == null) {
-            showFeaturedMode()
-            return
-        }
-        featuredMode = false
-        updateChrome()
-        showItem(item, updateDots = false)
+    fun onBrowseItemFocused(_item: CatalogItem?) {
+        // Carousel hero tetap 10 slide. Fokus kartu di baris bawah
+        // tidak mengganti judul/dot hero (itu yang terasa “film-nya banyak”).
     }
 
     fun showFeaturedMode() {

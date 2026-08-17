@@ -927,11 +927,40 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun persistProgress() {
         if (contentSlug.isBlank()) return
-        val player = exoPlayer ?: return
-        val pos = player.currentPosition
-        val dur = player.duration.takeIf { it > 0 } ?: 0L
-        if (pos < WatchSessionStore.MIN_SAVE_MS) return
-        persistWatch(pos, dur, flush = true)
+        val exo = exoPlayer
+        val exoVisible = exo != null &&
+            this::playerView.isInitialized &&
+            playerView.visibility == View.VISIBLE
+        if (exoVisible) {
+            val pos = exo!!.currentPosition
+            val dur = exo.duration.takeIf { it > 0 } ?: 0L
+            if (pos >= WatchSessionStore.MIN_SAVE_MS) {
+                persistWatch(pos, dur, flush = true)
+                return
+            }
+            if (!this::webView.isInitialized || webView.visibility != View.VISIBLE) return
+        }
+        val pos = (lastKnownPosSec * 1000.0).toLong()
+        val dur = (lastKnownDurSec * 1000.0).toLong()
+        if (pos >= WatchSessionStore.MIN_SAVE_MS) {
+            persistWatch(pos, dur, flush = true)
+        }
+    }
+
+    private fun persistWebClock() {
+        if (!this::webView.isInitialized || webView.visibility != View.VISIBLE) return
+        webView.evaluateJavascript(
+            """(function(){try{var c=window.__wuGetClock&&window.__wuGetClock();return c?JSON.stringify({p:c.p,d:c.d}):'{}';}catch(e){return '{}';}})()""",
+        ) { raw ->
+            val text = raw?.trim()?.trim('"')?.replace("\\\"", "\"") ?: return@evaluateJavascript
+            val obj = runCatching { JSONObject(text) }.getOrNull() ?: return@evaluateJavascript
+            val p = obj.optDouble("p", 0.0)
+            val d = obj.optDouble("d", 0.0)
+            if (!p.isFinite() || p < 5.0) return@evaluateJavascript
+            lastKnownPosSec = p
+            if (d.isFinite() && d > 0) lastKnownDurSec = d
+            persistWatch((p * 1000.0).toLong(), (d * 1000.0).toLong(), flush = true)
+        }
     }
 
     private fun persistWatch(
@@ -942,7 +971,9 @@ class PlayerActivity : AppCompatActivity() {
     ) {
         if (contentSlug.isBlank()) return
         val app = application as WebunimeApp
-        val collection = contentCollection ?: catalogItem?.detailCollection()
+        val collection = contentCollection
+            ?: catalogItem?.detailCollection()
+            ?: "movies"
         val episodeSlug = contentEpisodeSlug ?: episodeList.getOrNull(episodeIndex)?.slug
         val title = titleView.text?.toString().orEmpty()
         if (finished) {
@@ -1485,6 +1516,7 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onPause() {
         persistProgress()
+        persistWebClock()
         super.onPause()
     }
 

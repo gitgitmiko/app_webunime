@@ -1,6 +1,6 @@
 {
-  "versionCode": 221,
-  "versionName": "1.11.1",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.1/WEBUNIME-TV-v1.11.1.apk",
-  "changelog": "Hero 10 judul; cover tidak blank saat scroll balik; favorit muncul di beranda; lanjut menonton dari API; baris katalog dimuat di latar."
+  "versionCode": 222,
+  "versionName": "1.11.2",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.2/WEBUNIME-TV-v1.11.2.apk",
+  "changelog": "Lanjut menonton tersimpan dari WebView setelah ~5 detik; hero carousel tetap 10 slide dan tidak berubah saat geser baris katalog."
 }
