@@ -1,6 +1,6 @@
 {
-  "versionCode": 223,
-  "versionName": "1.11.3",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.3/WEBUNIME-TV-v1.11.3.apk",
-  "changelog": "Kartu browse seukuran web (~6 judul per baris); judul sampai 3 baris; lanjut menonton dari embed; hapus dari Lanjutkan/Favorit."
+  "versionCode": 224,
+  "versionName": "1.11.4",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.4/WEBUNIME-TV-v1.11.4.apk",
+  "changelog": "Hero carousel diacak setiap buka app, sama seperti web (rating ≥ 7)."
 }
