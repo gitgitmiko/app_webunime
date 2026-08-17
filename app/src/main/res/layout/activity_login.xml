@@ -27,7 +27,7 @@
                 android:contentDescription="@string/brand_name"
                 android:maxWidth="320dp"
                 android:scaleType="fitCenter"
-                android:src="@drawable/brand_wordmark" />
+                android:src="@drawable/weeboonime" />
 
             <TextView
                 android:layout_width="wrap_content"

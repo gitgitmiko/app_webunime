@@ -1,43 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Title browse: wordmark + nama user di kiri, Search/Settings di kanan. -->
+<!-- Title browse: Search + Settings di kiri, nama user + wordmark di kanan. -->
 <merge xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <LinearLayout
-        android:id="@+id/title_brand_row"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical|start"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <ImageView
-            android:id="@+id/title_badge"
-            android:layout_width="wrap_content"
-            android:layout_height="32dp"
-            android:adjustViewBounds="true"
-            android:contentDescription="@string/brand_name"
-            android:maxWidth="200dp"
-            android:scaleType="fitStart"
-            android:src="@drawable/brand_wordmark" />
-
-        <TextView
-            android:id="@+id/title_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
-            android:ellipsize="end"
-            android:fontFamily="sans-serif-medium"
-            android:maxWidth="240dp"
-            android:maxLines="1"
-            android:textColor="@color/wu_text"
-            android:textSize="16sp" />
-    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/title_orb_row"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical|end"
+        android:layout_gravity="center_vertical|start"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
@@ -55,5 +24,36 @@
             android:layout_marginStart="14dp"
             android:transitionGroup="true"
             android:visibility="invisible" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/title_brand_row"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical|end"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/title_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="14dp"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
+            android:maxWidth="240dp"
+            android:maxLines="1"
+            android:textColor="@color/wu_text"
+            android:textSize="16sp" />
+
+        <ImageView
+            android:id="@+id/title_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/brand_name"
+            android:maxWidth="200dp"
+            android:scaleType="fitEnd"
+            android:src="@drawable/weeboonime" />
     </LinearLayout>
 </merge>

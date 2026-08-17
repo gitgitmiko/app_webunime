@@ -14,7 +14,7 @@ import androidx.leanback.widget.TitleViewAdapter
 import com.webunime.tv.R
 
 /**
- * Title Leanback: wordmark + nama user di kiri, SearchOrb + SettingsOrb di kanan.
+ * Title Leanback: SearchOrb + SettingsOrb di kiri, nama user + wordmark di kanan.
  */
 class WebunimeTitleView @JvmOverloads constructor(
     context: Context,
