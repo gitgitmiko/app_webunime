@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Title browse: Search + Settings di kiri; badge + nama user + wordmark di kanan. -->
+<!-- Title browse: Search + Settings di kiri; nama user (badge warna) + wordmark di kanan. -->
 <merge xmlns:android="http://schemas.android.com/apk/res/android">
 
     <LinearLayout
@@ -35,31 +35,19 @@
         android:orientation="horizontal">
 
         <TextView
-            android:id="@+id/title_user_badge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="10dp"
-            android:background="@drawable/bg_user_badge"
-            android:fontFamily="sans-serif-medium"
-            android:paddingStart="8dp"
-            android:paddingTop="2dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="2dp"
-            android:textAllCaps="true"
-            android:textColor="@color/wu_text"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:visibility="gone" />
-
-        <TextView
             android:id="@+id/title_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="14dp"
+            android:background="@drawable/bg_user_badge"
             android:ellipsize="end"
             android:fontFamily="sans-serif-medium"
-            android:maxWidth="200dp"
+            android:maxWidth="220dp"
             android:maxLines="1"
+            android:paddingStart="12dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="4dp"
             android:textColor="@color/wu_text"
             android:textSize="16sp" />
 

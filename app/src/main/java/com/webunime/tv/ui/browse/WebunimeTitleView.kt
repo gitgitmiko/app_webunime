@@ -26,7 +26,6 @@ class WebunimeTitleView @JvmOverloads constructor(
 
     private val badgeView: ImageView
     private val textView: TextView
-    private val userBadgeView: TextView
     private val searchOrbView: SearchOrbView
     private val settingsOrbView: SearchOrbView
 
@@ -73,7 +72,6 @@ class WebunimeTitleView @JvmOverloads constructor(
         LayoutInflater.from(context).inflate(R.layout.wu_title_view, this, true)
         badgeView = findViewById(R.id.title_badge)
         textView = findViewById(R.id.title_text)
-        userBadgeView = findViewById(R.id.title_user_badge)
         searchOrbView = findViewById(R.id.title_orb)
         settingsOrbView = findViewById(R.id.settings_orb)
 
@@ -134,17 +132,15 @@ class WebunimeTitleView @JvmOverloads constructor(
         updateBadgeVisibility()
     }
 
-    fun setUserBadge(badge: UserBadge?) {
-        if (badge == null || badge.label.isBlank()) {
-            userBadgeView.visibility = GONE
+    fun setUserBadgeColor(color: Int?) {
+        if (color == null || textView.text.isNullOrBlank()) {
+            textView.background = null
             return
         }
-        userBadgeView.text = badge.label
-        val bg = (userBadgeView.background?.mutate() as? GradientDrawable)
-            ?: GradientDrawable().also { userBadgeView.background = it }
-        bg.setColor(badge.color)
-        bg.cornerRadius = 4f * resources.displayMetrics.density
-        userBadgeView.visibility = if (textView.text.isNullOrBlank()) GONE else VISIBLE
+        val bg = (textView.background?.mutate() as? GradientDrawable)
+            ?: GradientDrawable().also { textView.background = it }
+        bg.setColor(color)
+        bg.cornerRadius = 6f * resources.displayMetrics.density
     }
 
     fun getBadgeDrawable(): Drawable? = badgeView.drawable
@@ -182,7 +178,6 @@ class WebunimeTitleView @JvmOverloads constructor(
         } else {
             badgeView.visibility = GONE
             textView.visibility = GONE
-            userBadgeView.visibility = GONE
         }
         updateOrbVisibility()
     }
@@ -202,11 +197,6 @@ class WebunimeTitleView @JvmOverloads constructor(
         }
         badgeView.visibility = VISIBLE
         textView.visibility = if (textView.text.isNullOrBlank()) GONE else VISIBLE
-        if (userBadgeView.text.isNullOrBlank() || textView.visibility != VISIBLE) {
-            userBadgeView.visibility = GONE
-        } else {
-            userBadgeView.visibility = VISIBLE
-        }
     }
 
     private fun ensureFullWidth() {

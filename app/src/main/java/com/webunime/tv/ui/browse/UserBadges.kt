@@ -3,17 +3,7 @@ package com.webunime.tv.ui.browse
 import android.graphics.Color
 import kotlin.random.Random
 
-data class UserBadge(
-    val label: String,
-    val color: Int,
-)
-
 object UserBadges {
-    private val labels = listOf(
-        "VIP", "PRO", "ELITE", "GOLD", "STAR",
-        "PRIME", "ACE", "MAX", "ULTRA", "LEGEND",
-    )
-
     private val colors = listOf(
         Color.parseColor("#E50914"),
         Color.parseColor("#E5A000"),
@@ -27,8 +17,5 @@ object UserBadges {
         Color.parseColor("#00897B"),
     )
 
-    fun random(): UserBadge = UserBadge(
-        label = labels.random(Random.Default),
-        color = colors.random(Random.Default),
-    )
+    fun randomColor(): Int = colors.random(Random.Default)
 }

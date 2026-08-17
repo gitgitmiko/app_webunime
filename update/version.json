@@ -1,6 +1,6 @@
 {
-  "versionCode": 228,
-  "versionName": "1.11.8",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.8/WEBUNIME-TV-v1.11.8.apk",
-  "changelog": "Ikon launcher logo_app, wordmark WeebooNime di header, badge acak di nama user."
+  "versionCode": 229,
+  "versionName": "1.11.9",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.9/WEBUNIME-TV-v1.11.9.apk",
+  "changelog": "Nama user memakai badge berwarna acak setiap app dibuka."
 }

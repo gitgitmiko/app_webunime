@@ -74,8 +74,8 @@ class BrowseFragment : BrowseSupportFragment() {
         savedInstanceState: Bundle?,
     ): View = inflater.inflate(R.layout.wu_browse_title, parent, false)
 
-    /** Badge acak sekali per sesi buka app, tidak berubah saat resume. */
-    private var sessionUserBadge: UserBadge? = null
+    /** Warna badge nama user, acak sekali per sesi buka app. */
+    private var sessionUserBadgeColor: Int? = null
 
     private fun bindUserTitle() {
         if (!isAdded) return
@@ -84,12 +84,12 @@ class BrowseFragment : BrowseSupportFragment() {
             .currentUser()
             ?.displayLabel()
             .orEmpty()
-        if (sessionUserBadge == null) {
-            sessionUserBadge = UserBadges.random()
+        if (sessionUserBadgeColor == null) {
+            sessionUserBadgeColor = UserBadges.randomColor()
         }
         title = label
-        (titleView as? WebunimeTitleView)?.setUserBadge(
-            if (label.isBlank()) null else sessionUserBadge,
+        (titleView as? WebunimeTitleView)?.setUserBadgeColor(
+            if (label.isBlank()) null else sessionUserBadgeColor,
         )
     }
 
