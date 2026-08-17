@@ -16,6 +16,7 @@
         android:layout_height="match_parent"
         android:focusable="true"
         android:focusableInTouchMode="true"
+        android:layerType="hardware"
         android:visibility="gone" />
 
     <LinearLayout

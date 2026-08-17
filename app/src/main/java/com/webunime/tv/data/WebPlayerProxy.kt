@@ -3,6 +3,7 @@ package com.webunime.tv.data
 import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
+import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.ByteArrayInputStream
@@ -24,11 +25,23 @@ object WebPlayerProxy {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
 
     private val client = OkHttpClient.Builder()
+        .dispatcher(
+            Dispatcher().apply {
+                maxRequests = 24
+                maxRequestsPerHost = 12
+            },
+        )
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
         .followRedirects(true)
         .followSslRedirects(true)
         .build()
+
+    /** Segmen video/audio HLS-MP4: biarkan Chromium unduh langsung (1080p jadi mulus). */
+    private val heavyMediaPath = Regex(
+        """\.(ts|m4s|m4v|mp4|webm|mkv|aac|mp3|ogg|wav|flv)(\?|#|$)""",
+        RegexOption.IGNORE_CASE,
+    )
 
     /** Host player / CDN yang kita kelola (spoof header + sanitasi HTML). */
     private val managedHost = Regex(
@@ -212,6 +225,9 @@ object WebPlayerProxy {
         if (!url.startsWith("http")) return null
         if (isAdRequest(url)) return blockedResponse()
         if (!isManaged(url)) return null
+        // Segmen media (1080p ~beberapa MB) jangan lewat OkHttp:
+        // shouldInterceptRequest serial + tanpa Content-Length → buffer underrun / ngadat.
+        if (isHeavyMedia(url)) return null
         // POST tak punya body di WebResourceRequest → biarkan WebView menangani
         if (!request.method.equals("GET", ignoreCase = true)) return null
 
@@ -226,6 +242,7 @@ object WebPlayerProxy {
             val respHeaders = linkedMapOf<String, String>("Access-Control-Allow-Origin" to "*")
             response.header("Content-Range")?.let { respHeaders["Content-Range"] = it }
             response.header("Accept-Ranges")?.let { respHeaders["Accept-Ranges"] = it }
+            response.header("Content-Length")?.let { respHeaders["Content-Length"] = it }
 
             if (isHtml) {
                 val html = response.body?.string().orEmpty()
@@ -258,6 +275,28 @@ object WebPlayerProxy {
                 )
             }
         }.getOrNull()
+    }
+
+    /**
+     * True untuk payload video/audio besar. Playlist (.m3u8) dan HTML/JS tetap di-intercept
+     * supaya Referer/sanitasi Hydrax jalan.
+     */
+    private fun isHeavyMedia(url: String): Boolean {
+        val u = url.lowercase()
+        if (heavyMediaPath.containsMatchIn(u)) return true
+        val isPlaylistOrPage = u.contains(".m3u8") ||
+            u.contains(".html") ||
+            u.contains(".js") ||
+            u.contains(".css") ||
+            u.contains(".json") ||
+            u.contains(".vtt") ||
+            u.contains(".srt")
+        if (isPlaylistOrPage) return false
+        return u.contains("storage.googleapis.com") ||
+            u.contains("tiktokcdn") ||
+            u.contains("morphify") ||
+            u.contains("abysscdn") ||
+            u.contains("sptvp")
     }
 
     private fun splitContentType(ct: String): Pair<String, String?> {
@@ -505,7 +544,34 @@ object WebPlayerProxy {
   window.__wuSetQuality=function(idx){
     try{
       var jp=__wuJwAny();
-      if(jp&&typeof jp.setCurrentQuality==="function") jp.setCurrentQuality(Number(idx));
+      if(!jp||typeof jp.setCurrentQuality!=="function") return;
+      idx=Number(idx);
+      if(!isFinite(idx)||idx<0) return;
+      try{ jp.setCurrentQuality(idx); }catch(e){}
+      // 1080p butuh buffer dulu; kalau langsung play, JW underrun → ngadat.
+      var n=0;
+      var iv=setInterval(function(){
+        n++;
+        try{
+          var v=__wuVideo();
+          if(!v){ if(n>24) clearInterval(iv); return; }
+          v.preload="auto";
+          var ready=v.readyState>=3;
+          var ahead=0;
+          try{
+            if(v.buffered&&v.buffered.length){
+              ahead=v.buffered.end(v.buffered.length-1)-(v.currentTime||0);
+            }
+          }catch(e){}
+          if((ready&&ahead>=3.5)||n>24){
+            clearInterval(iv);
+            if(!window.__wuUserPaused){
+              try{ jp.play(); }catch(e){}
+              try{ v.play(); }catch(e){}
+            }
+          }
+        }catch(e){ clearInterval(iv); }
+      }, 250);
     }catch(e){}
   };
   // Deteksi <video> → beri tahu app (agar tombol OK beralih ke mode toggle),
@@ -582,7 +648,7 @@ object WebPlayerProxy {
       Object.defineProperty(window,"fuckAdBlock",{configurable:true,get:function(){return {onDetected:function(){},onNotDetected:function(cb){try{cb&&cb();}catch(e){}}};},set:function(){}});
       Object.defineProperty(window,"FuckAdBlock",{configurable:true,get:function(){return function(){};},set:function(){}});
     } catch(e){}
-    (function guardJwRemove(){ var tries=0; var iv=setInterval(function(){ tries++; try { if(typeof window.jwplayer==="function" && !window.jwplayer.__wuGuard){ var orig=window.jwplayer; function wrap(){ var p=orig.apply(this, arguments); try{ if(p&&typeof p.remove==="function") p.remove=function(){return p;}; }catch(e){} return p; } wrap.__wuGuard=true; try{ Object.keys(orig).forEach(function(k){ try{ wrap[k]=orig[k]; }catch(e){} }); }catch(e){} window.jwplayer=wrap; clearInterval(iv); } } catch(e){} if(tries>40) clearInterval(iv); }, 100); })();
+    (function guardJwRemove(){ var tries=0; var iv=setInterval(function(){ tries++; try { if(typeof window.jwplayer==="function" && !window.jwplayer.__wuGuard){ var orig=window.jwplayer; function wrap(){ var p=orig.apply(this, arguments); try{ if(p&&typeof p.remove==="function") p.remove=function(){return p;}; }catch(e){} try{ if(p&&typeof p.setup==="function"&&!p.__wuSetupTuned){ p.__wuSetupTuned=true; var oldSetup=p.setup.bind(p); p.setup=function(cfg){ cfg=cfg||{}; try{ cfg.hlshtml=false; cfg.androidhls=true; cfg.hlsjsConfig=Object.assign({maxBufferLength:40,maxMaxBufferLength:80,maxBufferSize:80*1000*1000,maxBufferHole:0.8,nudgeMaxRetry:8,startFragPrefetch:true}, cfg.hlsjsConfig||{}); }catch(e){} return oldSetup(cfg); }; } }catch(e){} return p; } wrap.__wuGuard=true; try{ Object.keys(orig).forEach(function(k){ try{ wrap[k]=orig[k]; }catch(e){} }); }catch(e){} window.jwplayer=wrap; clearInterval(iv); } } catch(e){} if(tries>40) clearInterval(iv); }, 50); })();
     var tries=0; var iv=setInterval(function(){ tries++; try { if(window.abyssConfig) window.abyssConfig.popups=[]; var overlay=document.getElementById("overlay"); if(overlay && tries===6 && !window.__wuUserPaused){ try{overlay.click();}catch(e){} } if(!overlay && typeof window.jwplayer==="function"){ if(!window.__wuUserPaused){ try{window.jwplayer().play();}catch(e){} } clearInterval(iv); } } catch(e){} if(tries>40) clearInterval(iv); }, 250);
   }
 

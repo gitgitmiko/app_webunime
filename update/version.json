@@ -1,6 +1,6 @@
 {
-  "versionCode": 232,
-  "versionName": "1.11.12",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.12/WEBUNIME-TV-v1.11.12.apk",
-  "changelog": "Film Indonesia: cover tidak abu-abu saat geser kanan; baris dipindah di atas Anime Terbaru."
+  "versionCode": 233,
+  "versionName": "1.11.13",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.13/WEBUNIME-TV-v1.11.13.apk",
+  "changelog": "Hydrax 1080p lebih mulus: video tidak lewat proxy Java, buffer HLS diperbesar."
 }
