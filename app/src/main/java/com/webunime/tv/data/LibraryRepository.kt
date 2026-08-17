@@ -1,5 +1,6 @@
 package com.webunime.tv.data
 
+import android.util.Log
 import com.webunime.tv.data.api.ApiClient
 import com.webunime.tv.data.api.LibraryEntry
 import kotlinx.coroutines.CoroutineScope
@@ -146,6 +147,8 @@ class LibraryRepository(
                 historyDirty.set(false)
                 runCatching {
                     upsertHistory(col, slug, title, thumbnail, episodeSlug, progressSeconds)
+                }.onFailure {
+                    Log.w("Library", "history upsert gagal: ${it.message}")
                 }
             } finally {
                 pendingHistoryWrites.decrementAndGet()

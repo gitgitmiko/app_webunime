@@ -11,6 +11,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.text.TextUtils
+import android.view.KeyEvent
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.content.ContextCompat
@@ -27,21 +28,24 @@ import com.webunime.tv.R
 import com.webunime.tv.data.CatalogItem
 
 /**
- * Kartu browse/search:
- * Ukuran tetap portrait; fokus hanya ganti gambar (+ zoom kecil Leanback).
- * Badge di pojok kanan atas: NEW / kualitas / total EPS.
+ * Kartu browse/search: poster 2:3 seukuran web (~6 per baris).
+ * Judul wrap max 3 baris, lalu ellipsis. Badge di pojok kanan atas.
  */
-class CardPresenter : Presenter() {
+class CardPresenter(
+    private val onLibraryLongPress: ((CatalogItem) -> Boolean)? = null,
+) : Presenter() {
 
     override fun onCreateViewHolder(parent: ViewGroup): ViewHolder {
+        val (w, h) = sizePx(parent.context)
         val card = ImageCardView(parent.context).apply {
             isFocusable = true
             isFocusableInTouchMode = true
             isClickable = true
-            setMainImageDimensions(CARD_W, CARD_H)
-            cardType = ImageCardView.CARD_TYPE_INFO_UNDER
+            setMainImageDimensions(w, h)
+            cardType = ImageCardView.CARD_TYPE_INFO_OVER
             setBackgroundColor(ContextCompat.getColor(context, R.color.wu_bg))
-            setInfoAreaBackgroundColor(ContextCompat.getColor(context, R.color.wu_bg))
+            setInfoAreaBackgroundColor(Color.argb(0xD4, 0, 0, 0))
+            setupTitleWrap()
             setupFocusBehavior()
         }
         return ViewHolder(card)
@@ -63,23 +67,24 @@ class CardPresenter : Presenter() {
                     "Episode $ep"
                 }
             }
-            else -> movie.displayMeta().ifBlank { movie.type?.replace('-', ' ')?.uppercase().orEmpty() }
+            else -> {
+                val meta = movie.displayMeta()
+                if (meta.isNotBlank()) meta
+                else when (movie.type) {
+                    "continue" -> movie.durasi.orEmpty()
+                    "favorite" -> ""
+                    else -> movie.type?.replace('-', ' ')?.uppercase().orEmpty()
+                }
+            }
         }
         card.badgeImage = null
 
         val titleView = card.titleTextView()
-        titleView?.let { tv ->
-            (tv.getTag(R.id.tag_marquee_run) as? Runnable)?.let { tv.removeCallbacks(it) }
-            tv.ellipsize = TextUtils.TruncateAt.END
-            tv.isSelected = false
-        }
+        titleView?.let { applyTitleWrap(it) }
 
-        applyCardSize(card, card.hasFocus())
+        applyCardSize(card)
         bindPoster(card, movie, force = false)
-
-        if (card.hasFocus()) {
-            titleView?.let { scheduleMarquee(card, it) }
-        }
+        bindLibraryLongPress(card, movie)
     }
 
     override fun onUnbindViewHolder(viewHolder: ViewHolder) {
@@ -88,33 +93,91 @@ class CardPresenter : Presenter() {
         titleView?.let { tv ->
             (tv.getTag(R.id.tag_marquee_run) as? Runnable)?.let { tv.removeCallbacks(it) }
             tv.setTag(R.id.tag_marquee_run, null)
-            tv.isSelected = false
-            tv.ellipsize = TextUtils.TruncateAt.END
+            applyTitleWrap(tv)
         }
         card.setTag(R.id.tag_catalog_item, null)
+        card.setOnLongClickListener(null)
+        card.setOnKeyListener(null)
         // Jangan Glide.clear + mainImage=null: recycle kartu akan load ulang dari jaringan
         // dan cover terlihat blank beberapa detik saat scroll balik.
     }
 
+    private fun bindLibraryLongPress(card: ImageCardView, movie: CatalogItem) {
+        val library = movie.type == "continue" || movie.type == "favorite"
+        if (!library || onLibraryLongPress == null) {
+            card.setOnLongClickListener(null)
+            card.setOnKeyListener(null)
+            return
+        }
+        card.setOnLongClickListener {
+            onLibraryLongPress.invoke(movie)
+        }
+        card.setOnKeyListener { _, keyCode, event ->
+            if (event.action != KeyEvent.ACTION_DOWN) return@setOnKeyListener false
+            if (keyCode != KeyEvent.KEYCODE_MENU && keyCode != KeyEvent.KEYCODE_INFO) {
+                return@setOnKeyListener false
+            }
+            onLibraryLongPress.invoke(movie)
+        }
+    }
+
     companion object {
-        /**
-         * Ukuran kartu tetap (portrait). Fokus hanya ganti gambar + zoom Leanback —
-         * morph lebar/tinggi saat fokus adalah penyebab utama “shaking” saat back
-         * dari Detail / Search / Settings.
-         */
-        private const val CARD_W = 156
-        private const val CARD_H = 234
+        /** Sama seperti baris web (anime terbaru ~6 poster di view 100%). */
+        const val VISIBLE_PER_ROW = 6
 
-        private const val MARQUEE_DELAY_MS = 480L
+        fun gapPx(context: Context): Int =
+            (12f * context.resources.displayMetrics.density).toInt().coerceAtLeast(8)
 
-        private fun cardSizeFor(focused: Boolean): Pair<Int, Int> = CARD_W to CARD_H
+        fun edgePadPx(context: Context): Int =
+            (48f * context.resources.displayMetrics.density).toInt().coerceAtLeast(32)
 
-        private fun applyCardSize(card: ImageCardView, focused: Boolean) {
-            val (w, h) = cardSizeFor(focused)
-            val sizeKey = "$w x $h"
+        /** Poster 2:3, lebar dihitung agar ~6 kartu masuk layar. */
+        fun sizePx(context: Context): Pair<Int, Int> {
+            val dm = context.resources.displayMetrics
+            val gap = gapPx(context)
+            val pad = edgePadPx(context)
+            val usable = (dm.widthPixels - pad * 2 - gap * (VISIBLE_PER_ROW - 1))
+                .coerceAtLeast((120f * dm.density).toInt() * VISIBLE_PER_ROW)
+            val w = usable / VISIBLE_PER_ROW
+            val h = w * 3 / 2
+            return w to h
+        }
+
+        fun styleCatalogRow(grid: androidx.leanback.widget.HorizontalGridView) {
+            val pad = edgePadPx(grid.context)
+            grid.setItemSpacing(gapPx(grid.context))
+            grid.setPadding(pad, grid.paddingTop, pad / 2, grid.paddingBottom)
+            grid.clipToPadding = false
+        }
+
+        private fun applyCardSize(card: ImageCardView) {
+            val (w, h) = sizePx(card.context)
+            val sizeKey = "${w}x$h"
             if (card.getTag(R.id.tag_card_size) == sizeKey) return
             card.setTag(R.id.tag_card_size, sizeKey)
             card.setMainImageDimensions(w, h)
+        }
+
+        private fun applyTitleWrap(titleView: TextView) {
+            titleView.isSingleLine = false
+            titleView.setSingleLine(false)
+            titleView.maxLines = 3
+            titleView.minLines = 1
+            titleView.ellipsize = TextUtils.TruncateAt.END
+            titleView.setHorizontallyScrolling(false)
+            titleView.isSelected = false
+            titleView.marqueeRepeatLimit = 0
+            titleView.isHorizontalFadingEdgeEnabled = false
+            titleView.setLineSpacing(0f, 1.2f)
+        }
+
+        private fun ImageCardView.setupTitleWrap() {
+            titleTextView()?.let { applyTitleWrap(it) }
+            contentTextView()?.let { tv ->
+                tv.isSingleLine = true
+                tv.maxLines = 1
+                tv.ellipsize = TextUtils.TruncateAt.END
+            }
         }
 
         /** Gambar badge (kualitas / total EPS) di pojok kanan atas bitmap poster. */
@@ -180,8 +243,7 @@ class CardPresenter : Presenter() {
 
         private fun bindPoster(card: ImageCardView, movie: CatalogItem, force: Boolean) {
             if (!canUseGlide(card.context)) return
-            val focused = card.hasFocus()
-            val (width, height) = cardSizeFor(focused)
+            val (width, height) = sizePx(card.context)
             val sizeKey = "${width}x$height"
             val badge = movie.posterBadgeLabel().orEmpty()
             val portrait = movie.thumbnail?.takeIf { it.isNotBlank() }
@@ -212,7 +274,10 @@ class CardPresenter : Presenter() {
                 .dontAnimate()
                 .skipMemoryCache(false)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .transform(CenterCrop(), RoundedCorners(12))
+                .transform(
+                    CenterCrop(),
+                    RoundedCorners((4f * card.resources.displayMetrics.density).toInt().coerceAtLeast(4)),
+                )
             loadIntoCard(card, urls, 0, options, placeholder, width, height, badge)
         }
 
@@ -220,10 +285,11 @@ class CardPresenter : Presenter() {
             val src = url?.takeIf { it.isNotBlank() } ?: return
             if (!canUseGlide(context)) return
             runCatching {
+                val (w, h) = sizePx(context)
                 Glide.with(context)
                     .load(src)
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .preload(CARD_W, CARD_H)
+                    .preload(w, h)
             }
         }
 
@@ -274,36 +340,19 @@ class CardPresenter : Presenter() {
         private fun ImageCardView.titleTextView(): TextView? =
             findViewById(androidx.leanback.R.id.title_text)
 
+        private fun ImageCardView.contentTextView(): TextView? =
+            findViewById(androidx.leanback.R.id.content_text)
+
         private fun ImageCardView.setupFocusBehavior() {
-            val titleView = titleTextView() ?: return
-            titleView.ellipsize = TextUtils.TruncateAt.END
-            titleView.isSingleLine = true
-            titleView.marqueeRepeatLimit = 2
-            titleView.isHorizontalFadingEdgeEnabled = false
-
-            setOnFocusChangeListener { _, hasFocus ->
-                applyCardSize(this, hasFocus)
-                // Gambar kartu tidak diganti saat fokus (tetap portrait).
-
-                val tv = titleTextView() ?: return@setOnFocusChangeListener
-                (tv.getTag(R.id.tag_marquee_run) as? Runnable)?.let { tv.removeCallbacks(it) }
-                if (hasFocus) {
-                    scheduleMarquee(this, tv)
-                } else {
-                    tv.isSelected = false
+            setOnFocusChangeListener { _, _ ->
+                applyCardSize(this)
+                titleTextView()?.let { applyTitleWrap(it) }
+                contentTextView()?.let { tv ->
+                    tv.isSingleLine = true
+                    tv.maxLines = 1
                     tv.ellipsize = TextUtils.TruncateAt.END
                 }
             }
-        }
-
-        private fun scheduleMarquee(card: ImageCardView, titleView: TextView) {
-            val start = Runnable {
-                if (!card.hasFocus()) return@Runnable
-                titleView.ellipsize = TextUtils.TruncateAt.MARQUEE
-                titleView.isSelected = true
-            }
-            titleView.setTag(R.id.tag_marquee_run, start)
-            titleView.postDelayed(start, MARQUEE_DELAY_MS)
         }
     }
 }

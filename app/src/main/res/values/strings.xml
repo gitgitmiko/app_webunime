@@ -15,6 +15,9 @@
     <string name="row_search_results">Hasil pencarian</string>
     <string name="row_continue">Lanjutkan menonton</string>
     <string name="row_favorites">Favorit saya</string>
+    <string name="library_remove_continue">Hapus %1$s dari Lanjutkan menonton?</string>
+    <string name="library_remove_favorite">Hapus %1$s dari Favorit saya?</string>
+    <string name="library_remove_confirm">Hapus</string>
     <string name="row_action">Aksi &amp; Petualangan</string>
     <string name="row_drama">Drama &amp; Romance</string>
     <string name="row_anime_top">Top Anime</string>

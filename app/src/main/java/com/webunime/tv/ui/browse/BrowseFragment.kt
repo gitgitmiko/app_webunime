@@ -19,6 +19,7 @@ import androidx.leanback.widget.OnItemViewClickedListener
 import androidx.leanback.widget.OnItemViewSelectedListener
 import androidx.leanback.widget.Presenter
 import androidx.leanback.widget.RowHeaderPresenter
+import androidx.leanback.widget.RowPresenter
 import androidx.leanback.widget.VerticalGridView
 import androidx.lifecycle.lifecycleScope
 import com.webunime.tv.R
@@ -37,7 +38,7 @@ import kotlinx.coroutines.launch
 class BrowseFragment : BrowseSupportFragment() {
 
     private lateinit var rowsAdapter: ArrayObjectAdapter
-    private val cardPresenter = CardPresenter()
+    private val cardPresenter = CardPresenter { item -> promptRemoveLibraryItem(item) }
     private val rowLoadingPresenter = RowLoadingPresenter()
     private val rowPaging = mutableMapOf<Long, RowPagingState>()
 
@@ -141,7 +142,13 @@ class BrowseFragment : BrowseSupportFragment() {
         bindSettingsOrb()
         view?.post { bindSettingsOrb() }
 
-        val cardRowPresenter = ListRowPresenter(FocusHighlight.ZOOM_FACTOR_XSMALL).apply {
+        val cardRowPresenter = object : ListRowPresenter(FocusHighlight.ZOOM_FACTOR_XSMALL) {
+            override fun initializeRowViewHolder(vh: RowPresenter.ViewHolder) {
+                super.initializeRowViewHolder(vh)
+                val listVh = vh as? ListRowPresenter.ViewHolder ?: return
+                CardPresenter.styleCatalogRow(listVh.gridView)
+            }
+        }.apply {
             shadowEnabled = true
             selectEffectEnabled = true
             headerPresenter = hideBlankHeaderPresenter()
@@ -477,7 +484,7 @@ class BrowseFragment : BrowseSupportFragment() {
 
     private fun buildContinueItems(): List<CatalogItem> {
         val app = requireActivity().application as WebunimeApp
-        return app.libraryRepository.history.take(20).map { entry ->
+        val fromApi = app.libraryRepository.history.take(20).map { entry ->
             val local = app.watchSessions.all()
                 .firstOrNull { it.slug.equals(entry.slug, true) && !it.isFinished() }
             val durasi = local?.let { formatContinueMeta(it.positionMs, it.durationMs) }
@@ -489,13 +496,76 @@ class BrowseFragment : BrowseSupportFragment() {
                 durasi = durasi,
             )
         }
+        val seen = fromApi.mapNotNull { it.slug?.lowercase() }.toMutableSet()
+        val fromLocal = app.watchSessions.continueWatching().mapNotNull { session ->
+            val key = session.slug.lowercase()
+            if (key in seen) return@mapNotNull null
+            seen.add(key)
+            CatalogItem(
+                type = TYPE_CONTINUE,
+                judul = session.title,
+                thumbnail = session.thumbnail,
+                slug = session.slug,
+                catalog = session.collection,
+                episode = session.episode,
+                episode_source = session.episodeSlug,
+                durasi = formatContinueMeta(session.positionMs, session.durationMs),
+            )
+        }
+        return (fromApi + fromLocal).take(20)
     }
 
     private fun buildFavoriteItems(): List<CatalogItem> =
         (requireActivity().application as WebunimeApp)
             .libraryRepository
             .favorites
-            .map { it.toCatalogItem() }
+            .map { it.toCatalogItem(TYPE_FAVORITE) }
+
+    private fun promptRemoveLibraryItem(item: CatalogItem): Boolean {
+        val kind = when (item.type) {
+            TYPE_CONTINUE -> LibraryRowKind.CONTINUE
+            TYPE_FAVORITE -> LibraryRowKind.FAVORITES
+            else -> return false
+        }
+        if (!isAdded) return false
+        val title = item.displayTitle()
+        val message = if (kind == LibraryRowKind.CONTINUE) {
+            getString(R.string.library_remove_continue, title)
+        } else {
+            getString(R.string.library_remove_favorite, title)
+        }
+        val themed = android.view.ContextThemeWrapper(requireContext(), R.style.Theme_WebunimeTv_Detail)
+        android.app.AlertDialog.Builder(themed)
+            .setMessage(message)
+            .setPositiveButton(R.string.library_remove_confirm) { _, _ ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    removeLibraryItem(kind, item)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+        return true
+    }
+
+    private suspend fun removeLibraryItem(kind: LibraryRowKind, item: CatalogItem) {
+        val app = requireActivity().application as WebunimeApp
+        val col = item.detailCollection()
+        val slug = item.detailSlug()
+        if (slug.isBlank()) return
+        runCatching {
+            when (kind) {
+                LibraryRowKind.CONTINUE -> {
+                    app.libraryRepository.removeHistory(col, slug)
+                    app.watchSessions.remove(slug, item.episode)
+                }
+                LibraryRowKind.FAVORITES -> app.libraryRepository.removeFavorite(col, slug)
+            }
+        }
+        if (isAdded) {
+            refreshContinueRowOnly(allowFullReload = true)
+            refreshFavoritesRowOnly(allowFullReload = true)
+        }
+    }
 
     private fun refreshContinueRowOnly(allowFullReload: Boolean = true) {
         refreshLibraryRow(
@@ -732,6 +802,7 @@ class BrowseFragment : BrowseSupportFragment() {
     companion object {
         private const val PREFETCH_THRESHOLD = 3
         const val TYPE_CONTINUE = "continue"
+        const val TYPE_FAVORITE = "favorite"
         private const val HERO_LIMIT = 10
 
         private fun formatContinueMeta(positionMs: Long, durationMs: Long): String {

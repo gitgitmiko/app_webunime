@@ -26,7 +26,13 @@ class SearchFragment : SearchSupportFragment(), SearchSupportFragment.SearchResu
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        rowsAdapter = ArrayObjectAdapter(ListRowPresenter())
+        rowsAdapter = ArrayObjectAdapter(object : ListRowPresenter() {
+            override fun initializeRowViewHolder(vh: androidx.leanback.widget.RowPresenter.ViewHolder) {
+                super.initializeRowViewHolder(vh)
+                val listVh = vh as? ListRowPresenter.ViewHolder ?: return
+                CardPresenter.styleCatalogRow(listVh.gridView)
+            }
+        })
         setSearchResultProvider(this)
         setOnItemViewClickedListener(OnItemViewClickedListener { _, item, _, _ ->
             val catalog = item as? CatalogItem ?: return@OnItemViewClickedListener

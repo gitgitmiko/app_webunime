@@ -38,6 +38,7 @@ import com.webunime.tv.data.PlayerRouter
 import com.webunime.tv.data.WatchSession
 import com.webunime.tv.data.WatchSessionStore
 import com.webunime.tv.data.WebPlayerProxy
+import com.webunime.tv.data.api.ApiConfig
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -81,6 +82,7 @@ class PlayerActivity : AppCompatActivity() {
     private var lastKnownPosSec = 0.0
     private var lastKnownDurSec = 0.0
     private var lastWebProgressSaveAt = 0L
+    private var playbackOpenedAt = 0L
 
     @Volatile
     private var webVideoActive = false
@@ -111,7 +113,7 @@ class PlayerActivity : AppCompatActivity() {
     }
     private val progressTicker = object : Runnable {
         override fun run() {
-            persistProgress()
+            persistProgress(flush = false)
             hideHandler.postDelayed(this, PROGRESS_TICK_MS)
         }
     }
@@ -222,6 +224,7 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
         prepareAnimeSkipTimes()
+        playbackOpenedAt = SystemClock.elapsedRealtime()
         playCurrentServer()
     }
 
@@ -923,9 +926,11 @@ class PlayerActivity : AppCompatActivity() {
         hideHandler.removeCallbacks(clearSeekHintRunnable)
         webView.requestFocus()
         showTitleThenAutoHide()
+        hideHandler.removeCallbacks(progressTicker)
+        hideHandler.postDelayed(progressTicker, WatchSessionStore.MIN_SAVE_MS)
     }
 
-    private fun persistProgress() {
+    private fun persistProgress(flush: Boolean = true) {
         if (contentSlug.isBlank()) return
         val exo = exoPlayer
         val exoVisible = exo != null &&
@@ -935,15 +940,28 @@ class PlayerActivity : AppCompatActivity() {
             val pos = exo!!.currentPosition
             val dur = exo.duration.takeIf { it > 0 } ?: 0L
             if (pos >= WatchSessionStore.MIN_SAVE_MS) {
-                persistWatch(pos, dur, flush = true)
+                persistWatch(pos, dur, flush = flush)
                 return
             }
-            if (!this::webView.isInitialized || webView.visibility != View.VISIBLE) return
+            if (!this::webView.isInitialized || webView.visibility != View.VISIBLE) {
+                persistWallClock(dur, flush)
+                return
+            }
         }
         val pos = (lastKnownPosSec * 1000.0).toLong()
         val dur = (lastKnownDurSec * 1000.0).toLong()
         if (pos >= WatchSessionStore.MIN_SAVE_MS) {
-            persistWatch(pos, dur, flush = true)
+            persistWatch(pos, dur, flush = flush)
+            return
+        }
+        persistWallClock(dur, flush)
+    }
+
+    private fun persistWallClock(durationMs: Long, flush: Boolean) {
+        if (playbackOpenedAt <= 0L) return
+        val elapsed = SystemClock.elapsedRealtime() - playbackOpenedAt
+        if (elapsed >= WatchSessionStore.MIN_SAVE_MS) {
+            persistWatch(elapsed, durationMs, flush = flush)
         }
     }
 
@@ -971,9 +989,10 @@ class PlayerActivity : AppCompatActivity() {
     ) {
         if (contentSlug.isBlank()) return
         val app = application as WebunimeApp
-        val collection = contentCollection
-            ?: catalogItem?.detailCollection()
-            ?: "movies"
+        val collection = ApiConfig.normalizeItemCollection(
+            contentCollection ?: catalogItem?.detailCollection(),
+        )
+        contentCollection = collection
         val episodeSlug = contentEpisodeSlug ?: episodeList.getOrNull(episodeIndex)?.slug
         val title = titleView.text?.toString().orEmpty()
         if (finished) {
@@ -1100,6 +1119,7 @@ class PlayerActivity : AppCompatActivity() {
         }
         Toast.makeText(this, getString(toastRes, ep.displayTitle()), Toast.LENGTH_SHORT).show()
         prepareAnimeSkipTimes()
+        playbackOpenedAt = SystemClock.elapsedRealtime()
         playCurrentServer()
     }
 

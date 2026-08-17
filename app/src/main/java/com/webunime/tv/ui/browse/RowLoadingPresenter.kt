@@ -20,6 +20,7 @@ class RowLoadingPresenter : Presenter() {
         val ctx = parent.context
         val density = ctx.resources.displayMetrics.density
         fun dp(v: Int) = (v * density).toInt()
+        val (w, h) = CardPresenter.sizePx(ctx)
 
         val card = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
@@ -28,7 +29,7 @@ class RowLoadingPresenter : Presenter() {
             isFocusableInTouchMode = true
             isClickable = false
             setBackgroundColor(ContextCompat.getColor(ctx, R.color.wu_surface_soft))
-            layoutParams = ViewGroup.LayoutParams(dp(CARD_W), dp(CARD_H))
+            layoutParams = ViewGroup.LayoutParams(w, h)
             setPadding(dp(16), dp(20), dp(16), dp(20))
         }
 
@@ -53,9 +54,8 @@ class RowLoadingPresenter : Presenter() {
         card.addView(spinner)
         card.addView(label)
 
-        // Bungkus supaya ukuran kartu stabil di ListRow
         val wrap = FrameLayout(ctx).apply {
-            layoutParams = ViewGroup.LayoutParams(dp(CARD_W), dp(CARD_H))
+            layoutParams = ViewGroup.LayoutParams(w, h)
             addView(card)
             isFocusable = true
             isFocusableInTouchMode = true
@@ -70,9 +70,4 @@ class RowLoadingPresenter : Presenter() {
     }
 
     override fun onUnbindViewHolder(viewHolder: ViewHolder) = Unit
-
-    companion object {
-        private const val CARD_W = 156
-        private const val CARD_H = 234
-    }
 }

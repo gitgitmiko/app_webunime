@@ -1,6 +1,6 @@
 {
-  "versionCode": 222,
-  "versionName": "1.11.2",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.2/WEBUNIME-TV-v1.11.2.apk",
-  "changelog": "Lanjut menonton tersimpan dari WebView setelah ~5 detik; hero carousel tetap 10 slide dan tidak berubah saat geser baris katalog."
+  "versionCode": 223,
+  "versionName": "1.11.3",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.3/WEBUNIME-TV-v1.11.3.apk",
+  "changelog": "Kartu browse seukuran web (~6 judul per baris); judul sampai 3 baris; lanjut menonton dari embed; hapus dari Lanjutkan/Favorit."
 }

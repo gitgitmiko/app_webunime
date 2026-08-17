@@ -5,6 +5,16 @@ object ApiConfig {
     const val COOKIE_SID = "webunime_sid"
     const val USER_AGENT = "WEBUNIME-TV/1.11"
 
+    fun normalizeItemCollection(raw: String?): String {
+        val c = raw?.trim()?.lowercase().orEmpty()
+        return when {
+            c == "anime-latest" -> "anime"
+            c == "series-latest" -> "series"
+            c in ITEM_COLLECTIONS -> c
+            else -> "movies"
+        }
+    }
+
     val ITEM_COLLECTIONS = setOf(
         "movies",
         "series",

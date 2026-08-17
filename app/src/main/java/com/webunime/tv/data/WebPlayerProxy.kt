@@ -90,6 +90,12 @@ object WebPlayerProxy {
             if (d.type === "__wuQualities") {
               try { WebunimePlayback.onQualities(JSON.stringify(d)); } catch (ex) {}
             }
+            if (d.type === "__wuProgress") {
+              var p = Number(d.p || d.position || 0);
+              var dur = Number(d.d || d.duration || 0);
+              if (isFinite(p) && p > 0) window.__wuClock = {p:p,d:dur||0};
+              try { WebunimePlayback.onProgress(p, dur || 0); } catch (ex) {}
+            }
           });
           window.__wuRequestQualities = function(){
             try {
@@ -115,8 +121,11 @@ object WebPlayerProxy {
               if (f && f.contentWindow) f.contentWindow.postMessage({type:"__wuSeekTo",time:t}, "*");
             } catch (ex) {}
           };
+          window.__wuT0 = Date.now();
           window.__wuGetClock = function(){
-            return {p:0,d:0};
+            var elapsed = Math.max(0, (Date.now() - (window.__wuT0 || Date.now())) / 1000);
+            if (window.__wuClock && window.__wuClock.p > 0) return window.__wuClock;
+            return {p: elapsed, d: 0};
           };
           window.__wuToggle = function(){
             try {
