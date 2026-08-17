@@ -1,6 +1,6 @@
 {
-  "versionCode": 230,
-  "versionName": "1.11.10",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.10/WEBUNIME-TV-v1.11.10.apk",
-  "changelog": "Backdrop ikut kartu fokus, badge negara di hero, cover paging tidak tertukar."
+  "versionCode": 231,
+  "versionName": "1.11.11",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.11/WEBUNIME-TV-v1.11.11.apk",
+  "changelog": "OTA tidak tertahan cache GitHub; backdrop, badge negara, cover paging."
 }

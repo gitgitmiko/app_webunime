@@ -51,15 +51,18 @@ class AppUpdateChecker(private val context: Context) {
     suspend fun fetchAvailableUpdate(): AppUpdateInfo? = withContext(Dispatchers.IO) {
         val bust = System.currentTimeMillis()
         val urls = listOf(
+            VERSION_JSON_GITHUB_API,
             "$VERSION_JSON_URL?t=$bust",
             "$VERSION_JSON_JSDELIVR?t=$bust",
         )
-        var info: AppUpdateInfo? = null
+        var best: AppUpdateInfo? = null
         for (url in urls) {
-            info = fetchVersionJson(url)
-            if (info != null) break
+            val info = fetchVersionJson(url) ?: continue
+            if (best == null || info.versionCode > best.versionCode) {
+                best = info
+            }
         }
-        val resolved = info ?: return@withContext null
+        val resolved = best ?: return@withContext null
         if (resolved.versionCode <= BuildConfig.VERSION_CODE) {
             Log.i(TAG, "Up to date: installed=${BuildConfig.VERSION_CODE} remote=${resolved.versionCode}")
             return@withContext null
@@ -71,14 +74,17 @@ class AppUpdateChecker(private val context: Context) {
 
     private fun fetchVersionJson(url: String): AppUpdateInfo? {
         return runCatching {
-            val request = Request.Builder()
+            val builder = Request.Builder()
                 .url(url)
                 .header("User-Agent", "WEBUNIME-TV/${BuildConfig.VERSION_NAME}")
                 .header("Cache-Control", "no-cache, no-store, must-revalidate")
                 .header("Pragma", "no-cache")
                 .get()
-                .build()
-            val body = client.newCall(request).execute().use { response ->
+            if (url.contains("api.github.com")) {
+                builder.header("Accept", "application/vnd.github.raw+json")
+                builder.header("X-GitHub-Api-Version", "2022-11-28")
+            }
+            val body = client.newCall(builder.build()).execute().use { response ->
                 if (!response.isSuccessful) {
                     Log.w(TAG, "version.json HTTP ${response.code} for $url")
                     return null
@@ -93,16 +99,41 @@ class AppUpdateChecker(private val context: Context) {
     }
 
     private fun parseUpdateInfo(body: String): AppUpdateInfo? {
-        adapter.fromJson(body)?.let { return it }
-        // Fallback JSONObject bila Moshi gagal (BOM / whitespace aneh)
+        val trimmed = body.trim().removePrefix("\uFEFF")
+        decodeGithubContents(trimmed)?.let { decoded ->
+            adapter.fromJson(decoded)?.let { return it }
+            runCatching {
+                val o = JSONObject(decoded)
+                return AppUpdateInfo(
+                    versionCode = o.getInt("versionCode"),
+                    versionName = o.getString("versionName"),
+                    apkUrl = o.getString("apkUrl"),
+                    changelog = o.optString("changelog").takeIf { it.isNotBlank() },
+                )
+            }
+        }
+        adapter.fromJson(trimmed)?.let { return it }
         return runCatching {
-            val o = JSONObject(body.trim().removePrefix("\uFEFF"))
+            val o = JSONObject(trimmed)
             AppUpdateInfo(
                 versionCode = o.getInt("versionCode"),
                 versionName = o.getString("versionName"),
                 apkUrl = o.getString("apkUrl"),
                 changelog = o.optString("changelog").takeIf { it.isNotBlank() },
             )
+        }.getOrNull()
+    }
+
+    /** GitHub Contents API kadang mengirim JSON {content, encoding=base64}. */
+    private fun decodeGithubContents(body: String): String? {
+        return runCatching {
+            val o = JSONObject(body)
+            if (!o.has("content") || o.optString("encoding") != "base64") return null
+            val encoded = o.getString("content").replace("\n", "").replace("\r", "")
+            android.util.Base64.decode(encoded, android.util.Base64.DEFAULT)
+                .toString(Charsets.UTF_8)
+                .trim()
+                .takeIf { it.startsWith("{") && it.contains("versionCode") }
         }.getOrNull()
     }
 
@@ -184,6 +215,10 @@ class AppUpdateChecker(private val context: Context) {
 
         const val VERSION_JSON_URL =
             "https://raw.githubusercontent.com/gitgitmiko/app_webunime/main/update/version.json"
+
+        /** GitHub API — tidak kena cache Fastly raw.githubusercontent. */
+        const val VERSION_JSON_GITHUB_API =
+            "https://api.github.com/repos/gitgitmiko/app_webunime/contents/update/version.json?ref=main"
 
         /** CDN mirror — sering lebih cepat / kurang cache ketat daripada raw.githubusercontent. */
         const val VERSION_JSON_JSDELIVR =
