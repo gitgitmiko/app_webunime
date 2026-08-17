@@ -1,6 +1,6 @@
 {
-  "versionCode": 220,
-  "versionName": "1.11.0",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.0/WEBUNIME-TV-v1.11.0.apk",
-  "changelog": "Katalog, favorit, dan lanjut menonton dari API gitgitmiko.my.id. Wajib login akun WEBUNIME."
+  "versionCode": 221,
+  "versionName": "1.11.1",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.1/WEBUNIME-TV-v1.11.1.apk",
+  "changelog": "Hero 10 judul; cover tidak blank saat scroll balik; favorit muncul di beranda; lanjut menonton dari API; baris katalog dimuat di latar."
 }

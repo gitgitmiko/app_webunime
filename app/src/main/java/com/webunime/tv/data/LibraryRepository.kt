@@ -44,7 +44,8 @@ class LibraryRepository(
         if (col.isBlank() || s.isBlank()) return@withContext false
         val cached = favorites.any { it.collection == col && it.slug.equals(s, true) }
         if (cached) return@withContext true
-        val body = JSONObject(api.get("/api/v1/me/favorites/check?collection=$col&slug=$s"))
+        val qs = "collection=${enc(col)}&slug=${enc(s)}"
+        val body = JSONObject(api.get("/api/v1/me/favorites/check?$qs"))
         body.optBoolean("favorite", false)
     }
 
@@ -54,12 +55,7 @@ class LibraryRepository(
         title: String?,
         thumbnail: String?,
     ) = withContext(Dispatchers.IO) {
-        val payload = JSONObject()
-            .put("collection", collection)
-            .put("slug", slug.lowercase())
-            .put("title", title)
-            .put("thumbnail", thumbnail)
-        api.post("/api/v1/me/favorites", payload)
+        api.post("/api/v1/me/favorites", libraryBody(collection, slug, title, thumbnail))
         val entry = LibraryEntry(collection, slug.lowercase(), title, thumbnail)
         favorites = listOf(entry) + favorites.filterNot {
             it.collection == collection && it.slug.equals(slug, true)
@@ -69,7 +65,7 @@ class LibraryRepository(
     suspend fun removeFavorite(collection: String, slug: String) = withContext(Dispatchers.IO) {
         val col = collection.trim()
         val s = slug.trim().lowercase()
-        api.delete("/api/v1/me/favorites/$col/$s")
+        api.delete("/api/v1/me/favorites/${enc(col)}/${enc(s)}")
         favorites = favorites.filterNot { it.collection == col && it.slug.equals(s, true) }
     }
 
@@ -81,14 +77,10 @@ class LibraryRepository(
         episodeSlug: String?,
         progressSeconds: Long,
     ) = withContext(Dispatchers.IO) {
-        val payload = JSONObject()
-            .put("collection", collection)
-            .put("slug", slug.lowercase())
-            .put("title", title)
-            .put("thumbnail", thumbnail)
-            .put("episodeSlug", episodeSlug)
-            .put("progressSeconds", progressSeconds.coerceAtLeast(0L))
-        api.post("/api/v1/me/history", payload)
+        api.post(
+            "/api/v1/me/history",
+            libraryBody(collection, slug, title, thumbnail, episodeSlug, progressSeconds),
+        )
         val entry = LibraryEntry(
             collection = collection,
             slug = slug.lowercase(),
@@ -105,7 +97,7 @@ class LibraryRepository(
     suspend fun removeHistory(collection: String, slug: String) = withContext(Dispatchers.IO) {
         val col = collection.trim()
         val s = slug.trim().lowercase()
-        api.delete("/api/v1/me/history/$col/$s")
+        api.delete("/api/v1/me/history/${enc(col)}/${enc(s)}")
         history = history.filterNot { it.collection == col && it.slug.equals(s, true) }
     }
 
@@ -137,6 +129,27 @@ class LibraryRepository(
             }
         }
     }
+
+    private fun libraryBody(
+        collection: String,
+        slug: String,
+        title: String?,
+        thumbnail: String?,
+        episodeSlug: String? = null,
+        progressSeconds: Long? = null,
+    ): JSONObject {
+        val json = JSONObject()
+            .put("collection", collection)
+            .put("slug", slug.lowercase())
+        if (!title.isNullOrBlank()) json.put("title", title)
+        if (!thumbnail.isNullOrBlank()) json.put("thumbnail", thumbnail)
+        if (!episodeSlug.isNullOrBlank()) json.put("episodeSlug", episodeSlug)
+        if (progressSeconds != null) json.put("progressSeconds", progressSeconds.coerceAtLeast(0L))
+        return json
+    }
+
+    private fun enc(value: String): String =
+        java.net.URLEncoder.encode(value, "UTF-8")
 
     private fun parseItems(root: JSONObject): List<LibraryEntry> {
         val arr = root.optJSONArray("items") ?: return emptyList()

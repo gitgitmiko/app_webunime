@@ -106,7 +106,7 @@ class HeroCarouselController(
     }
 
     fun setFeatured(items: List<CatalogItem>) {
-        featured = items
+        featured = items.take(10)
         index = 0
         featuredMode = true
         if (featured.isEmpty()) {

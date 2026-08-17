@@ -58,6 +58,7 @@ class BrowseFragment : BrowseSupportFragment() {
     /** Spesifikasi baris yang belum ditampilkan (lazy vertikal). */
     private var deferredRowSpecs: List<DeferredRowSpec> = emptyList()
     private var deferredRowIndex: Int = 0
+    private var nextRowId: Long = 1L
     private var appendRowsJob: Job? = null
     private var keepItemForDeferred: Int = 0
 
@@ -170,15 +171,14 @@ class BrowseFragment : BrowseSupportFragment() {
             val listRow = row as? ListRow ?: return@OnItemViewSelectedListener
             if (listRow is HeroListRow) {
                 lastItemIndex = 0
-                // Prefetch baris berikutnya saat masih di hero/continue
-                maybeAppendDeferredRows()
+                drainDeferredRows()
                 return@OnItemViewSelectedListener
             }
             val selectedIndex =
                 (rowViewHolder as? ListRowPresenter.ViewHolder)?.selectedPosition ?: -1
             if (selectedIndex >= 0) lastItemIndex = selectedIndex
             maybeLoadMore(listRow.headerItem.id, selectedIndex)
-            maybeAppendDeferredRows()
+            drainDeferredRows()
         }
     }
 
@@ -326,8 +326,9 @@ class BrowseFragment : BrowseSupportFragment() {
         favoritesRowIndex = -1
         heroRowIndex = -1
         deferredRowIndex = 0
+        nextRowId = 1L
 
-        val featured = repo.heroItems
+        val featured = repo.heroItems.take(HERO_LIMIT)
         hero?.setFeatured(featured)
         if (featured.isNotEmpty()) {
             heroRowIndex = rowsAdapter.size()
@@ -364,7 +365,7 @@ class BrowseFragment : BrowseSupportFragment() {
             view?.let { clearOpaqueBackgrounds(it) }
             restoreRetries = 0
             view?.post(restoreSelectionRunnable)
-            view?.post { maybeAppendDeferredRows(force = true) }
+            view?.post { drainDeferredRows() }
         }
     }
 
@@ -377,7 +378,7 @@ class BrowseFragment : BrowseSupportFragment() {
         if (items.isEmpty()) return
         val list = ArrayObjectAdapter(cardPresenter)
         items.forEach { list.add(it) }
-        val rowId = rowsAdapter.size().toLong()
+        val rowId = allocRowId()
         rowPaging[rowId] = RowPagingState(
             allItems = items.toMutableList(),
             adapter = list,
@@ -387,13 +388,14 @@ class BrowseFragment : BrowseSupportFragment() {
         if (isContinue) continueRowIndex = rowsAdapter.size()
         if (isFavorites) favoritesRowIndex = rowsAdapter.size()
         rowsAdapter.add(ListRow(HeaderItem(rowId, title), list))
+        items.forEach { CardPresenter.preload(requireContext(), it.thumbnail) }
     }
 
     private fun addApiCardRow(spec: DeferredRowSpec, page: CatalogPage) {
         if (page.items.isEmpty()) return
         val list = ArrayObjectAdapter(cardPresenter)
         page.items.forEach { list.add(it) }
-        val rowId = rowsAdapter.size().toLong()
+        val rowId = allocRowId()
         rowPaging[rowId] = RowPagingState(
             allItems = page.items.toMutableList(),
             adapter = list,
@@ -405,52 +407,48 @@ class BrowseFragment : BrowseSupportFragment() {
             total = page.total,
         )
         rowsAdapter.add(ListRow(HeaderItem(rowId, spec.title), list))
+        page.items.forEach { CardPresenter.preload(requireContext(), it.thumbnail) }
     }
 
+    private fun allocRowId(): Long = nextRowId++
+
     /**
-     * Append baris berikutnya jika fokus mendekati akhir, atau [force] (prefetch).
+     * Muat sisa baris katalog di latar belakang (2 per batch),
+     * tidak menunggu user sampai ke bawah.
      */
-    private fun maybeAppendDeferredRows(force: Boolean = false) {
+    private fun drainDeferredRows() {
         if (!isAdded || !this::rowsAdapter.isInitialized) return
-        if (suppressDeferredAppend && !force) return
         if (deferredRowIndex >= deferredRowSpecs.size) return
         if (appendRowsJob?.isActive == true) return
 
-        val nearEnd = selectedPosition >= rowsAdapter.size() - ROW_PREFETCH
-        if (!force && !nearEnd) return
-
         val repo = (requireActivity().application as WebunimeApp).catalogRepository
-        val prefetchOnly = force
         appendRowsJob = viewLifecycleOwner.lifecycleScope.launch {
-            var appended = 0
-            val maxBatch = if (prefetchOnly) 1 else 2
-            while (
-                deferredRowIndex < deferredRowSpecs.size &&
-                appended < maxBatch
-            ) {
-                if (!prefetchOnly && selectedPosition < rowsAdapter.size() - ROW_PREFETCH && appended > 0) {
-                    break
+            while (isAdded && deferredRowIndex < deferredRowSpecs.size) {
+                while (suppressDeferredAppend) {
+                    kotlinx.coroutines.delay(120)
+                    if (!isAdded) return@launch
                 }
-                val spec = deferredRowSpecs[deferredRowIndex]
-                deferredRowIndex++
-
-                val loadingRowPos = rowsAdapter.size()
-                addLoadingRow(spec.title)
-
-                val page = runCatching {
-                    repo.listCollectionPage(
-                        collection = spec.collection,
-                        page = 1,
-                        genre = spec.genre,
-                        sort = spec.sort,
-                    )
-                }.getOrNull()
-                if (!isAdded) return@launch
-                removeLoadingRowAt(loadingRowPos)
-                if (page == null || page.items.isEmpty()) continue
-                addApiCardRow(spec, page)
-                appended++
-                if (prefetchOnly) break
+                val batch = minOf(2, deferredRowSpecs.size - deferredRowIndex)
+                repeat(batch) {
+                    if (!isAdded || deferredRowIndex >= deferredRowSpecs.size) return@repeat
+                    val spec = deferredRowSpecs[deferredRowIndex]
+                    deferredRowIndex++
+                    val loadingRowPos = rowsAdapter.size()
+                    addLoadingRow(spec.title)
+                    val page = runCatching {
+                        repo.listCollectionPage(
+                            collection = spec.collection,
+                            page = 1,
+                            genre = spec.genre,
+                            sort = spec.sort,
+                        )
+                    }.getOrNull()
+                    if (!isAdded) return@launch
+                    removeLoadingRowAt(loadingRowPos)
+                    if (page != null && page.items.isNotEmpty()) {
+                        addApiCardRow(spec, page)
+                    }
+                }
             }
         }
     }
@@ -475,35 +473,18 @@ class BrowseFragment : BrowseSupportFragment() {
 
     private fun buildContinueItems(): List<CatalogItem> {
         val app = requireActivity().application as WebunimeApp
-        val local = app.watchSessions.continueWatching()
-        val fromLocal = local.map { session ->
-            CatalogItem(
-                type = TYPE_CONTINUE,
-                judul = session.title,
-                thumbnail = session.thumbnail,
-                slug = session.slug,
-                catalog = session.collection,
-                episode = session.episode,
-                episode_source = session.episodeSlug,
-                durasi = formatContinueMeta(session.positionMs, session.durationMs),
-            )
-        }
-        val seen = fromLocal.mapNotNull { it.slug }.toMutableSet()
-        val fromApi = app.libraryRepository.history.mapNotNull { entry ->
-            if (entry.slug in seen) return@mapNotNull null
-            val localSession = app.watchSessions.get(entry.slug, null)
-                ?: app.watchSessions.all().firstOrNull { it.slug == entry.slug }
-            if (localSession?.isFinished() == true) return@mapNotNull null
-            seen.add(entry.slug)
-            val durasi = localSession?.let { formatContinueMeta(it.positionMs, it.durationMs) }
+        return app.libraryRepository.history.take(20).map { entry ->
+            val local = app.watchSessions.all()
+                .firstOrNull { it.slug.equals(entry.slug, true) && !it.isFinished() }
+            val durasi = local?.let { formatContinueMeta(it.positionMs, it.durationMs) }
                 ?: entry.toCatalogItem().durasi
             entry.toCatalogItem(TYPE_CONTINUE).copy(
-                episode = localSession?.episode,
-                episode_source = entry.episodeSlug ?: localSession?.episodeSlug,
+                episode = local?.episode,
+                episode_source = entry.episodeSlug ?: local?.episodeSlug,
+                thumbnail = entry.thumbnail ?: local?.thumbnail,
                 durasi = durasi,
             )
         }
-        return (fromLocal + fromApi).take(20)
     }
 
     private fun buildFavoriteItems(): List<CatalogItem> =
@@ -513,31 +494,42 @@ class BrowseFragment : BrowseSupportFragment() {
             .map { it.toCatalogItem() }
 
     private fun refreshContinueRowOnly(allowFullReload: Boolean = true) {
-        refreshLocalRow(
-            index = continueRowIndex,
+        refreshLibraryRow(
+            kind = LibraryRowKind.CONTINUE,
             items = buildContinueItems(),
-            allowFullReload = allowFullReload,
+            allowRemoveEmpty = allowFullReload,
         )
     }
 
     private fun refreshFavoritesRowOnly(allowFullReload: Boolean = true) {
-        refreshLocalRow(
-            index = favoritesRowIndex,
+        refreshLibraryRow(
+            kind = LibraryRowKind.FAVORITES,
             items = buildFavoriteItems(),
-            allowFullReload = allowFullReload,
+            allowRemoveEmpty = allowFullReload,
         )
     }
 
-    private fun refreshLocalRow(
-        index: Int,
+    private fun refreshLibraryRow(
+        kind: LibraryRowKind,
         items: List<CatalogItem>,
-        allowFullReload: Boolean,
+        allowRemoveEmpty: Boolean,
     ) {
         if (!this::rowsAdapter.isInitialized || !isAdded) return
+        var index = when (kind) {
+            LibraryRowKind.CONTINUE -> continueRowIndex
+            LibraryRowKind.FAVORITES -> favoritesRowIndex
+        }
         if (index in 0 until rowsAdapter.size()) {
             val listRow = rowsAdapter.get(index) as? ListRow ?: return
             if (listRow is HeroListRow) return
             val adapter = listRow.adapter as? ArrayObjectAdapter ?: return
+            if (items.isEmpty()) {
+                if (allowRemoveEmpty) {
+                    rowsAdapter.removeItems(index, 1)
+                    onLibraryRowRemoved(kind, index)
+                }
+                return
+            }
             if (continueItemsEqual(adapter, items)) return
             adapter.clear()
             items.forEach { adapter.add(it) }
@@ -548,14 +540,60 @@ class BrowseFragment : BrowseSupportFragment() {
                 loadedCount = items.size,
                 collection = "",
             )
-            if (items.isEmpty() && allowFullReload) {
-                reloadRows()
-            }
+            items.forEach { CardPresenter.preload(requireContext(), it.thumbnail) }
             return
         }
-        if (items.isNotEmpty() && allowFullReload) {
-            reloadRows()
+        if (items.isNotEmpty()) {
+            insertLibraryRow(kind, items)
         }
+    }
+
+    private fun insertLibraryRow(kind: LibraryRowKind, items: List<CatalogItem>) {
+        val at = insertIndexFor(kind).coerceIn(0, rowsAdapter.size())
+        val title = getString(
+            if (kind == LibraryRowKind.CONTINUE) R.string.row_continue else R.string.row_favorites,
+        )
+        val list = ArrayObjectAdapter(cardPresenter)
+        items.forEach { list.add(it) }
+        val rowId = allocRowId()
+        rowPaging[rowId] = RowPagingState(
+            allItems = items.toMutableList(),
+            adapter = list,
+            loadedCount = items.size,
+            collection = "",
+        )
+        rowsAdapter.add(at, ListRow(HeaderItem(rowId, title), list))
+        shiftLibraryIndicesOnInsert(at)
+        when (kind) {
+            LibraryRowKind.CONTINUE -> continueRowIndex = at
+            LibraryRowKind.FAVORITES -> favoritesRowIndex = at
+        }
+        items.forEach { CardPresenter.preload(requireContext(), it.thumbnail) }
+    }
+
+    private fun insertIndexFor(kind: LibraryRowKind): Int {
+        val afterHero = if (heroRowIndex >= 0) heroRowIndex + 1 else 0
+        return when (kind) {
+            LibraryRowKind.CONTINUE -> afterHero
+            LibraryRowKind.FAVORITES ->
+                if (continueRowIndex >= 0) continueRowIndex + 1 else afterHero
+        }
+    }
+
+    private fun shiftLibraryIndicesOnInsert(at: Int) {
+        if (heroRowIndex >= at) heroRowIndex += 1
+        if (continueRowIndex >= at) continueRowIndex += 1
+        if (favoritesRowIndex >= at) favoritesRowIndex += 1
+    }
+
+    private fun onLibraryRowRemoved(kind: LibraryRowKind, removedAt: Int) {
+        when (kind) {
+            LibraryRowKind.CONTINUE -> continueRowIndex = -1
+            LibraryRowKind.FAVORITES -> favoritesRowIndex = -1
+        }
+        if (heroRowIndex > removedAt) heroRowIndex -= 1
+        if (continueRowIndex > removedAt) continueRowIndex -= 1
+        if (favoritesRowIndex > removedAt) favoritesRowIndex -= 1
     }
 
     private fun continueItemsEqual(adapter: ArrayObjectAdapter, items: List<CatalogItem>): Boolean {
@@ -685,11 +723,12 @@ class BrowseFragment : BrowseSupportFragment() {
         val sort: String = "",
     )
 
+    private enum class LibraryRowKind { CONTINUE, FAVORITES }
+
     companion object {
         private const val PREFETCH_THRESHOLD = 3
-        /** Prefetch baris vertikal saat fokus mendekati N baris dari akhir. */
-        private const val ROW_PREFETCH = 2
         const val TYPE_CONTINUE = "continue"
+        private const val HERO_LIMIT = 10
 
         private fun formatContinueMeta(positionMs: Long, durationMs: Long): String {
             fun mmss(ms: Long): String {

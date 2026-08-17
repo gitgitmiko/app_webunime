@@ -75,7 +75,7 @@ class CardPresenter : Presenter() {
         }
 
         applyCardSize(card, card.hasFocus())
-        bindPoster(card, movie, force = true)
+        bindPoster(card, movie, force = false)
 
         if (card.hasFocus()) {
             titleView?.let { scheduleMarquee(card, it) }
@@ -92,13 +92,8 @@ class CardPresenter : Presenter() {
             tv.ellipsize = TextUtils.TruncateAt.END
         }
         card.setTag(R.id.tag_catalog_item, null)
-        card.setTag(R.id.tag_thumb_url, null)
-        card.setTag(R.id.tag_card_size, null)
-        card.setTag(R.id.tag_quality, null)
-        card.mainImageView.setTag(R.id.tag_thumb_url, null)
-        card.badgeImage = null
-        Glide.with(card).clear(card)
-        card.mainImage = null
+        // Jangan Glide.clear + mainImage=null: recycle kartu akan load ulang dari jaringan
+        // dan cover terlihat blank beberapa detik saat scroll balik.
     }
 
     companion object {
@@ -206,16 +201,30 @@ class CardPresenter : Presenter() {
             card.setTag(R.id.tag_quality, badge)
             card.mainImageView.setTag(R.id.tag_thumb_url, nextUrl)
 
-            val placeholder = ColorDrawable(ContextCompat.getColor(card.context, R.color.wu_bg))
-            runCatching { Glide.with(card.context).clear(card.mainImageView) }
-            card.mainImage = placeholder
-            if (nextUrl == null) return
+            val keep = card.mainImage
+            val placeholder = keep ?: ColorDrawable(ContextCompat.getColor(card.context, R.color.wu_surface))
+            if (nextUrl.isNullOrBlank()) {
+                card.mainImage = placeholder
+                return
+            }
 
             val options = RequestOptions()
                 .dontAnimate()
-                .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                .skipMemoryCache(false)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .transform(CenterCrop(), RoundedCorners(12))
             loadIntoCard(card, urls, 0, options, placeholder, width, height, badge)
+        }
+
+        fun preload(context: Context, url: String?) {
+            val src = url?.takeIf { it.isNotBlank() } ?: return
+            if (!canUseGlide(context)) return
+            runCatching {
+                Glide.with(context)
+                    .load(src)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .preload(CARD_W, CARD_H)
+            }
         }
 
         private fun loadIntoCard(
@@ -238,6 +247,7 @@ class CardPresenter : Presenter() {
                 .asBitmap()
                 .load(url)
                 .apply(options)
+                .placeholder(placeholder)
                 .into(object : CustomTarget<Bitmap>(width, height) {
                     override fun onResourceReady(
                         resource: Bitmap,

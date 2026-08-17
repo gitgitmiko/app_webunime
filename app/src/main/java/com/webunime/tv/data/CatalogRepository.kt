@@ -72,7 +72,7 @@ class CatalogRepository(
     private suspend fun loadHomeUnlocked(): CatalogSnapshot = withContext(Dispatchers.IO) {
         api.get("/api/v1")
         heroItems = try {
-            fetchHero()
+            fetchHero(HERO_LIMIT).take(HERO_LIMIT)
         } catch (err: UnauthorizedException) {
             throw err
         } catch (_: Exception) {
@@ -130,9 +130,11 @@ class CatalogRepository(
         )
     }
 
-    suspend fun fetchHero(limit: Int = 12): List<CatalogItem> = withContext(Dispatchers.IO) {
+    suspend fun fetchHero(limit: Int = HERO_LIMIT): List<CatalogItem> = withContext(Dispatchers.IO) {
         val raw = api.get("/api/v1/hero?limit=$limit")
-        parseItemArray(JSONObject(raw).optJSONArray("items")).map { remember(it, it.detailCollection()) }
+        parseItemArray(JSONObject(raw).optJSONArray("items"))
+            .map { remember(it, it.detailCollection()) }
+            .take(limit.coerceAtLeast(1))
     }
 
     suspend fun search(query: String, limit: Int = 40): List<CatalogItem> = withContext(Dispatchers.IO) {
@@ -340,5 +342,6 @@ class CatalogRepository(
         private const val PREFS_NAME = "catalog_sync"
         private const val KEY_RELOAD_BROWSE = "reload_browse_after_sync"
         const val PAGE_LIMIT = 12
+        const val HERO_LIMIT = 10
     }
 }
