@@ -6,11 +6,7 @@ object PlayerRouter {
     private val filmPrefer = listOf("hydrax", "turbovip", "cast")
 
     fun preferredPlayers(item: CatalogItem, episode: Episode? = null): List<PlayerServer> {
-        val raw = when {
-            episode?.players?.isNotEmpty() == true -> episode.players
-            item.players?.isNotEmpty() == true -> item.players
-            else -> emptyList()
-        }.orEmpty().filter { !it.url.isNullOrBlank() }
+        val raw = resolvePlayers(item, episode).filter { !it.url.isNullOrBlank() }
 
         if (raw.isEmpty()) return emptyList()
 
@@ -35,6 +31,17 @@ object PlayerRouter {
         }
         val p2p = raw.filter { isP2p(it) }
         return (ranked + rest + p2p).distinctBy { it.url }
+    }
+
+    /** Sama seperti web: episode aktif → players judul → episode lain yang punya server. */
+    private fun resolvePlayers(item: CatalogItem, episode: Episode?): List<PlayerServer> {
+        episode?.players?.takeIf { it.isNotEmpty() }?.let { return it }
+        item.players?.takeIf { it.isNotEmpty() }?.let { return it }
+        return item.episodes.orEmpty()
+            .asReversed()
+            .firstOrNull { !it.players.isNullOrEmpty() }
+            ?.players
+            .orEmpty()
     }
 
     private fun matchesFilmKey(p: PlayerServer, key: String): Boolean {

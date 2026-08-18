@@ -2,7 +2,6 @@ package com.webunime.tv.data
 
 import android.content.Context
 import com.squareup.moshi.Moshi
-import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.webunime.tv.data.api.ApiClient
 import com.webunime.tv.data.api.ApiConfig
@@ -23,9 +22,6 @@ class CatalogRepository(
     private val moshi: Moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
         .build()
-
-    private val listType = Types.newParameterizedType(List::class.java, CatalogItem::class.java)
-    private val listAdapter = moshi.adapter<List<CatalogItem>>(listType)
     private val itemAdapter = moshi.adapter(CatalogItem::class.java)
 
     private val prefs by lazy {
@@ -268,14 +264,12 @@ class CatalogRepository(
         return normalized
     }
 
-    private fun parseItemArray(arr: JSONArray?): List<CatalogItem> {
-        if (arr == null) return emptyList()
-        return runCatching { listAdapter.fromJson(arr.toString()).orEmpty() }
-            .getOrDefault(emptyList())
-    }
+    private fun parseItemArray(arr: JSONArray?): List<CatalogItem> =
+        CatalogJson.parseItemList(arr)
 
     private fun parseItem(raw: String): CatalogItem? =
-        runCatching { itemAdapter.fromJson(raw) }.getOrNull()
+        CatalogJson.parseItem(raw)
+            ?: runCatching { itemAdapter.fromJson(raw) }.getOrNull()
 
     private fun enc(value: String): String =
         java.net.URLEncoder.encode(value, "UTF-8")
