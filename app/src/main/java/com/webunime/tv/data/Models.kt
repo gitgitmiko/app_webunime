@@ -114,8 +114,11 @@ data class CatalogItem(
         return !episodes.isNullOrEmpty() && (totalEpisodes() ?: 0) > 1
     }
 
-    /** Label badge pojok kanan atas: NEW > total EPS > kualitas film. */
+    /** Label badge pojok kanan atas: E12 lanjut > NEW > total EPS > kualitas film. */
     fun posterBadgeLabel(): String? {
+        if (type == "continue") {
+            episode?.takeIf { it > 0 }?.let { return "E$it" }
+        }
         if (is_new == true) return "NEW"
         if (showsEpisodeCountBadge()) {
             val n = totalEpisodes() ?: return null

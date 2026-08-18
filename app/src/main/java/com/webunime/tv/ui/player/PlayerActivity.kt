@@ -1030,6 +1030,7 @@ class PlayerActivity : AppCompatActivity() {
             title = title,
             thumbnail = contentThumb,
             episodeSlug = episodeSlug,
+            episodeNum = contentEpisode,
             progressSeconds = (if (finished) (durationMs / 1000L).coerceAtLeast(1L) else positionMs / 1000L),
             flushNow = flush || finished,
         )

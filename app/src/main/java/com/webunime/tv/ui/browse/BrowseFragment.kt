@@ -507,7 +507,7 @@ class BrowseFragment : BrowseSupportFragment() {
             val durasi = local?.let { formatContinueMeta(it.positionMs, it.durationMs) }
                 ?: entry.toCatalogItem().durasi
             entry.toCatalogItem(TYPE_CONTINUE).copy(
-                episode = local?.episode,
+                episode = local?.episode ?: entry.resolvedEpisodeNum(),
                 episode_source = entry.episodeSlug ?: local?.episodeSlug,
                 thumbnail = entry.thumbnail ?: local?.thumbnail,
                 durasi = durasi,

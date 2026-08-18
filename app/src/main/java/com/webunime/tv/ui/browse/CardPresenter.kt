@@ -64,6 +64,12 @@ class CardPresenter(
         card.titleText = movie.displayTitle()
         val ep = movie.episode
         card.contentText = when {
+            movie.type == "continue" -> {
+                val parts = mutableListOf<String>()
+                if (ep != null && ep > 0) parts += "Episode $ep"
+                movie.durasi?.takeIf { it.isNotBlank() }?.let { parts += it }
+                parts.joinToString(" · ")
+            }
             ep != null && ep > 0 && (movie.anime_slug != null || movie.series_slug != null) -> {
                 val season = movie.season?.takeIf { it > 0 }
                 if (movie.series_slug != null && season != null && season > 1) {
@@ -76,7 +82,6 @@ class CardPresenter(
                 val meta = movie.displayMeta()
                 if (meta.isNotBlank()) meta
                 else when (movie.type) {
-                    "continue" -> movie.durasi.orEmpty()
                     "favorite" -> ""
                     else -> movie.type?.replace('-', ' ')?.uppercase().orEmpty()
                 }
@@ -228,7 +233,7 @@ class CardPresenter(
         private fun posterBadgeColor(label: String): Int = when {
             label == "NEW" ->
                 Color.argb(0xE6, 0x00, 0x8A, 0x3E)
-            label.endsWith("EPS") ->
+            label.endsWith("EPS") || Regex("^E\\d+$").matches(label) ->
                 Color.argb(0xE6, 0x0D, 0x47, 0x6B)
             label.contains("CAM") || label.contains("TS") || label.contains("TC") ->
                 Color.argb(0xE6, 0xB2, 0x5B, 0x00)

@@ -21,6 +21,7 @@ import com.webunime.tv.data.Episode
 import com.webunime.tv.data.PlayerRouter
 import com.webunime.tv.data.PlayerServer
 import com.webunime.tv.data.WatchSessionStore
+import com.webunime.tv.data.api.WatchedEpisode
 import com.webunime.tv.ui.PosterGlide
 import com.webunime.tv.ui.player.PlayerActivity
 import kotlinx.coroutines.launch
@@ -44,6 +45,7 @@ class DetailActivity : AppCompatActivity() {
     private lateinit var playButton: MaterialButton
     private lateinit var favoriteButton: MaterialButton
     private var isFavorite: Boolean = false
+    private var watchedEpisodes: List<WatchedEpisode> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,6 +71,7 @@ class DetailActivity : AppCompatActivity() {
             item = found
             bindDetail(preferEpisode, preferSeason)
             refreshFavoriteState()
+            refreshWatchedEpisodes()
         }
     }
 
@@ -141,6 +144,7 @@ class DetailActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         if (::item.isInitialized && ::episodeContainer.isInitialized) {
+            refreshWatchedEpisodes()
             bindEpisodes()
             updatePlayButtonLabel()
         }
@@ -251,15 +255,35 @@ class DetailActivity : AppCompatActivity() {
         }
     }
 
+    private fun refreshWatchedEpisodes() {
+        if (!::item.isInitialized) return
+        val col = item.detailCollection()
+        val slug = item.detailSlug()
+        val app = application as WebunimeApp
+        watchedEpisodes = app.libraryRepository.cachedWatchedEpisodes(col, slug)
+        lifecycleScope.launch {
+            watchedEpisodes = runCatching {
+                app.libraryRepository.fetchWatchedEpisodes(col, slug)
+            }.getOrDefault(watchedEpisodes)
+            if (!isFinishing && ::episodeContainer.isInitialized) bindEpisodes()
+        }
+    }
+
     private fun continueEpisode(episodes: List<Episode>): Episode? {
         val slug = contentSlug()
         if (slug.isBlank()) return null
-        val sessions = (application as WebunimeApp).watchSessions
-        val session = sessions.continueWatching(limit = 200)
-            .firstOrNull { it.slug == slug }
+        val app = application as WebunimeApp
+        val session = app.watchSessions.continueWatching(limit = 200)
+            .firstOrNull { it.slug.equals(slug, true) }
+        val fromSession = session?.episode?.let { n ->
+            episodes.firstOrNull { it.episode == n }
+        }
+        if (fromSession != null) return fromSession
+        val hist = app.libraryRepository.history.firstOrNull { it.slug.equals(slug, true) }
             ?: return null
-        val epNum = session.episode ?: return null
-        return episodes.firstOrNull { it.episode == epNum }
+        val n = hist.resolvedEpisodeNum()
+        return n?.let { num -> episodes.firstOrNull { it.episode == num } }
+            ?: hist.episodeSlug?.let { epSlug -> episodes.firstOrNull { it.slug == epSlug } }
     }
 
     private fun bindEpisodes() {
@@ -393,7 +417,7 @@ class DetailActivity : AppCompatActivity() {
         slug: String,
         sessions: WatchSessionStore,
     ): MaterialButton {
-        val watched = slug.isNotBlank() && sessions.isWatched(slug, ep.episode)
+        val watched = isEpisodeWatched(ep, slug, sessions)
         return MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
             text = if (watched) {
                 getString(R.string.episode_watched, ep.displayTitle())
@@ -416,6 +440,21 @@ class DetailActivity : AppCompatActivity() {
                 setTextColor(getColor(R.color.wu_text))
             }
         }
+    }
+
+    private fun isEpisodeWatched(
+        ep: Episode,
+        slug: String,
+        sessions: WatchSessionStore,
+    ): Boolean {
+        if (slug.isNotBlank() && sessions.isWatched(slug, ep.episode)) return true
+        return watchedEpisodes.any { it.matches(ep.slug, ep.episode) } ||
+            (application as WebunimeApp).libraryRepository.isEpisodeWatched(
+                item.detailCollection(),
+                item.detailSlug(),
+                ep.slug,
+                ep.episode,
+            )
     }
 
     private fun makeChromeButton(
