@@ -90,6 +90,9 @@ class PlayerActivity : AppCompatActivity() {
 
     private var isAbyssWrapper = false
 
+    /** Setelah load server baru (failover), buang history WebView agar tidak menumpuk. */
+    private var clearWebHistoryOnFinish = false
+
     /** Abaikan OK/seek sebentar setelah buka player (sisa key dari tombol Play di Detail). */
     private var ignoreRemoteUntil = 0L
 
@@ -740,6 +743,7 @@ class PlayerActivity : AppCompatActivity() {
         pendingSeekSec = 0
         hideHandler.removeCallbacks(applySeekRunnable)
         hideHandler.removeCallbacks(clearSeekHintRunnable)
+        clearWebHistoryOnFinish = true
 
         webView.removeJavascriptInterface("WebunimePlayback")
         webView.addJavascriptInterface(PlaybackBridge(), "WebunimePlayback")
@@ -813,6 +817,10 @@ class PlayerActivity : AppCompatActivity() {
             }
 
             override fun onPageFinished(view: WebView?, pageUrl: String?) {
+                if (clearWebHistoryOnFinish) {
+                    clearWebHistoryOnFinish = false
+                    view?.clearHistory()
+                }
                 // Seek/play helpers universal: film Cast/Turbo + anime Mega/Blogger/dll.
                 view?.evaluateJavascript(universalPlayerJs, null)
                 // Watcher error Mega saja (ringan); jangan MutationObserver di semua halaman.
@@ -1133,10 +1141,8 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_UP && isBackLike(event.keyCode)) {
-            if (webView.visibility == View.VISIBLE && webView.canGoBack()) {
-                webView.goBack()
-                return true
-            }
+            // Jangan webView.goBack(): failover Hydrax→Turbo menumpuk history,
+            // sehingga Back harus beberapa kali. Langsung ke detail.
             persistProgress()
             finish()
             return true
@@ -1147,7 +1153,8 @@ class PlayerActivity : AppCompatActivity() {
             if (event.action == KeyEvent.ACTION_UP) activateSkipPrompt()
             return true
         }
-        // Series / anime: Channel±, Next/Prev, atau Atas/Bawah → ganti episode
+        // Series / anime: Channel± atau Media Next/Prev → ganti episode
+        // (Atas/Bawah tidak dipakai — Atas untuk ganti resolusi)
         if (isEpisodeNavKey(event.keyCode) && hasEpisodeNav()) {
             if (SystemClock.uptimeMillis() < ignoreRemoteUntil) return true
             if (event.action == KeyEvent.ACTION_UP) {
@@ -1230,19 +1237,12 @@ class PlayerActivity : AppCompatActivity() {
             keyCode == KeyEvent.KEYCODE_BUTTON_A ||
             keyCode == KeyEvent.KEYCODE_BUTTON_SELECT
 
-    private fun isQualityKey(keyCode: Int): Boolean {
-        // Saat series/anime: Atas/Bawah dipakai ganti episode; kualitas lewat Menu/Info.
-        if (hasEpisodeNav() &&
-            (keyCode == KeyEvent.KEYCODE_DPAD_UP || keyCode == KeyEvent.KEYCODE_DPAD_DOWN)
-        ) {
-            return false
-        }
-        return keyCode == KeyEvent.KEYCODE_DPAD_UP ||
+    private fun isQualityKey(keyCode: Int): Boolean =
+        keyCode == KeyEvent.KEYCODE_DPAD_UP ||
             keyCode == KeyEvent.KEYCODE_MENU ||
             keyCode == KeyEvent.KEYCODE_INFO ||
             keyCode == KeyEvent.KEYCODE_GUIDE ||
             keyCode == KeyEvent.KEYCODE_MEDIA_AUDIO_TRACK
-    }
 
     private fun isEpisodeNavKey(keyCode: Int): Boolean =
         keyCode == KeyEvent.KEYCODE_CHANNEL_UP ||
@@ -1250,15 +1250,12 @@ class PlayerActivity : AppCompatActivity() {
             keyCode == KeyEvent.KEYCODE_MEDIA_NEXT ||
             keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS ||
             keyCode == KeyEvent.KEYCODE_MEDIA_SKIP_FORWARD ||
-            keyCode == KeyEvent.KEYCODE_MEDIA_SKIP_BACKWARD ||
-            keyCode == KeyEvent.KEYCODE_DPAD_UP ||
-            keyCode == KeyEvent.KEYCODE_DPAD_DOWN
+            keyCode == KeyEvent.KEYCODE_MEDIA_SKIP_BACKWARD
 
     private fun isNextEpisodeKey(keyCode: Int): Boolean =
         keyCode == KeyEvent.KEYCODE_CHANNEL_UP ||
             keyCode == KeyEvent.KEYCODE_MEDIA_NEXT ||
-            keyCode == KeyEvent.KEYCODE_MEDIA_SKIP_FORWARD ||
-            keyCode == KeyEvent.KEYCODE_DPAD_DOWN
+            keyCode == KeyEvent.KEYCODE_MEDIA_SKIP_FORWARD
 
     private fun isSeekKey(keyCode: Int): Boolean =
         keyCode == KeyEvent.KEYCODE_DPAD_LEFT ||
