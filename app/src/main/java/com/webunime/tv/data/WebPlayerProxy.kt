@@ -348,6 +348,38 @@ object WebPlayerProxy {
             Regex("""<a\b[^>]*\bid=["']uyeouyeo["'][^>]*>[\s\S]*?</a>""", RegexOption.IGNORE_CASE),
             ""
         )
+        // playcdn: init_core butuh global data={id} — tanpa ini layar hitam / "Video not found"
+        if (hostOf(url).contains("playcdn")) {
+            val id = try {
+                val u = java.net.URI(url)
+                val q = u.query?.split("&")?.mapNotNull { p ->
+                    val kv = p.split("=", limit = 2)
+                    if (kv.size == 2 && kv[0] == "id") kv[1] else null
+                }?.firstOrNull()
+                q ?: u.path.split("/").lastOrNull { it.isNotBlank() }
+            } catch (_: Exception) {
+                null
+            }
+            if (!id.isNullOrBlank() &&
+                !Regex("""\bvar\s+data\s*=""").containsMatchIn(out) &&
+                !Regex("""\bwindow\.data\s*=""").containsMatchIn(out)
+            ) {
+                val safeId = id
+                    .replace("\\", "\\\\")
+                    .replace("\"", "\\\"")
+                    .replace("</", "<\\/")
+                val inject =
+                    """<script data-webunime-p2p-data>window.data={id:"$safeId"};var data=window.data;</script>"""
+                out = if (Regex("""init_core\.js""", RegexOption.IGNORE_CASE).containsMatchIn(out)) {
+                    out.replace(
+                        Regex("""(<script[^>]+init_core\.js[^>]*>\s*</script>)""", RegexOption.IGNORE_CASE),
+                        "$inject\n$1"
+                    )
+                } else {
+                    inject + out
+                }
+            }
+        }
         // Hydrax: matikan deteksi extension + ganti handler overlay → langsung play
         out = out.replace(
             Regex("""const\s+isUseExtension\s*=\s*[^;]+;"""),
