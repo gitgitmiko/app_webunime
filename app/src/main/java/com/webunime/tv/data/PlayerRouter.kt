@@ -16,7 +16,9 @@ object PlayerRouter {
                 val u = (p.url ?: "").lowercase()
                 u.contains("wibufile") || u.contains("blogger.com") ||
                     u.contains("filedon") || u.contains("mega.nz") ||
-                    u.contains("pixeldrain")
+                    u.contains("pixeldrain") || u.contains("anoboy") ||
+                    (p.server ?: "").contains("anoboy", ignoreCase = true) ||
+                    (p.label ?: "").contains("anoboy", ignoreCase = true)
             }
 
         if (isAnime) {
@@ -81,14 +83,15 @@ object PlayerRouter {
             val isMega = u.contains("mega.nz") || s.contains("mega") || l.contains("mega")
             val isWibu = u.contains("wibufile") || s.contains("wibu") || s.contains("premium") ||
                 l.contains("wibufile") || l.contains("premium")
-            val isBlog = u.contains("blogger.com") || s.contains("blogspot") || l.contains("blogspot") ||
-                l.contains("blogger")
+            val isBlog = u.contains("blogger.com") || s.contains("blogspot") || s.contains("anoboy") ||
+                l.contains("blogspot") || l.contains("blogger") || l.contains("anoboy")
 
             return when {
                 isMega -> 10 + res
                 isWibu && (u.contains("wibufile.com/video") || u.contains(".mp4")) -> 40 + res
                 isWibu -> 50 + res
-                isBlog -> 70
+                // Utamakan Anoboy/Blogspot resolusi lebih tinggi (720 sebelum 360)
+                isBlog -> 70 + res
                 u.contains("pixeldrain") || s.contains("nakama") -> 80 + res
                 u.contains("filedon") || s.contains("pucuk") || s.contains("vip") -> 90
                 else -> 100
@@ -97,14 +100,15 @@ object PlayerRouter {
         return raw.sortedBy { score(it) }.distinctBy { it.url }
     }
 
-    /** 0=1080/HD, 1=720, 2=480, 3=lain. */
+    /** 0=1080/HD, 1=720, 2=480, 3=360, 4=lain. */
     private fun resolutionRank(label: String, url: String): Int {
         val t = "$label $url"
         return when {
             t.contains("1080") || t.contains("mp4hd") || Regex("\\bhd\\b").containsMatchIn(t) -> 0
             t.contains("720") -> 1
-            t.contains("480") || t.contains("360") -> 2
-            else -> 3
+            t.contains("480") -> 2
+            t.contains("360") -> 3
+            else -> 4
         }
     }
 

@@ -35,6 +35,33 @@
         <item name="colorSecondary">@color/wu_accent</item>
         <item name="android:statusBarColor">@color/wu_bg</item>
         <item name="materialButtonOutlinedStyle">@style/Wu.Button.Outlined</item>
+        <item name="alertDialogTheme">@style/Theme.WebunimeTv.AlertDialog</item>
+        <item name="android:alertDialogTheme">@style/Theme.WebunimeTv.AlertDialog</item>
+    </style>
+
+    <!-- Dialog TV: tombol fokus jelas (latar merah + border putih). -->
+    <style name="Theme.WebunimeTv.AlertDialog" parent="Theme.AppCompat.Dialog.Alert">
+        <item name="android:background">@color/wu_bg_elevated</item>
+        <item name="android:textColorPrimary">@color/wu_text</item>
+        <item name="android:textColor">@color/wu_text</item>
+        <item name="colorAccent">@color/wu_accent</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Wu.DialogButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Wu.DialogButton</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Wu.DialogButton</item>
+        <item name="android:buttonBarPositiveButtonStyle">@style/Wu.DialogButton</item>
+        <item name="android:buttonBarNegativeButtonStyle">@style/Wu.DialogButton</item>
+    </style>
+
+    <style name="Wu.DialogButton" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
+        <item name="android:background">@drawable/bg_dialog_button</item>
+        <item name="android:textColor">@color/dialog_button_text</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:minWidth">120dp</item>
+        <item name="android:focusable">true</item>
+        <item name="android:focusableInTouchMode">true</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">16sp</item>
     </style>
 
     <style name="Wu.Button.Outlined" parent="Widget.MaterialComponents.Button.OutlinedButton">

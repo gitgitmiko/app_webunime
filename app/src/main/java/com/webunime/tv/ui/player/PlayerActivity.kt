@@ -777,6 +777,10 @@ class PlayerActivity : AppCompatActivity() {
         val isPixeldrain = url.contains("pixeldrain", ignoreCase = true)
         val isMega = url.contains("mega.nz", ignoreCase = true) ||
             url.contains("mega.co.nz", ignoreCase = true)
+        val isBlogger = url.contains("blogger.com", ignoreCase = true) ||
+            server.contains("anoboy", ignoreCase = true) ||
+            server.contains("blogspot", ignoreCase = true) ||
+            server.contains("blogger", ignoreCase = true)
         val isP2pPlay = PlayerRouter.isP2pUrl(url) ||
             server.contains("p2p", ignoreCase = true)
         val seekMs = resumePositionMs
@@ -827,6 +831,12 @@ class PlayerActivity : AppCompatActivity() {
                 if (isMega) {
                     view?.evaluateJavascript(sourceFailWatcherJs, null)
                     view?.evaluateJavascript(megaAutoplayJs, null)
+                }
+                if (isBlogger) {
+                    view?.evaluateJavascript(bloggerAutoplayJs, null)
+                    hideHandler.postDelayed({ tryBloggerPlayClick() }, 600)
+                    hideHandler.postDelayed({ tryBloggerPlayClick() }, 1500)
+                    hideHandler.postDelayed({ tryBloggerPlayClick() }, 2800)
                 }
                 val pageIsP2p = isP2pPlay ||
                     PlayerRouter.isP2pUrl(pageUrl.orEmpty()) ||
@@ -1191,19 +1201,27 @@ class PlayerActivity : AppCompatActivity() {
             peekPlayerChrome()
         }
         if (webView.visibility == View.VISIBLE && isOkKey(event.keyCode)) {
-            // Grace: cegah pause Hydrax, tapi izinkan OK untuk klik poster p2pplay.
-            if (SystemClock.uptimeMillis() < ignoreRemoteUntil && !isP2pPlayUrl()) return true
+            // Grace: cegah pause Hydrax, tapi izinkan OK untuk boot poster p2p/blogger/mega.
+            if (SystemClock.uptimeMillis() < ignoreRemoteUntil &&
+                !isP2pPlayUrl() &&
+                !isBloggerPlayerUrl() &&
+                !isMegaPlayerUrl()
+            ) {
+                return true
+            }
             if (webVideoActive || isAbyssWrapper) {
                 if (event.action == KeyEvent.ACTION_UP) togglePlayback()
                 return true
             }
-            // Mega / p2pplay: OK = boot poster ATAU toggle pause/play.
-            if (event.action == KeyEvent.ACTION_UP && (isMegaPlayerUrl() || isP2pPlayUrl())) {
-                if (isP2pPlayUrl()) {
-                    // Setelah video hidup, selalu toggle (jangan bootstrap play lagi).
-                    if (webVideoActive) togglePlayback() else tryP2pPlayClick()
-                } else {
-                    tryMegaPlayClick()
+            // Mega / Blogger(Anoboy) / p2pplay: OK = boot poster ATAU toggle pause/play.
+            if (event.action == KeyEvent.ACTION_UP &&
+                (isMegaPlayerUrl() || isP2pPlayUrl() || isBloggerPlayerUrl())
+            ) {
+                when {
+                    isP2pPlayUrl() ->
+                        if (webVideoActive) togglePlayback() else tryP2pPlayClick()
+                    isBloggerPlayerUrl() -> tryBloggerPlayClick()
+                    else -> tryMegaPlayClick()
                 }
                 return true
             }
@@ -1325,22 +1343,40 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun seekWebBy(deltaSec: Int) {
+        // Absolute target lebih andal untuk Blogger/YouTube iframe (postMessage seekTo).
+        val target = (lastKnownPosSec + deltaSec).coerceAtLeast(0.0)
         val js = """
             (function(){
+              var delta=$deltaSec;
+              var target=$target;
               try{
-                if(typeof window.__wuSeekBy==="function"){ window.__wuSeekBy($deltaSec); return; }
-                var f=document.querySelector("iframe");
-                if(f&&f.contentWindow){ f.contentWindow.postMessage({type:"__wuSeekBy",delta:$deltaSec},"*"); }
+                if(typeof window.__wuSeekTo==="function"){ window.__wuSeekTo(target); }
+                else if(typeof window.__wuSeekBy==="function"){ window.__wuSeekBy(delta); }
                 var vids=document.querySelectorAll("video");
                 for(var i=0;i<vids.length;i++){
                   var v=vids[i];
                   if(!v||v.readyState<1) continue;
-                  var n=v.currentTime+($deltaSec);
+                  var n=target;
                   var d=v.duration||0;
-                  if(d>0&&isFinite(d)) n=Math.max(0,Math.min(d-0.25,n));
-                  else n=Math.max(0,n);
+                  if(d>0&&isFinite(d)) n=Math.max(0,Math.min(d-0.25,target));
                   v.currentTime=n;
+                  try{ if(v.paused) v.play(); }catch(e){}
                   return;
+                }
+                var frames=document.querySelectorAll("iframe");
+                for(var fi=0;fi<frames.length;fi++){
+                  var f=frames[fi];
+                  var src=(f.getAttribute("src")||"").toLowerCase();
+                  if(f.contentWindow){
+                    try{ f.contentWindow.postMessage({type:"__wuSeekBy",delta:delta},"*"); }catch(e){}
+                    try{ f.contentWindow.postMessage({type:"__wuSeekTo",time:target},"*"); }catch(e){}
+                  }
+                  if(src.indexOf("youtube")>=0||src.indexOf("youtu.be")>=0||src.indexOf("googleusercontent")>=0){
+                    try{
+                      f.contentWindow.postMessage(JSON.stringify({event:"command",func:"seekTo",args:[target,true]}),"*");
+                      f.contentWindow.postMessage(JSON.stringify({event:"command",func:"playVideo",args:[]}),"*");
+                    }catch(e){}
+                  }
                 }
               }catch(e){}
             })();
@@ -1354,6 +1390,19 @@ class PlayerActivity : AppCompatActivity() {
             u.contains("mega.co.nz", ignoreCase = true) ||
             (this::webView.isInitialized &&
                 webView.url.orEmpty().contains("mega.", ignoreCase = true))
+    }
+
+    private fun isBloggerPlayerUrl(): Boolean {
+        if (serverLabel.contains("anoboy", ignoreCase = true) ||
+            serverLabel.contains("blogspot", ignoreCase = true) ||
+            serverLabel.contains("blogger", ignoreCase = true)
+        ) {
+            return true
+        }
+        val u = sourceUrl
+        if (u.contains("blogger.com", ignoreCase = true)) return true
+        return this::webView.isInitialized &&
+            webView.url.orEmpty().contains("blogger.com", ignoreCase = true)
     }
 
     private fun isP2pPlayUrl(): Boolean {
@@ -1380,6 +1429,40 @@ class PlayerActivity : AppCompatActivity() {
                 }
                 var v=document.querySelector("video");
                 if(v){ try{v.muted=false; v.play();}catch(e){} }
+              }catch(e){}
+            })();
+            """.trimIndent(),
+            null
+        )
+        showTitleThenAutoHide()
+    }
+
+    /** Anoboy/Blogger: klik overlay play (.ppVepb) tanpa harus panah atas/bawah dulu. */
+    private fun tryBloggerPlayClick() {
+        if (isFinishing || isDestroyed) return
+        if (!this::webView.isInitialized) return
+        if (!isBloggerPlayerUrl()) return
+        webView.evaluateJavascript(
+            """
+            (function(){
+              try{
+                if(typeof window.__wuBloggerPlay==="function"){ window.__wuBloggerPlay(); return; }
+                var sels=[
+                  ".ppVepb",".fWUOAc",".iLXc1d",
+                  "[jsname='z6Hxxc'] button","[aria-label*='Play' i]","[aria-label*='play' i]",
+                  "button[class*='play']",".play-button","[role='button']"
+                ];
+                for(var i=0;i<sels.length;i++){
+                  var nodes=document.querySelectorAll(sels[i]);
+                  for(var j=0;j<nodes.length;j++){
+                    var el=nodes[j];
+                    if(!el) continue;
+                    try{ el.focus(); }catch(e){}
+                    try{ el.click(); return; }catch(e){}
+                  }
+                }
+                var v=document.querySelector("video");
+                if(v){ try{v.muted=false; v.controls=true; v.play();}catch(e){} }
               }catch(e){}
             })();
             """.trimIndent(),
@@ -1668,6 +1751,91 @@ class PlayerActivity : AppCompatActivity() {
         """.trimIndent()
 
     /**
+     * Anoboy / Blogger video.g: overlay play class `.ppVepb` harus diklik.
+     * Tanpa ini remote harus panah atas/bawah dulu baru OK.
+     */
+    private val bloggerAutoplayJs: String = """
+            (function(){
+              if(window.__wuBloggerAuto) return;
+              window.__wuBloggerAuto=true;
+              function playingVid(){
+                try{
+                  var v=document.querySelector("video");
+                  return v && !v.paused && v.readyState>=2;
+                }catch(e){ return false; }
+              }
+              function hookVideo(v){
+                if(!v||v.__wuHooked) return;
+                v.__wuHooked=true;
+                try{ v.controls=true; v.muted=false; }catch(e){}
+                v.addEventListener('play',function(){try{WebunimePlayback.onPlay();}catch(e){}});
+                v.addEventListener('playing',function(){try{WebunimePlayback.onPlay();}catch(e){}});
+                v.addEventListener('pause',function(){try{WebunimePlayback.onPause();}catch(e){}});
+                v.addEventListener('ended',function(){try{WebunimePlayback.onEnded();}catch(e){}});
+                var lastReport=0;
+                v.addEventListener('timeupdate',function(){
+                  try{
+                    var now=Date.now();
+                    if(now-lastReport<900) return;
+                    lastReport=now;
+                    WebunimePlayback.onProgress(v.currentTime, v.duration||0);
+                  }catch(e){}
+                });
+                if(!v.paused){ try{WebunimePlayback.onPlay();}catch(e){} }
+              }
+              function clickPlay(){
+                try{
+                  if(playingVid()) return true;
+                  var sels=[
+                    ".ppVepb",".fWUOAc",".iLXc1d",
+                    "[aria-label='Play']","[aria-label='play']","[aria-label*='Play' i]",
+                    "button[class*='play']",".play-button","[role='button']"
+                  ];
+                  for(var i=0;i<sels.length;i++){
+                    var nodes=document.querySelectorAll(sels[i]);
+                    for(var j=0;j<nodes.length;j++){
+                      var el=nodes[j];
+                      if(!el) continue;
+                      var t=(el.innerText||el.textContent||el.getAttribute("aria-label")||"").toLowerCase();
+                      if(t.indexOf("sign")>=0||t.indexOf("login")>=0||t.indexOf("account")>=0) continue;
+                      try{ el.focus(); }catch(e){}
+                      try{ el.click(); }catch(e){}
+                    }
+                  }
+                  document.querySelectorAll("video").forEach(function(v){
+                    hookVideo(v);
+                    try{ v.muted=false; v.play(); }catch(e){}
+                  });
+                  return playingVid();
+                }catch(e){}
+                return false;
+              }
+              window.__wuBloggerPlay=function(){ clickPlay(); };
+              try{
+                var mo=new MutationObserver(function(){
+                  document.querySelectorAll("video").forEach(hookVideo);
+                });
+                mo.observe(document.documentElement,{childList:true,subtree:true});
+              }catch(e){}
+              var n=0;
+              var iv=setInterval(function(){
+                n++;
+                document.querySelectorAll("video").forEach(hookVideo);
+                if(playingVid()){
+                  clearInterval(iv);
+                  try{ WebunimePlayback.onPlay(); }catch(e){}
+                  return;
+                }
+                clickPlay();
+                if(n>30) clearInterval(iv);
+              },500);
+              setTimeout(clickPlay, 400);
+              setTimeout(clickPlay, 1200);
+              setTimeout(clickPlay, 2400);
+            })();
+        """.trimIndent()
+
+    /**
      * Mega: otomatis klik tombol Play (halaman file/embed sering menunggu interaksi).
      * Juga expose __wuMegaPlay untuk tombol OK remote.
      */
@@ -1945,7 +2113,16 @@ class PlayerActivity : AppCompatActivity() {
             (function(){
               if(window.__wuUniversalSeek) return;
               window.__wuUniversalSeek=true;
-              function __wuVid(){ try{return document.querySelector("video");}catch(e){return null;} }
+              function __wuVid(){
+                try{
+                  var vids=document.querySelectorAll("video");
+                  for(var i=0;i<vids.length;i++){
+                    var v=vids[i];
+                    if(v && v.readyState>=1) return v;
+                  }
+                  return vids.length?vids[0]:null;
+                }catch(e){return null;}
+              }
               function __wuJw(){
                 try{
                   if(typeof jwplayer==="function"){
@@ -1954,6 +2131,21 @@ class PlayerActivity : AppCompatActivity() {
                   }
                 }catch(e){}
                 return null;
+              }
+              function __wuYtSeek(t){
+                try{
+                  var frames=document.querySelectorAll("iframe");
+                  for(var i=0;i<frames.length;i++){
+                    var f=frames[i];
+                    var src=(f.getAttribute("src")||"").toLowerCase();
+                    if(!f.contentWindow) continue;
+                    if(src.indexOf("youtube")>=0||src.indexOf("youtu.be")>=0||src.indexOf("googleusercontent")>=0||src.indexOf("blogger")>=0||!src){
+                      try{ f.contentWindow.postMessage(JSON.stringify({event:"command",func:"seekTo",args:[t,true]}),"*"); }catch(e){}
+                      try{ f.contentWindow.postMessage(JSON.stringify({event:"command",func:"playVideo",args:[]}),"*"); }catch(e){}
+                    }
+                    try{ f.contentWindow.postMessage({type:"__wuSeekTo",time:t},"*"); }catch(e){}
+                  }
+                }catch(e){}
               }
               if(typeof window.__wuSeekBy!=="function"){
                 window.__wuSeekBy=function(delta){
@@ -1982,7 +2174,14 @@ class PlayerActivity : AppCompatActivity() {
                       if(d>0&&isFinite(d)) n=Math.max(0,Math.min(d-0.25,n));
                       else n=Math.max(0,n);
                       v.currentTime=n;
+                      try{ if(v.paused) v.play(); }catch(e){}
+                      return;
                     }
+                  }catch(e){}
+                  try{
+                    var v2=__wuVid();
+                    var base=v2&&isFinite(v2.currentTime)?v2.currentTime:0;
+                    __wuYtSeek(Math.max(0, base+delta));
                   }catch(e){}
                 };
               }
@@ -2006,8 +2205,11 @@ class PlayerActivity : AppCompatActivity() {
                     var n=t;
                     if(d>0&&isFinite(d)) n=Math.max(0,Math.min(d-0.25,t));
                     v.currentTime=n;
+                    try{ if(v.paused) v.play(); }catch(e){}
+                    return;
                   }
                 }catch(e){}
+                __wuYtSeek(t);
               };
               window.__wuGetClock=function(){
                 try{

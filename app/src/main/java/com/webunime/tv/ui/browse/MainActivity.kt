@@ -8,6 +8,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.view.ContextThemeWrapper
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import com.webunime.tv.R
@@ -135,15 +136,34 @@ class MainActivity : FragmentActivity() {
         if (updateDialogShown || isFinishing) return
         updateDialogShown = true
         val notes = info.changelog?.takeIf { it.isNotBlank() }.orEmpty()
-        // AppCompat + theme Material: AlertDialog bawaan Leanback sering tidak terlihat di TV.
-        val themed = ContextThemeWrapper(this, R.style.Theme_WebunimeTv_Detail)
-        AlertDialog.Builder(themed)
+        val themed = ContextThemeWrapper(this, R.style.Theme_WebunimeTv_AlertDialog)
+        val dialog = AlertDialog.Builder(themed)
             .setTitle(R.string.update_title)
             .setMessage(getString(R.string.update_message, info.versionName, notes))
             .setPositiveButton(R.string.update_now) { _, _ -> startUpdateDownload(info) }
             .setNegativeButton(R.string.update_later, null)
             .setCancelable(true)
-            .show()
+            .create()
+        dialog.setOnShowListener {
+            listOf(
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE),
+                dialog.getButton(AlertDialog.BUTTON_NEGATIVE),
+            ).forEach { btn ->
+                if (btn == null) return@forEach
+                btn.isFocusable = true
+                btn.setBackgroundResource(R.drawable.bg_dialog_button)
+                btn.setTextColor(ContextCompat.getColorStateList(this, R.color.dialog_button_text))
+                btn.setAllCaps(false)
+                btn.textSize = 16f
+                val padH = (18 * resources.displayMetrics.density).toInt()
+                val padV = (10 * resources.displayMetrics.density).toInt()
+                btn.setPadding(padH, padV, padH, padV)
+                btn.minHeight = (48 * resources.displayMetrics.density).toInt()
+                btn.minWidth = (120 * resources.displayMetrics.density).toInt()
+            }
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.requestFocus()
+        }
+        dialog.show()
     }
 
     private fun startUpdateDownload(info: AppUpdateInfo) {

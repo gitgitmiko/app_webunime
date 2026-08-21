@@ -551,8 +551,8 @@ class BrowseFragment : BrowseSupportFragment() {
         } else {
             getString(R.string.library_remove_favorite, title)
         }
-        val themed = android.view.ContextThemeWrapper(requireContext(), R.style.Theme_WebunimeTv_Detail)
-        android.app.AlertDialog.Builder(themed)
+        val themed = android.view.ContextThemeWrapper(requireContext(), R.style.Theme_WebunimeTv_AlertDialog)
+        val dialog = android.app.AlertDialog.Builder(themed)
             .setMessage(message)
             .setPositiveButton(R.string.library_remove_confirm) { _, _ ->
                 viewLifecycleOwner.lifecycleScope.launch {
@@ -560,8 +560,37 @@ class BrowseFragment : BrowseSupportFragment() {
                 }
             }
             .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            .create()
+        dialog.setOnShowListener {
+            styleTvDialogButtons(dialog)
+            // Default fokus di Batal agar OK tidak langsung menghapus.
+            dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)?.requestFocus()
+        }
+        dialog.show()
         return true
+    }
+
+    private fun styleTvDialogButtons(dialog: android.app.AlertDialog) {
+        val buttons = listOf(
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE),
+            dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE),
+            dialog.getButton(android.app.AlertDialog.BUTTON_NEUTRAL),
+        )
+        for (btn in buttons) {
+            if (btn == null) continue
+            btn.isFocusable = true
+            btn.isFocusableInTouchMode = true
+            btn.setBackgroundResource(R.drawable.bg_dialog_button)
+            btn.setTextColor(ContextCompat.getColorStateList(requireContext(), R.color.dialog_button_text))
+            btn.setAllCaps(false)
+            btn.textSize = 16f
+            btn.setTypeface(btn.typeface, android.graphics.Typeface.BOLD)
+            val padH = (18 * resources.displayMetrics.density).toInt()
+            val padV = (10 * resources.displayMetrics.density).toInt()
+            btn.setPadding(padH, padV, padH, padV)
+            btn.minHeight = (48 * resources.displayMetrics.density).toInt()
+            btn.minWidth = (120 * resources.displayMetrics.density).toInt()
+        }
     }
 
     private suspend fun removeLibraryItem(kind: LibraryRowKind, item: CatalogItem) {
