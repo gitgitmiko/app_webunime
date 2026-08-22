@@ -1,6 +1,6 @@
 {
-  "versionCode": 239,
-  "versionName": "1.11.19",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.19/WEBUNIME-TV-v1.11.19.apk",
-  "changelog": "Hydrax: seek/slider dari remote TV jalan lagi. TurboVIP: pemutaran lewat iframe wrapper + resolver videonode."
+  "versionCode": 240,
+  "versionName": "1.11.20",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.20/WEBUNIME-TV-v1.11.20.apk",
+  "changelog": "Perbaikan install OTA (APK signed). Hydrax: seek/slider remote. TurboVIP: iframe wrapper + resolver videonode."
 }
