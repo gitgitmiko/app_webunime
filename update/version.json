@@ -1,6 +1,6 @@
 {
-  "versionCode": 238,
-  "versionName": "1.11.18",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.18/WEBUNIME-TV-v1.11.18.apk",
-  "changelog": "Anoboy/Blogger: autoplay + seek; popup hapus Lanjutkan menonton: fokus tombol Hapus/Batal jelas."
+  "versionCode": 239,
+  "versionName": "1.11.19",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.19/WEBUNIME-TV-v1.11.19.apk",
+  "changelog": "Hydrax: seek/slider dari remote TV jalan lagi. TurboVIP: pemutaran lewat iframe wrapper + resolver videonode."
 }

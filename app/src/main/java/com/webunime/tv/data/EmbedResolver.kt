@@ -142,9 +142,17 @@ object EmbedResolver {
 
     private fun resolvePlayeriframe(sourceUrl: String): String =
         runCatching {
-            val html = fetch(sourceUrl, referer = "https://tv12.lk21official.cc/")
-            extractPlayerUrl(html, sourceUrl) ?: sourceUrl
+            val normalized = rewritePlayerHost(sourceUrl)
+            val html = fetch(normalized, referer = "https://tv12.lk21official.cc/")
+            extractPlayerUrl(html, normalized) ?: normalized
         }.getOrDefault(sourceUrl)
+
+    /** playeriframe.sbs sering mati; videonode.de mirror aktif. */
+    private fun rewritePlayerHost(url: String): String =
+        url.replace(
+            Regex("""(?i)https?://playeriframe\.sbs"""),
+            "https://videonode.de",
+        )
 
     private fun resolveWibufileEmbed(sourceUrl: String): String? {
         val html = fetch(sourceUrl, referer = "https://api.wibufile.com/")

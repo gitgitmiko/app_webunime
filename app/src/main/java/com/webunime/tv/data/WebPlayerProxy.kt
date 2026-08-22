@@ -74,6 +74,13 @@ object WebPlayerProxy {
         return h.contains("abyss") || h.contains("iamcdn") || h.contains("short.icu")
     }
 
+    /** TurboVIP / emturbovid: harus di iframe agar gate iframePlay & domainEmbed lolos. */
+    fun isTurbo(url: String): Boolean {
+        val h = hostOf(url)
+        if (h.contains("playeriframe") || h.contains("videonode")) return false
+        return h.contains("turbo") || h.contains("emturbo")
+    }
+
     /**
      * Wrapper HTML agar Hydrax berjalan di dalam iframe (bukan dokumen top).
      * Script bridge: iframe lintas-origin tidak bisa memanggil @JavascriptInterface
@@ -154,6 +161,87 @@ object WebPlayerProxy {
     /** Base URL wrapper: seolah embed berasal dari playeriframe.sbs. */
     const val ABYSS_WRAPPER_BASE = "https://playeriframe.sbs/"
 
+    /** Wrapper iframe TurboVIP (parent = playeriframe.sbs). */
+    fun turboWrapperHtml(embedUrl: String): String = """
+        <!DOCTYPE html><html><head><meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+        html,body{margin:0;padding:0;height:100%;width:100%;background:#000;overflow:hidden}
+        iframe#wuEmbed{
+          border:0!important;outline:0!important;box-shadow:none!important;
+          margin:0!important;padding:0!important;
+          width:100vw!important;height:100vh!important;display:block;
+          background:#000!important;
+        }
+        </style></head>
+        <body>
+        <iframe id="wuEmbed" src="$embedUrl" allow="autoplay; fullscreen; encrypted-media"
+        allowfullscreen scrolling="no"></iframe>
+        <script>
+        (function(){
+          window.addEventListener("message", function(e){
+            var d = e && e.data;
+            if (!d || typeof d !== "object") return;
+            if (d.type === "__wuQualities") {
+              try { WebunimePlayback.onQualities(JSON.stringify(d)); } catch (ex) {}
+            }
+            if (d.type === "__wuProgress") {
+              var p = Number(d.p || d.position || 0);
+              var dur = Number(d.d || d.duration || 0);
+              if (isFinite(p) && p > 0) window.__wuClock = {p:p,d:dur||0};
+              try { WebunimePlayback.onProgress(p, dur || 0); } catch (ex) {}
+            }
+            if (d.type === "__wuPlayState") {
+              try {
+                if (d.playing) WebunimePlayback.onPlay();
+                else WebunimePlayback.onPause();
+              } catch (ex) {}
+            }
+            if (d.type === "__wuEnded") {
+              try { WebunimePlayback.onEnded(); } catch (ex) {}
+            }
+          });
+          window.__wuRequestQualities = function(){
+            try {
+              var f = document.getElementById("wuEmbed");
+              if (f && f.contentWindow) f.contentWindow.postMessage("__wuGetQualities", "*");
+            } catch (ex) {}
+          };
+          window.__wuSetQuality = function(idx){
+            try {
+              var f = document.getElementById("wuEmbed");
+              if (f && f.contentWindow) f.contentWindow.postMessage({type:"__wuSetQuality",index:idx}, "*");
+            } catch (ex) {}
+          };
+          window.__wuSeekBy = function(delta){
+            try {
+              var f = document.getElementById("wuEmbed");
+              if (f && f.contentWindow) f.contentWindow.postMessage({type:"__wuSeekBy",delta:delta}, "*");
+            } catch (ex) {}
+          };
+          window.__wuSeekTo = function(t){
+            try {
+              var f = document.getElementById("wuEmbed");
+              if (f && f.contentWindow) f.contentWindow.postMessage({type:"__wuSeekTo",time:t}, "*");
+            } catch (ex) {}
+          };
+          window.__wuT0 = Date.now();
+          window.__wuGetClock = function(){
+            var elapsed = Math.max(0, (Date.now() - (window.__wuT0 || Date.now())) / 1000);
+            if (window.__wuClock && window.__wuClock.p > 0) return window.__wuClock;
+            return {p: elapsed, d: 0};
+          };
+          window.__wuToggle = function(){
+            try {
+              var f = document.getElementById("wuEmbed");
+              if (f && f.contentWindow) f.contentWindow.postMessage("__wuToggle", "*");
+            } catch (ex) {}
+          };
+        })();
+        </script>
+        </body></html>
+    """.trimIndent()
+
     /** Response kosong untuk memblok iklan/popup di level jaringan. */
     private fun blockedResponse(): WebResourceResponse =
         WebResourceResponse(
@@ -175,10 +263,11 @@ object WebPlayerProxy {
         host.contains("hownetwork") -> "https://playeriframe.sbs/"
         host.contains("abyss") || host.contains("iamcdn") || host.contains("short.icu") ->
             "https://abyssplayer.com/"
-        host.contains("turbovid") || host.contains("emturbo") ||
-            host.contains("turboviplay") || host.contains("turbosplayer") ||
+        host.contains("turboviplay") || host.contains("turbosplayer") ||
             host.contains("tiktokcdn") || host.contains("sptvp") ||
             host.contains("googleusercontent") -> "https://turbovidhls.com/"
+        host.contains("turbovid") || host.contains("emturbo") || host.contains("emturbovid") ->
+            "https://playeriframe.sbs/"
         host.contains("playcdn") || host.contains("p2pplay") -> "https://videonode.de/"
         else -> "https://playeriframe.sbs/"
     }
@@ -469,8 +558,8 @@ object WebPlayerProxy {
   function __wuVideo(){ try{return document.querySelector("video");}catch(e){return null;} }
   function __wuJw(){ try{ if(typeof jwplayer==="function"){ var p=jwplayer(); if(p&&typeof p.getState==="function") return p; } }catch(e){} return null; }
   function __wuIsPlaying(){ var v=__wuVideo(); if(v) return !v.paused && !v.ended; var jp=__wuJw(); if(jp){ var s=jp.getState(); return s==="playing"||s==="buffering"; } return false; }
-  window.__wuPlay=function(){ window.__wuUserPaused=false; try{var jp=__wuJw(); if(jp) jp.play();}catch(e){} try{var v=__wuVideo(); if(v){ v.muted=false; v.play(); }}catch(e){} try{WebunimePlayback.onPlay();}catch(e){} try{ if(typeof window.__wuHidePlayerUi==="function") setTimeout(window.__wuHidePlayerUi, 1200); }catch(e){} };
-  window.__wuPause=function(){ window.__wuUserPaused=true; try{var jp=__wuJw(); if(jp) jp.pause();}catch(e){} try{var v=__wuVideo(); if(v) v.pause();}catch(e){} try{ if(typeof window.__wuShowPlayerUi==="function") window.__wuShowPlayerUi(); }catch(e){} try{WebunimePlayback.onPause();}catch(e){} };
+  window.__wuPlay=function(){ window.__wuUserPaused=false; try{var jp=__wuJw(); if(jp) jp.play();}catch(e){} try{var v=__wuVideo(); if(v){ v.muted=false; v.play(); }}catch(e){} try{ if(window.parent&&window.parent!==window){ window.parent.postMessage({type:"__wuPlayState",playing:true},"*"); }else{ WebunimePlayback.onPlay(); } }catch(e){} try{ if(typeof window.__wuHidePlayerUi==="function") setTimeout(window.__wuHidePlayerUi, 1200); }catch(e){} };
+  window.__wuPause=function(){ window.__wuUserPaused=true; try{var jp=__wuJw(); if(jp) jp.pause();}catch(e){} try{var v=__wuVideo(); if(v) v.pause();}catch(e){} try{ if(typeof window.__wuShowPlayerUi==="function") window.__wuShowPlayerUi(); }catch(e){} try{ if(window.parent&&window.parent!==window){ window.parent.postMessage({type:"__wuPlayState",playing:false},"*"); }else{ WebunimePlayback.onPause(); } }catch(e){} };
   window.__wuToggle=function(){ if(__wuIsPlaying()) window.__wuPause(); else window.__wuPlay(); };
   // Seek dari remote TV (app ambil alih D-pad). Satu panggilan = satu seek,
   // menghindari stuck dari keyboard bawaan JW (±5 dtk per event).
@@ -698,6 +787,26 @@ object WebPlayerProxy {
   }
 
   if (IS_TURBO) {
+    function turboBoot(){
+      try{
+        if(typeof enablePlay!=="undefined") enablePlay="yes";
+        if(typeof checkDomain!=="undefined") checkDomain=true;
+        if(typeof iframePlay!=="undefined") iframePlay=false;
+        var pre=document.querySelector(".preloader"); var ready=false;
+        try { if(typeof jwplayer==="function"){ var jp=jwplayer("video_player"); if(jp&&typeof jp.getState==="function"){ var st=jp.getState(); if(st&&st!=="idle") ready=true; } } } catch(e){}
+        if(!ready && !window.__wuUserPaused && typeof loadPlayer==="function" && typeof urlPlay==="string" && urlPlay){
+          try{loadPlayer(urlPlay);}catch(e){}
+          if(pre){ try{pre.style.display="none";}catch(e){} }
+        }
+        if(ready || (document.querySelector("video") && document.querySelector("video").readyState>=2)){
+          if(pre) pre.style.display="none";
+          if(!window.__wuUserPaused){ try{ if(typeof jwplayer==="function") jwplayer("video_player").play(); }catch(e){} }
+        }
+      }catch(e){}
+    }
+    document.addEventListener("DOMContentLoaded", turboBoot, true);
+    setTimeout(turboBoot, 60);
+    setTimeout(turboBoot, 350);
     // Hapus frame/outline kuning + pastikan full-bleed hitam
     (function injectTurboCss(){
       try{

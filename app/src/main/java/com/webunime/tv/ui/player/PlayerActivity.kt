@@ -89,6 +89,7 @@ class PlayerActivity : AppCompatActivity() {
     private var webVideoActive = false
 
     private var isAbyssWrapper = false
+    private var isTurboWrapper = false
 
     /** Setelah load server baru (failover), buang history WebView agar tidak menumpuk. */
     private var clearWebHistoryOnFinish = false
@@ -111,7 +112,7 @@ class PlayerActivity : AppCompatActivity() {
         qualityDialogShown = false
     }
     private val webFailTimeoutRunnable = Runnable {
-        if (!webVideoActive && !isAbyssWrapper) {
+        if (!webVideoActive && !isAbyssWrapper && !isTurboWrapper) {
             tryFailover("timeout")
         }
     }
@@ -737,6 +738,7 @@ class PlayerActivity : AppCompatActivity() {
         modeView.text = "$server · WebView"
         webVideoActive = false
         isAbyssWrapper = WebPlayerProxy.isAbyss(url)
+        isTurboWrapper = WebPlayerProxy.isTurbo(url)
         // Sisa ACTION_UP dari tombol Play di Detail sering sampai ke sini dan
         // memanggil toggle → Hydrax yang baru autoplay langsung ter-pause.
         ignoreRemoteUntil = SystemClock.uptimeMillis() + REMOTE_GRACE_MS
@@ -825,8 +827,10 @@ class PlayerActivity : AppCompatActivity() {
                     clearWebHistoryOnFinish = false
                     view?.clearHistory()
                 }
-                // Seek/play helpers universal: film Cast/Turbo + anime Mega/Blogger/dll.
-                view?.evaluateJavascript(universalPlayerJs, null)
+                // Seek/play helpers universal — jangan timpa bridge wrapper Hydrax/Turbo.
+                if (!isAbyssWrapper && !isTurboWrapper) {
+                    view?.evaluateJavascript(universalPlayerJs, null)
+                }
                 // Watcher error Mega saja (ringan); jangan MutationObserver di semua halaman.
                 if (isMega) {
                     view?.evaluateJavascript(sourceFailWatcherJs, null)
@@ -921,6 +925,14 @@ class PlayerActivity : AppCompatActivity() {
             webView.loadDataWithBaseURL(
                 WebPlayerProxy.ABYSS_WRAPPER_BASE,
                 WebPlayerProxy.abyssWrapperHtml(url),
+                "text/html",
+                "utf-8",
+                null
+            )
+        } else if (WebPlayerProxy.isTurbo(url)) {
+            webView.loadDataWithBaseURL(
+                WebPlayerProxy.ABYSS_WRAPPER_BASE,
+                WebPlayerProxy.turboWrapperHtml(url),
                 "text/html",
                 "utf-8",
                 null
@@ -1176,7 +1188,7 @@ class PlayerActivity : AppCompatActivity() {
         if (webView.visibility == View.VISIBLE &&
             event.action == KeyEvent.ACTION_UP &&
             isQualityKey(event.keyCode) &&
-            (webVideoActive || isAbyssWrapper)
+            (webVideoActive || isAbyssWrapper || isTurboWrapper)
         ) {
             requestQualityPicker()
             return true
@@ -1209,7 +1221,7 @@ class PlayerActivity : AppCompatActivity() {
             ) {
                 return true
             }
-            if (webVideoActive || isAbyssWrapper) {
+            if (webVideoActive || isAbyssWrapper || isTurboWrapper) {
                 if (event.action == KeyEvent.ACTION_UP) togglePlayback()
                 return true
             }
@@ -2185,7 +2197,8 @@ class PlayerActivity : AppCompatActivity() {
                   }catch(e){}
                 };
               }
-              window.__wuSeekTo=function(t){
+              if(typeof window.__wuSeekTo!=="function"){
+                window.__wuSeekTo=function(t){
                 t=Number(t);
                 if(!isFinite(t)||t<0) return;
                 try{
@@ -2211,6 +2224,8 @@ class PlayerActivity : AppCompatActivity() {
                 }catch(e){}
                 __wuYtSeek(t);
               };
+              }
+              if(typeof window.__wuGetClock!=="function"){
               window.__wuGetClock=function(){
                 try{
                   var jp=__wuJw();
@@ -2224,6 +2239,7 @@ class PlayerActivity : AppCompatActivity() {
                 }catch(e){}
                 return {p:0,d:0};
               };
+              }
               if(typeof window.__wuToggle!=="function"){
                 window.__wuToggle=function(){
                   try{

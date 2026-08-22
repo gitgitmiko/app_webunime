@@ -152,6 +152,9 @@ object PlayerRouter {
             host.contains("mega.nz") -> "https://mega.nz/"
             host.contains("p2pplay") -> "https://kconaz.com/"
             host.contains("playcdn") -> "https://videonode.de/"
+            host.contains("turbovid") || host.contains("emturbo") || host.contains("emturbovid") ||
+                host.contains("playeriframe") || host.contains("videonode") ->
+                "https://playeriframe.sbs/"
             else -> null
         }
     }
