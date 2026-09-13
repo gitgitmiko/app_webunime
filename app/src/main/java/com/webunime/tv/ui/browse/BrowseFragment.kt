@@ -358,17 +358,15 @@ class BrowseFragment : BrowseSupportFragment() {
         addLocalCardRow(getString(R.string.row_continue), buildContinueItems(), isContinue = true)
         addLocalCardRow(getString(R.string.row_favorites), buildFavoriteItems(), isFavorites = true)
 
+        // Urutan katalog: film → top film → horror → top horror → series → anime.
         deferredRowSpecs = listOf(
             DeferredRowSpec(getString(R.string.row_movies), "movies"),
-            DeferredRowSpec(getString(R.string.row_action), "movies", genre = "Action,Adventure,Thriller"),
-            DeferredRowSpec(getString(R.string.row_drama), "movies", genre = "Drama,Romance"),
+            DeferredRowSpec(getString(R.string.row_movies_top), "movies", sort = "top_random"),
             DeferredRowSpec(getString(R.string.row_horror), "horror"),
+            DeferredRowSpec(getString(R.string.row_horror_top), "horror", sort = "top_random"),
             DeferredRowSpec(getString(R.string.row_series_latest), "series-latest"),
             DeferredRowSpec(getString(R.string.row_series), "series"),
-            DeferredRowSpec(getString(R.string.row_indonesia), "indonesia"),
             DeferredRowSpec(getString(R.string.row_anime_latest), "anime-latest"),
-            DeferredRowSpec(getString(R.string.row_anime_top), "anime", sort = "rating"),
-            DeferredRowSpec(getString(R.string.row_anime_hot), "anime", sort = "hot"),
             DeferredRowSpec(getString(R.string.row_anime), "anime"),
             DeferredRowSpec(getString(R.string.row_anime_movies), "anime-movies"),
         )
@@ -779,6 +777,8 @@ class BrowseFragment : BrowseSupportFragment() {
         if (selectedIndex < 0) return
         val state = rowPaging[rowId] ?: return
         if (state.collection.isBlank()) return
+        // Top Film / Top Horor: fixed random set, jangan paging.
+        if (state.sort.equals("top_random", ignoreCase = true)) return
         if (state.loadingMore) return
         if (state.total > 0 && state.allItems.size >= state.total) return
         if (selectedIndex < state.loadedCount - PREFETCH_THRESHOLD) return

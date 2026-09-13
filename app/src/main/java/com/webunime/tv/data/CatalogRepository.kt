@@ -209,6 +209,12 @@ class CatalogRepository(
         items = when (sort.trim().lowercase()) {
             "rating" -> items.sortedByDescending { ratingValue(it) }
             "hot" -> items.sortedByDescending { hotScore(it) }
+            // Random N film rating > 8 dari koleksi (Top Film / Top Horor).
+            "top_random" ->
+                items
+                    .filter { ratingValue(it) > TOP_RANDOM_MIN_RATING }
+                    .shuffled()
+                    .take(TOP_RANDOM_LIMIT)
             else -> if (section == CatalogSection.INDONESIA) {
                 items.sortedWith(
                     compareByDescending<CatalogItem> { it.releaseSortKey() }
@@ -661,6 +667,8 @@ class CatalogRepository(
         const val PAGE_LIMIT = 12
         const val HERO_LIMIT = 10
         private const val FEATURED_MIN_RATING = 7.0
+        private const val TOP_RANDOM_MIN_RATING = 8.0
+        private const val TOP_RANDOM_LIMIT = 10
 
         private val CATALOG_FILES = listOf(
             "movies.json",
