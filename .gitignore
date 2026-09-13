@@ -13,5 +13,8 @@
 *.aab
 proxy/**/.env*
 proxy/**/.vercel/
-.tmp-webunime/
+.tmp*/
 .kotlin/
+emu-*.png
+*-test.png
+ui.xml

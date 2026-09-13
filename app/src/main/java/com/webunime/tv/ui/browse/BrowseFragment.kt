@@ -33,7 +33,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Browse: baris hero carousel (ikut scroll) + backdrop + baris katalog.
+ * Browse: baris hero carousel (ikut scroll) + backdrop hero + baris katalog.
+ * Backdrop tidak diganti tiap fokus kartu katalog (hemat decode/GPU).
  */
 class BrowseFragment : BrowseSupportFragment() {
 
@@ -148,15 +149,15 @@ class BrowseFragment : BrowseSupportFragment() {
         bindSettingsOrb()
         view?.post { bindSettingsOrb() }
 
-        val cardRowPresenter = object : ListRowPresenter(FocusHighlight.ZOOM_FACTOR_XSMALL) {
+        val cardRowPresenter = object : ListRowPresenter(FocusHighlight.ZOOM_FACTOR_NONE) {
             override fun initializeRowViewHolder(vh: RowPresenter.ViewHolder) {
                 super.initializeRowViewHolder(vh)
                 val listVh = vh as? ListRowPresenter.ViewHolder ?: return
                 CardPresenter.styleCatalogRow(listVh.gridView)
             }
         }.apply {
-            shadowEnabled = true
-            selectEffectEnabled = true
+            shadowEnabled = false
+            selectEffectEnabled = false
             headerPresenter = hideBlankHeaderPresenter()
         }
         val heroRowPresenter = ListRowPresenter(FocusHighlight.ZOOM_FACTOR_NONE).apply {
@@ -403,7 +404,6 @@ class BrowseFragment : BrowseSupportFragment() {
         if (isContinue) continueRowIndex = rowsAdapter.size()
         if (isFavorites) favoritesRowIndex = rowsAdapter.size()
         rowsAdapter.add(ListRow(HeaderItem(rowId, title), list))
-        items.forEach { CardPresenter.preload(requireContext(), it.thumbnail) }
     }
 
     private fun addApiCardRow(spec: DeferredRowSpec, page: CatalogPage) {
@@ -422,7 +422,6 @@ class BrowseFragment : BrowseSupportFragment() {
             total = page.total,
         )
         rowsAdapter.add(ListRow(HeaderItem(rowId, spec.title), list))
-        page.items.forEach { CardPresenter.preload(requireContext(), it.thumbnail) }
     }
 
     private fun allocRowId(): Long = nextRowId++
@@ -647,7 +646,6 @@ class BrowseFragment : BrowseSupportFragment() {
                 loadedCount = items.size,
                 collection = "",
             )
-            items.forEach { CardPresenter.preload(requireContext(), it.thumbnail) }
             return
         }
         if (items.isNotEmpty()) {
@@ -675,7 +673,6 @@ class BrowseFragment : BrowseSupportFragment() {
             LibraryRowKind.CONTINUE -> continueRowIndex = at
             LibraryRowKind.FAVORITES -> favoritesRowIndex = at
         }
-        items.forEach { CardPresenter.preload(requireContext(), it.thumbnail) }
     }
 
     private fun insertIndexFor(kind: LibraryRowKind): Int {
@@ -808,7 +805,6 @@ class BrowseFragment : BrowseSupportFragment() {
                 state.adapter.add(item)
             }
             state.loadedCount = state.allItems.size
-            next.items.forEach { CardPresenter.preload(requireContext(), it.thumbnail) }
         }
     }
 

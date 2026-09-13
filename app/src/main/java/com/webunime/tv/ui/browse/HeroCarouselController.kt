@@ -19,6 +19,7 @@ import com.webunime.tv.ui.PosterGlide
 /**
  * Hero carousel: backdrop landscape + teks di baris Leanback.
  * Geser manual ←/→; OK buka detail. Tanpa trailer video.
+ * Backdrop hanya di-update saat mode hero — tidak mengikuti fokus kartu katalog.
  */
 class HeroCarouselController(
     private val context: Context,
@@ -120,13 +121,10 @@ class HeroCarouselController(
 
     fun currentItem(): CatalogItem? = current
 
+    /** Fokus kartu katalog: hentikan rotate hero, backdrop tetap di gambar hero terakhir. */
     fun onBrowseItemFocused(item: CatalogItem?) {
         if (item == null) return
-        featuredMode = false
-        updateChrome()
-        val url = item.thumbnail_landscape?.takeIf { it.isNotBlank() }
-            ?: item.thumbnail?.takeIf { it.isNotBlank() }
-        loadBackdrop(url)
+        pauseRotate()
     }
 
     fun showFeaturedMode() {

@@ -9,6 +9,7 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
@@ -52,6 +53,9 @@ class CardPresenter(
             cardType = ImageCardView.CARD_TYPE_INFO_OVER
             setBackgroundColor(ContextCompat.getColor(context, R.color.wu_bg))
             setInfoAreaBackgroundColor(Color.argb(0xD4, 0, 0, 0))
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                foreground = ContextCompat.getDrawable(context, R.drawable.bg_card_focus_ring)
+            }
             setupTitleWrap()
             setupFocusBehavior()
         }
@@ -428,13 +432,27 @@ class CardPresenter(
             findViewById(androidx.leanback.R.id.content_text)
 
         private fun ImageCardView.setupFocusBehavior() {
-            setOnFocusChangeListener { _, _ ->
+            val accent = ContextCompat.getColor(context, R.color.wu_accent)
+            val titleNormal = ContextCompat.getColor(context, R.color.wu_text)
+            val dim = ContextCompat.getColor(context, R.color.wu_text_dim)
+            setOnFocusChangeListener { _, hasFocus ->
                 applyCardSize(this)
-                titleTextView()?.let { applyTitleWrap(it) }
+                titleTextView()?.let { tv ->
+                    applyTitleWrap(tv)
+                    tv.setTextColor(if (hasFocus) accent else titleNormal)
+                }
                 contentTextView()?.let { tv ->
                     tv.isSingleLine = true
                     tv.maxLines = 1
                     tv.ellipsize = TextUtils.TruncateAt.END
+                    tv.setTextColor(if (hasFocus) titleNormal else dim)
+                }
+                // API < 23: foreground tak tersedia — bedakan lewat warna info area.
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                    setInfoAreaBackgroundColor(
+                        if (hasFocus) Color.argb(0xE6, 0xE5, 0x09, 0x14)
+                        else Color.argb(0xD4, 0, 0, 0),
+                    )
                 }
             }
         }
