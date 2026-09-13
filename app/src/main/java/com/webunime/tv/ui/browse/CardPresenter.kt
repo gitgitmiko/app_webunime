@@ -9,6 +9,8 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.os.Handler
+import android.os.Looper
 import android.text.TextUtils
 import android.view.KeyEvent
 import android.view.ViewGroup
@@ -364,10 +366,15 @@ class CardPresenter(
                     ): Boolean {
                         if (!canUseGlide(card.context)) return true
                         if (card.getTag(R.id.tag_bind_key) != bindKey) return true
-                        loadIntoCard(
-                            card, bindKey, urls, index + 1,
-                            options, placeholder, corner, badge,
-                        )
+                        // Jangan panggil into()/clear() di dalam callback Glide — crash.
+                        mainHandler.post {
+                            if (!canUseGlide(card.context)) return@post
+                            if (card.getTag(R.id.tag_bind_key) != bindKey) return@post
+                            loadIntoCard(
+                                card, bindKey, urls, index + 1,
+                                options, placeholder, corner, badge,
+                            )
+                        }
                         return true
                     }
 
@@ -386,6 +393,8 @@ class CardPresenter(
                 })
                 .into(iv)
         }
+
+        private val mainHandler = Handler(Looper.getMainLooper())
 
         private class PosterBadgeTransform(
             private val badge: String,

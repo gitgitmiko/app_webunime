@@ -1,6 +1,6 @@
 {
-  "versionCode": 241,
-  "versionName": "1.11.21",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.21/WEBUNIME-TV-v1.11.21.apk",
-  "changelog": "Katalog kembali dari GitHub JSON WEBUNIME. Login dihapus. Favorit & history disimpan lokal di TV."
+  "versionCode": 242,
+  "versionName": "1.11.22",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.22/WEBUNIME-TV-v1.11.22.apk",
+  "changelog": "Perbaikan force close saat poster gagal load (Glide fallback). Katalog GitHub, tanpa login, favorit/history lokal."
 }
