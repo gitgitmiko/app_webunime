@@ -17,8 +17,6 @@ import com.webunime.tv.data.AppUpdateChecker
 import com.webunime.tv.data.AppUpdateInfo
 import com.webunime.tv.data.CatalogItem
 import com.webunime.tv.data.PlayerRouter
-import com.webunime.tv.data.api.UnauthorizedException
-import com.webunime.tv.ui.auth.LoginActivity
 import com.webunime.tv.ui.detail.DetailActivity
 import com.webunime.tv.ui.player.PlayerActivity
 import kotlinx.coroutines.Dispatchers
@@ -56,16 +54,22 @@ class MainActivity : FragmentActivity() {
             }
 
             loading.visibility = View.VISIBLE
-            loadingText.setText(R.string.updating)
-            val home = runCatching { repo.loadHome() }
-            if (home.exceptionOrNull() is UnauthorizedException) {
-                openLogin()
-                return@launch
+            val needRemote = repo.needsGithubRefreshToday()
+            if (needRemote) {
+                loadingText.setText(R.string.updating)
+                runCatching { repo.refreshFromGithubOnce() }
+            } else {
+                loadingText.setText(R.string.loading_catalog)
             }
+
+            if (!repo.isSnapshotReady()) {
+                if (needRemote) loadingText.setText(R.string.loading_local_fallback)
+                runCatching { repo.loadStartupShell() }
+            } else if (repo.heroItems.isEmpty()) {
+                runCatching { repo.loadStartupShell() }
+            }
+
             runCatching { library.refresh() }
-            if (home.isFailure) {
-                loadingText.setText(R.string.loading_local_fallback)
-            }
 
             loading.visibility = View.GONE
             if (!isFinishing) {
@@ -98,10 +102,6 @@ class MainActivity : FragmentActivity() {
         }
 
         val repo = (application as WebunimeApp).catalogRepository
-        if (!(application as WebunimeApp).authRepository.isLoggedIn()) {
-            openLogin()
-            return
-        }
         if (repo.consumeBrowseReloadRequest()) {
             browseFragment()?.reloadRows()
         }
@@ -316,14 +316,6 @@ class MainActivity : FragmentActivity() {
                     .putExtra(PlayerActivity.EXTRA_EPISODE_SLUG, episode?.slug ?: card.episode_source)
             )
         }
-    }
-
-    private fun openLogin() {
-        startActivity(
-            Intent(this, LoginActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
-        )
-        finish()
     }
 
     private fun browseFragment(): BrowseFragment? =

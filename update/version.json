@@ -1,6 +1,6 @@
 {
-  "versionCode": 240,
-  "versionName": "1.11.20",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.20/WEBUNIME-TV-v1.11.20.apk",
-  "changelog": "Perbaikan install OTA (APK signed). Hydrax: seek/slider remote. TurboVIP: iframe wrapper + resolver videonode."
+  "versionCode": 241,
+  "versionName": "1.11.21",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.21/WEBUNIME-TV-v1.11.21.apk",
+  "changelog": "Katalog kembali dari GitHub JSON WEBUNIME. Login dihapus. Favorit & history disimpan lokal di TV."
 }

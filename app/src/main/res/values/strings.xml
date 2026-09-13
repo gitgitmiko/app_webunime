@@ -48,9 +48,9 @@
     <string name="servers">Audio &amp; Server</string>
     <string name="detail_credits">Informasi</string>
     <string name="loading">Memuat katalog…</string>
-    <string name="updating">Memuat data dari server…</string>
+    <string name="updating">Mengunduh katalog dari GitHub…</string>
     <string name="loading_catalog">Memuat katalog…</string>
-    <string name="loading_local_fallback">Server gagal · coba lagi nanti.</string>
+    <string name="loading_local_fallback">GitHub gagal · pakai data lokal.</string>
     <string name="login_subtitle">Masuk dengan akun WeebooNime</string>
     <string name="login_hint">Email atau username</string>
     <string name="login_password">Password</string>
@@ -100,7 +100,7 @@
     <string name="settings_scrape_failed">Gagal memulai scrape: %1$s</string>
     <string name="settings_catalog_checking">Memeriksa status data…</string>
     <string name="settings_catalog_processing">Data terbaru sedang diproses. Tunggu scrape selesai.</string>
-    <string name="settings_catalog_updating">Mengambil data dari server…</string>
+    <string name="settings_catalog_updating">Mengambil katalog dari GitHub…</string>
     <string name="settings_catalog_updated">Data katalog diperbarui. Kembali ke beranda.</string>
     <string name="settings_catalog_failed">Gagal mengunduh data katalog.</string>
     <string name="settings_catalog_status_unknown">Status scrape tidak terbaca; mencoba unduh data…</string>

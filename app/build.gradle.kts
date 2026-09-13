@@ -11,10 +11,8 @@ android {
         applicationId = "com.webunime.tv"
         minSdk = 21
         targetSdk = 34
-        versionCode = 240
-        versionName = "1.11.20"
-
-        buildConfigField("String", "API_BASE_URL", "\"https://gitgitmiko.my.id\"")
+        versionCode = 241
+        versionName = "1.11.21"
 
         // Proxy Vercel (PAT GitHub hanya di server). Key bukan token GitHub.
         buildConfigField(

@@ -2,23 +2,6 @@ package com.webunime.tv.data.api
 
 import com.webunime.tv.data.CatalogItem
 
-data class AuthUser(
-    val id: Int = 0,
-    val email: String? = null,
-    val username: String? = null,
-    val displayName: String? = null,
-    val createdAt: String? = null,
-    val isActive: Boolean = true,
-    val canInvite: Boolean = false,
-    val isAdmin: Boolean = false,
-) {
-    fun displayLabel(): String =
-        displayName?.takeIf { it.isNotBlank() }
-            ?: username?.takeIf { it.isNotBlank() }
-            ?: email
-            ?: "Akun"
-}
-
 data class CatalogPage(
     val collection: String = "",
     val page: Int = 1,
