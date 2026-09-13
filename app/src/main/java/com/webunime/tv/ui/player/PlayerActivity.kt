@@ -827,6 +827,26 @@ class PlayerActivity : AppCompatActivity() {
                     clearWebHistoryOnFinish = false
                     view?.clearHistory()
                 }
+                // playcdn sering menampilkan halaman hitam "Pembaruan Sistem" (bukan video).
+                view?.evaluateJavascript(
+                    """
+                    (function(){
+                      try {
+                        var t = (document.title || '') + ' ' +
+                          ((document.body && (document.body.innerText || document.body.textContent)) || '');
+                        if (/Pembaruan Sistem/i.test(t)) return 'maint';
+                        if (/Video not found|video tidak ditemukan/i.test(t) &&
+                            !document.querySelector('video, .jwplayer, #video_player')) return 'missing';
+                      } catch (e) {}
+                      return 'ok';
+                    })();
+                    """.trimIndent(),
+                ) { result ->
+                    val flag = result?.trim('"', ' ')?.lowercase().orEmpty()
+                    if (flag == "maint" || flag == "missing") {
+                        tryFailover(flag)
+                    }
+                }
                 // Seek/play helpers universal — jangan timpa bridge wrapper Hydrax/Turbo.
                 if (!isAbyssWrapper && !isTurboWrapper) {
                     view?.evaluateJavascript(universalPlayerJs, null)

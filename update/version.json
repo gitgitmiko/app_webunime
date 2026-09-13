@@ -1,6 +1,6 @@
 {
-  "versionCode": 242,
-  "versionName": "1.11.22",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.22/WEBUNIME-TV-v1.11.22.apk",
-  "changelog": "Perbaikan force close saat poster gagal load (Glide fallback). Katalog GitHub, tanpa login, favorit/history lokal."
+  "versionCode": 243,
+  "versionName": "1.11.23",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.23/WEBUNIME-TV-v1.11.23.apk",
+  "changelog": "Perbaikan layar hitam player: resolve wrapper Hydrax/Turbo/Cast tanpa 403 Cloudflare; failover jika P2P maintenance."
 }

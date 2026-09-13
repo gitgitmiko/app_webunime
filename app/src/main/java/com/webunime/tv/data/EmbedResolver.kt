@@ -140,12 +140,38 @@ object EmbedResolver {
             host.contains("playcdn")
     }
 
-    private fun resolvePlayeriframe(sourceUrl: String): String =
-        runCatching {
+    private fun resolvePlayeriframe(sourceUrl: String): String {
+        // Path deterministic — jangan andalkan fetch HTML (videonode sering 403 ke OkHttp/CF).
+        resolveFromWrapperPath(sourceUrl)?.let { return it }
+        return runCatching {
             val normalized = rewritePlayerHost(sourceUrl)
             val html = fetch(normalized, referer = "https://tv12.lk21official.cc/")
             extractPlayerUrl(html, normalized) ?: normalized
         }.getOrDefault(sourceUrl)
+    }
+
+    /**
+     * Mapping tetap dari pola LK21:
+     * /iframe/hydrax|turbovip|cast|p2p/<id> → host player asli.
+     */
+    fun resolveFromWrapperPath(url: String): String? {
+        val uri = runCatching { java.net.URI(url) }.getOrNull() ?: return null
+        val path = uri.path.orEmpty()
+        val m = Regex(
+            """^/iframe/(hydrax|turbovip|turbo|cast|p2p)/([^/]+)/?$""",
+            RegexOption.IGNORE_CASE,
+        ).find(path) ?: return null
+        val server = m.groupValues[1].lowercase()
+        val id = m.groupValues[2].trim()
+        if (id.isBlank()) return null
+        return when (server) {
+            "hydrax" -> "https://abyssplayer.com/$id"
+            "turbovip", "turbo" -> "https://emturbovid.com/t/$id"
+            "cast" -> "https://gn1r5n.org/e/$id"
+            "p2p" -> "https://playcdn.de/video.php?id=$id&t=1"
+            else -> null
+        }
+    }
 
     /** playeriframe.sbs sering mati; videonode.de mirror aktif. */
     private fun rewritePlayerHost(url: String): String =
@@ -305,7 +331,7 @@ object EmbedResolver {
         val candidates = mutableListOf<String>()
         val m = iframeSrc.matcher(html)
         while (m.find()) {
-            val raw = m.group(1) ?: continue
+            val raw = m.group(1)?.replace("&amp;", "&") ?: continue
             val abs = toAbsolute(raw, base) ?: continue
             if (isBlockedNavigation(abs)) continue
             candidates += abs
