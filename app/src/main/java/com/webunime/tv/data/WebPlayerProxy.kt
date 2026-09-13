@@ -161,6 +161,74 @@ object WebPlayerProxy {
     /** Base URL wrapper: seolah embed berasal dari playeriframe.sbs. */
     const val ABYSS_WRAPPER_BASE = "https://playeriframe.sbs/"
 
+    const val VIDEONODE_WRAPPER_BASE = "https://videonode.de/"
+
+    /**
+     * Bootstrap /iframe3/: Chromium POST /api.php (OkHttp sering 403 CF),
+     * lalu kirim embedUrl ke [WebunimePlayback.onResolvedEmbed] agar Turbo/Hydrax
+     * memakai wrapper yang sudah terbukti jalan.
+     */
+    fun iframe3BootstrapHtml(server: String, id: String): String {
+        val safeServer = server.filter { it.isLetterOrDigit() }.ifBlank { "turbovip" }
+        val safeId = id
+            .replace("\\", "\\\\")
+            .replace("'", "\\'")
+            .replace("\"", "\\\"")
+            .replace("</", "<\\/")
+        // Warm iframe: cookie/CF Chromium; lalu POST api.php → embedUrl ke bridge.
+        return """
+            <!DOCTYPE html><html><head><meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+            html,body{margin:0;height:100%;width:100%;background:#000;color:#ddd;
+              font-family:sans-serif;display:flex;align-items:center;justify-content:center}
+            iframe#wuWarm{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;border:0}
+            </style></head>
+            <body><div id="msg">Memuat server…</div>
+            <iframe id="wuWarm" src="/iframe3/$safeServer/$safeId"></iframe>
+            <script>
+            (function(){
+              var doneOnce = false;
+              var body = 'host=' + encodeURIComponent('$safeServer') +
+                '&id=' + encodeURIComponent('$safeId');
+              function done(url){
+                if (doneOnce) return;
+                doneOnce = true;
+                try { WebunimePlayback.onResolvedEmbed(url || ''); } catch (e) {}
+              }
+              function resolve(){
+                fetch('/api.php', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json, text/plain, */*'
+                  },
+                  body: body,
+                  credentials: 'include'
+                }).then(function(r){
+                  if (!r.ok) throw new Error('http');
+                  return r.json();
+                }).then(function(j){
+                  done(j && j.embedUrl ? String(j.embedUrl) : '');
+                }).catch(function(){ done(''); });
+              }
+              var warm = document.getElementById('wuWarm');
+              var kicked = false;
+              function kick(){
+                if (kicked) return;
+                kicked = true;
+                setTimeout(resolve, 400);
+              }
+              if (warm) {
+                warm.addEventListener('load', kick);
+                warm.addEventListener('error', kick);
+              }
+              setTimeout(kick, 2200);
+            })();
+            </script></body></html>
+        """.trimIndent()
+    }
+
     /** Wrapper iframe TurboVIP (parent = playeriframe.sbs). */
     fun turboWrapperHtml(embedUrl: String): String = """
         <!DOCTYPE html><html><head><meta charset="utf-8">
@@ -319,6 +387,8 @@ object WebPlayerProxy {
         if (isHeavyMedia(url)) return null
         // POST tak punya body di WebResourceRequest → biarkan WebView menangani
         if (!request.method.equals("GET", ignoreCase = true)) return null
+        // /iframe3/ + /api.php harus Chromium murni (OkHttp sering 403 Cloudflare).
+        if (isVideonodeChromiumOnly(url)) return null
 
         return runCatching {
             val reqBuilder = Request.Builder().url(url)
@@ -364,6 +434,13 @@ object WebPlayerProxy {
                 )
             }
         }.getOrNull()
+    }
+
+    /** Halaman/API resolve wrapper baru — jangan lewat OkHttp. */
+    private fun isVideonodeChromiumOnly(url: String): Boolean {
+        val u = url.lowercase()
+        if (!u.contains("videonode.") && !u.contains("playeriframe.")) return false
+        return u.contains("/api.php") || u.contains("/iframe3/")
     }
 
     /**

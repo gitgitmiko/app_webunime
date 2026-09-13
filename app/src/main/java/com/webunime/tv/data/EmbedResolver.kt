@@ -27,11 +27,10 @@ object EmbedResolver {
 
     /**
      * Wrapper LK21 (playeriframe.sbs dan mirror-nya, mis. videonode.de) memakai pola
-     * path /iframe/<server>/<id>. Nama domain berganti-ganti, jadi deteksi utama
-     * memakai pola path, bukan daftar host.
+     * path /iframe/<server>/<id> atau /iframe3/<server>/<id>.
      */
     private val wrapperHostName = Regex("(playeriframe|videonode)", RegexOption.IGNORE_CASE)
-    private val wrapperPath = Regex("""^/iframe/[a-z0-9_-]+/.+""", RegexOption.IGNORE_CASE)
+    private val wrapperPath = Regex("""^/iframe3?/[a-z0-9_-]+/.+""", RegexOption.IGNORE_CASE)
 
     data class ResolveResult(
         val url: String,
@@ -54,6 +53,33 @@ object EmbedResolver {
     }
 
     fun needsPlayeriframeResolve(url: String): Boolean = isWrapperEmbed(url)
+
+    /** Wrapper baru LK21: ID opaque + resolve lewat POST /api.php (bukan slug player langsung). */
+    fun isIframe3Wrapper(url: String): Boolean {
+        if (!wrapperHostName.containsMatchIn(url)) return false
+        val path = runCatching { java.net.URI(url).path }.getOrNull().orEmpty()
+        return path.startsWith("/iframe3/", ignoreCase = true)
+    }
+
+    /** host + id dari path /iframe3/<server>/<id>. */
+    fun parseIframe3(url: String): Pair<String, String>? {
+        val path = runCatching { java.net.URI(url).path }.getOrNull().orEmpty()
+        val m = Regex(
+            """^/iframe3/(hydrax|turbovip|turbo|cast|p2p)/([^/]+)/?$""",
+            RegexOption.IGNORE_CASE,
+        ).find(path) ?: return null
+        val server = m.groupValues[1].lowercase().let { if (it == "turbo") "turbovip" else it }
+        val id = m.groupValues[2].trim()
+        if (id.isBlank()) return null
+        return server to id
+    }
+
+    fun wrapperOrigin(url: String): String? {
+        val uri = runCatching { java.net.URI(url) }.getOrNull() ?: return null
+        val host = uri.host?.takeIf { it.isNotBlank() } ?: return null
+        val scheme = uri.scheme?.takeIf { it.isNotBlank() } ?: "https"
+        return "$scheme://$host/"
+    }
 
     fun isWrapperEmbed(url: String): Boolean {
         if (wrapperHostName.containsMatchIn(url)) return true
@@ -141,7 +167,9 @@ object EmbedResolver {
     }
 
     private fun resolvePlayeriframe(sourceUrl: String): String {
-        // Path deterministic — jangan andalkan fetch HTML (videonode sering 403 ke OkHttp/CF).
+        // iframe3: ID opaque — jangan map path; PlayerActivity bootstrap POST /api.php.
+        if (isIframe3Wrapper(sourceUrl)) return rewritePlayerHost(sourceUrl)
+        // Path deterministic lama /iframe/<server>/<slug>
         resolveFromWrapperPath(sourceUrl)?.let { return it }
         return runCatching {
             val normalized = rewritePlayerHost(sourceUrl)

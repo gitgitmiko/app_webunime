@@ -1,6 +1,6 @@
 {
-  "versionCode": 243,
-  "versionName": "1.11.23",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.23/WEBUNIME-TV-v1.11.23.apk",
-  "changelog": "Perbaikan layar hitam player: resolve wrapper Hydrax/Turbo/Cast tanpa 403 Cloudflare; failover jika P2P maintenance."
+  "versionCode": 244,
+  "versionName": "1.11.24",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.24/WEBUNIME-TV-v1.11.24.apk",
+  "changelog": "Support wrapper LK21 /iframe3/: resolve via api.php lalu TurboVIP/Hydrax pakai wrapper yang benar (TurboVIP film baru bisa diputar)."
 }

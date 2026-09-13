@@ -711,6 +711,24 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
 
+        /**
+         * Hasil POST /api.php dari bootstrap /iframe3/.
+         * Lanjut ke wrapper Turbo/Hydrax yang sudah benar (bukan nest mentah).
+         */
+        @android.webkit.JavascriptInterface
+        fun onResolvedEmbed(embedUrl: String) {
+            runOnUiThread {
+                if (isFinishing || failoverInProgress) return@runOnUiThread
+                val play = embedUrl.trim()
+                if (play.isBlank() || !play.startsWith("http")) {
+                    tryFailover("iframe3-resolve")
+                    return@runOnUiThread
+                }
+                hideHandler.removeCallbacks(webFailTimeoutRunnable)
+                startWeb(play, serverLabel)
+            }
+        }
+
         @android.webkit.JavascriptInterface
         fun onQualities(json: String) {
             runOnUiThread { showQualityDialog(json) }
@@ -835,6 +853,7 @@ class PlayerActivity : AppCompatActivity() {
                         var t = (document.title || '') + ' ' +
                           ((document.body && (document.body.innerText || document.body.textContent)) || '');
                         if (/Pembaruan Sistem/i.test(t)) return 'maint';
+                        if (/Memuat server/i.test(t)) return 'ok';
                         if (/Video not found|video tidak ditemukan/i.test(t) &&
                             !document.querySelector('video, .jwplayer, #video_player')) return 'missing';
                       } catch (e) {}
@@ -957,6 +976,24 @@ class PlayerActivity : AppCompatActivity() {
                 "utf-8",
                 null
             )
+        } else if (EmbedResolver.isIframe3Wrapper(url)) {
+            // /iframe3/: resolve embedUrl via Chromium fetch(/api.php), lalu startWeb lagi.
+            val parsed = EmbedResolver.parseIframe3(url)
+            if (parsed == null) {
+                tryFailover("iframe3-parse")
+                return
+            }
+            val (host, id) = parsed
+            val base = EmbedResolver.wrapperOrigin(url) ?: WebPlayerProxy.VIDEONODE_WRAPPER_BASE
+            webView.loadDataWithBaseURL(
+                base,
+                WebPlayerProxy.iframe3BootstrapHtml(host, id),
+                "text/html",
+                "utf-8",
+                null
+            )
+            hideHandler.removeCallbacks(webFailTimeoutRunnable)
+            hideHandler.postDelayed(webFailTimeoutRunnable, WEB_FAIL_TIMEOUT_MS)
         } else {
             val headers = mutableMapOf<String, String>()
             PlayerRouter.refererFor(url)?.let { headers["Referer"] = it }
