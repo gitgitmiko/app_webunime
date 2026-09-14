@@ -364,6 +364,7 @@ class BrowseFragment : BrowseSupportFragment() {
             DeferredRowSpec(getString(R.string.row_movies_top), "movies", sort = "top_random"),
             DeferredRowSpec(getString(R.string.row_horror), "horror"),
             DeferredRowSpec(getString(R.string.row_horror_top), "horror", sort = "top_random"),
+            DeferredRowSpec(getString(R.string.row_marvel), "marvel"),
             DeferredRowSpec(getString(R.string.row_series_latest), "series-latest"),
             DeferredRowSpec(getString(R.string.row_series), "series"),
             DeferredRowSpec(getString(R.string.row_anime_latest), "anime-latest"),

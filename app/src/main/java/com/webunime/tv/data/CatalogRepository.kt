@@ -74,6 +74,7 @@ class CatalogRepository(
             snapshot.movies.isNotEmpty() ||
             snapshot.indonesia.isNotEmpty() ||
             snapshot.horror.isNotEmpty() ||
+            snapshot.marvel.isNotEmpty() ||
             snapshot.series.isNotEmpty() ||
             snapshot.seriesLatest.isNotEmpty() ||
             snapshot.anime.isNotEmpty() ||
@@ -186,6 +187,7 @@ class CatalogRepository(
             CatalogSection.MOVIES -> snapshot.copy(movies = list)
             CatalogSection.INDONESIA -> snapshot.copy(indonesia = list)
             CatalogSection.HORROR -> snapshot.copy(horror = list)
+            CatalogSection.MARVEL -> snapshot.copy(marvel = list)
             CatalogSection.SERIES_LATEST -> snapshot.copy(seriesLatest = list)
             CatalogSection.SERIES -> snapshot.copy(series = list)
             CatalogSection.ANIME_LATEST -> snapshot.copy(animeLatest = list)
@@ -802,6 +804,7 @@ class CatalogRepository(
             CatalogSection.MOVIES -> snapshot.movies
             CatalogSection.INDONESIA -> snapshot.indonesia
             CatalogSection.HORROR -> snapshot.horror
+            CatalogSection.MARVEL -> snapshot.marvel
             CatalogSection.SERIES_LATEST -> snapshot.seriesLatest
             CatalogSection.SERIES -> snapshot.series
             CatalogSection.ANIME_LATEST -> snapshot.animeLatest
@@ -844,6 +847,7 @@ class CatalogRepository(
             "series-index.json",
             "series-latest.json",
             "horror.json",
+            "marvel.json",
             "indonesia.json",
             "anime-index.json",
             "anime-movies.json",

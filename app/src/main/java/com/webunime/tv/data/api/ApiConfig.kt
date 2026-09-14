@@ -7,6 +7,7 @@ object ApiConfig {
         return when {
             c == "anime-latest" -> "anime"
             c == "series-latest" -> "series"
+            c == "marvel" -> "movies"
             c in ITEM_COLLECTIONS -> c
             else -> "movies"
         }
@@ -16,6 +17,7 @@ object ApiConfig {
         "movies",
         "series",
         "horror",
+        "marvel",
         "indonesia",
         "anime",
         "anime-movies",

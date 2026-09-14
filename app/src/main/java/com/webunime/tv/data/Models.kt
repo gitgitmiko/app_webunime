@@ -142,6 +142,8 @@ data class CatalogItem(
         if (cat == "anime-latest" || !anime_slug.isNullOrBlank() || type == "anime") return "anime"
         if (cat == "series-latest" || !series_slug.isNullOrBlank() || type == "series") return "series"
         if (type == "anime-movie" || cat == "anime-movies") return "anime-movies"
+        // Marvel = subset film LK21; detail/player tetap di koleksi movies.
+        if (cat == "marvel") return "movies"
         if (cat in PARENT_COLLECTIONS) return cat
         return "movies"
     }
@@ -358,6 +360,7 @@ data class CatalogSnapshot(
     val series: List<CatalogItem> = emptyList(),
     val seriesLatest: List<CatalogItem> = emptyList(),
     val horror: List<CatalogItem> = emptyList(),
+    val marvel: List<CatalogItem> = emptyList(),
     val indonesia: List<CatalogItem> = emptyList(),
     val anime: List<CatalogItem> = emptyList(),
     val animeMovies: List<CatalogItem> = emptyList(),
@@ -366,7 +369,7 @@ data class CatalogSnapshot(
     fun findBySlug(slug: String): CatalogItem? {
         if (slug.isBlank()) return null
         val key = slug.trim()
-        val all = movies + series + horror + indonesia + anime + animeMovies
+        val all = movies + series + horror + marvel + indonesia + anime + animeMovies
         all.firstOrNull { it.slug.equals(key, ignoreCase = true) }?.let { return it }
         // Feed anime-terbaru: hanya anime_slug — ambil entri penuh dari katalog anime
         anime.firstOrNull {
@@ -391,7 +394,7 @@ data class CatalogSnapshot(
     fun search(query: String, limit: Int = 40): List<CatalogItem> {
         val q = query.trim().lowercase()
         if (q.length < 2) return emptyList()
-        val pool = (movies + series + horror + indonesia + anime + animeMovies)
+        val pool = (movies + series + horror + marvel + indonesia + anime + animeMovies)
             .distinctBy { it.slug ?: "${it.anime_slug}:${it.judul}" }
         return pool
             .asSequence()
