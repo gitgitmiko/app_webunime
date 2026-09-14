@@ -1,6 +1,6 @@
 {
-  "versionCode": 249,
-  "versionName": "1.11.29",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.29/WEBUNIME-TV-v1.11.29.apk",
-  "changelog": "Perbaikan poster Anoboy kosong (anoboy.xyz → anoboy.quest), contoh Yani Neko."
+  "versionCode": 250,
+  "versionName": "1.11.30",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.30/WEBUNIME-TV-v1.11.30.apk",
+  "changelog": "Baris Lanjutkan menonton dibatasi 10 item."
 }

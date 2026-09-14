@@ -485,7 +485,7 @@ class BrowseFragment : BrowseSupportFragment() {
 
     private fun buildContinueItems(): List<CatalogItem> {
         val app = requireActivity().application as WebunimeApp
-        val fromApi = app.libraryRepository.history.take(20).map { entry ->
+        val fromApi = app.libraryRepository.history.take(CONTINUE_ROW_LIMIT).map { entry ->
             val local = app.watchSessions.all()
                 .firstOrNull { it.slug.equals(entry.slug, true) && !it.isFinished() }
             val durasi = local?.let { formatContinueMeta(it.positionMs, it.durationMs) }
@@ -498,7 +498,7 @@ class BrowseFragment : BrowseSupportFragment() {
             )
         }
         val seen = fromApi.mapNotNull { it.slug?.lowercase() }.toMutableSet()
-        val fromLocal = app.watchSessions.continueWatching().mapNotNull { session ->
+        val fromLocal = app.watchSessions.continueWatching(CONTINUE_ROW_LIMIT).mapNotNull { session ->
             val key = session.slug.lowercase()
             if (key in seen) return@mapNotNull null
             seen.add(key)
@@ -513,7 +513,7 @@ class BrowseFragment : BrowseSupportFragment() {
                 durasi = formatContinueMeta(session.positionMs, session.durationMs),
             )
         }
-        return (fromApi + fromLocal).take(20)
+        return (fromApi + fromLocal).take(CONTINUE_ROW_LIMIT)
     }
 
     private fun buildFavoriteItems(): List<CatalogItem> =
@@ -831,6 +831,7 @@ class BrowseFragment : BrowseSupportFragment() {
 
     companion object {
         private const val PREFETCH_THRESHOLD = 3
+        private const val CONTINUE_ROW_LIMIT = 10
         const val TYPE_CONTINUE = "continue"
         const val TYPE_FAVORITE = "favorite"
         private const val HERO_LIMIT = 10

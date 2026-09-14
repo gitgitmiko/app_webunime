@@ -57,7 +57,7 @@ class WatchSessionStore(context: Context) {
 
     /** Baris "Lanjutkan" — belum selesai & sudah ada progress bermakna. */
     @Synchronized
-    fun continueWatching(limit: Int = 20): List<WatchSession> =
+    fun continueWatching(limit: Int = 10): List<WatchSession> =
         all()
             .filter { it.positionMs >= MIN_RESUME_MS && !it.isFinished() }
             .take(limit)
