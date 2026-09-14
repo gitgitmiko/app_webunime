@@ -1,6 +1,6 @@
 {
-  "versionCode": 246,
-  "versionName": "1.11.26",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.26/WEBUNIME-TV-v1.11.26.apk",
-  "changelog": "Susun ulang baris browse: Film Terbaru, Top Film, Horor, Top Horor, Series, Anime. Top = random 10 rating di atas 8."
+  "versionCode": 247,
+  "versionName": "1.11.27",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.27/WEBUNIME-TV-v1.11.27.apk",
+  "changelog": "Autoplay langsung tanpa OK remote; auto-next episode series; default TurboVIP; pilihan server Film/Series bisa disembunyikan di Settings."
 }

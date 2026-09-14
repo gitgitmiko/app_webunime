@@ -2,26 +2,15 @@ package com.webunime.tv.data
 
 object PlayerRouter {
 
-    /** Film / series / horor: Hydrax → TurboVIP → Cast → P2P (terakhir). */
-    private val filmPrefer = listOf("hydrax", "turbovip", "cast")
+    /** Film / series / horor: TurboVIP dulu, lalu Hydrax → Cast → P2P. */
+    private val filmPrefer = listOf("turbovip", "hydrax", "cast")
 
     fun preferredPlayers(item: CatalogItem, episode: Episode? = null): List<PlayerServer> {
         val raw = resolvePlayers(item, episode).filter { !it.url.isNullOrBlank() }
 
         if (raw.isEmpty()) return emptyList()
 
-        val isAnime = item.type == "anime" || item.type == "anime-movie" ||
-            item.anime_slug != null ||
-            raw.any { p ->
-                val u = (p.url ?: "").lowercase()
-                u.contains("wibufile") || u.contains("blogger.com") ||
-                    u.contains("filedon") || u.contains("mega.nz") ||
-                    u.contains("pixeldrain") || u.contains("anoboy") ||
-                    (p.server ?: "").contains("anoboy", ignoreCase = true) ||
-                    (p.label ?: "").contains("anoboy", ignoreCase = true)
-            }
-
-        if (isAnime) {
+        if (isAnimeContent(item, raw)) {
             return rankAnime(raw)
         }
 
@@ -50,8 +39,20 @@ object PlayerRouter {
         val s = (p.server ?: "").lowercase()
         val l = (p.label ?: "").lowercase()
         val u = (p.url ?: "").lowercase()
-        return s.contains(key) || l.contains(key) || u.contains(key) ||
-            (key == "hydrax" && (u.contains("abyss") || u.contains("gn1r5n")))
+        return when (key) {
+            "turbovip" ->
+                s.contains("turbo") || l.contains("turbo") ||
+                    u.contains("turbo") || u.contains("emturbovid")
+            "hydrax" ->
+                s.contains("hydrax") || l.contains("hydrax") ||
+                    u.contains("abyss") || u.contains("/iframe/hydrax") ||
+                    u.contains("/iframe3/hydrax")
+            "cast" ->
+                s.contains("cast") || l.contains("cast") ||
+                    u.contains("gn1r5n") || u.contains("/iframe/cast") ||
+                    u.contains("/iframe3/cast")
+            else -> s.contains(key) || l.contains(key) || u.contains(key)
+        }
     }
 
     private fun isP2p(p: PlayerServer): Boolean {
@@ -114,6 +115,21 @@ object PlayerRouter {
 
     fun pickDefault(item: CatalogItem, episode: Episode? = null): PlayerServer? =
         preferredPlayers(item, episode).firstOrNull()
+
+    fun isAnimeContent(item: CatalogItem, players: List<PlayerServer> = emptyList()): Boolean {
+        if (item.type == "anime" || item.type == "anime-movie" || item.anime_slug != null) {
+            return true
+        }
+        val raw = players.ifEmpty { resolvePlayers(item, null) }
+        return raw.any { p ->
+            val u = (p.url ?: "").lowercase()
+            u.contains("wibufile") || u.contains("blogger.com") ||
+                u.contains("filedon") || u.contains("mega.nz") ||
+                u.contains("pixeldrain") || u.contains("anoboy") ||
+                (p.server ?: "").contains("anoboy", ignoreCase = true) ||
+                (p.label ?: "").contains("anoboy", ignoreCase = true)
+        }
+    }
 
     fun isDirectMedia(url: String): Boolean {
         val u = url.lowercase()

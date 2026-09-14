@@ -91,6 +91,10 @@
     <string name="settings_check_update_hint">Jika sebelumnya memilih Nanti, cek ulang di sini untuk unduh versi terbaru.</string>
     <string name="settings_checking_update">Memeriksa pembaruan…</string>
     <string name="settings_up_to_date">Sudah versi terbaru (%1$s)</string>
+    <string name="settings_section_playback">Pemutaran</string>
+    <string name="settings_film_servers_hidden">Pilihan server Film/Series: Disembunyikan</string>
+    <string name="settings_film_servers_shown">Pilihan server Film/Series: Ditampilkan</string>
+    <string name="settings_film_servers_hint">Default: disembunyikan — film/series langsung TurboVIP. Anime tetap menampilkan pilihan server. Ketuk untuk ubah.</string>
     <string name="settings_section_catalog">Data katalog</string>
     <string name="settings_start_scrape">Mulai scraping</string>
     <string name="settings_refresh_catalog">Update data terbaru</string>

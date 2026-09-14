@@ -683,6 +683,7 @@ class PlayerActivity : AppCompatActivity() {
             webVideoActive = true
             hideHandler.removeCallbacks(webFailTimeoutRunnable)
             hideHandler.removeCallbacks(showPauseHudRunnable)
+            hideHandler.removeCallbacks(autoplayKickRunnable)
             setTitleBarVisible(false)
         }
 
@@ -763,6 +764,8 @@ class PlayerActivity : AppCompatActivity() {
         pendingSeekSec = 0
         hideHandler.removeCallbacks(applySeekRunnable)
         hideHandler.removeCallbacks(clearSeekHintRunnable)
+        hideHandler.removeCallbacks(autoplayKickRunnable)
+        autoplayKickAttempts = 0
         clearWebHistoryOnFinish = true
 
         webView.removeJavascriptInterface("WebunimePlayback")
@@ -952,6 +955,8 @@ class PlayerActivity : AppCompatActivity() {
                         null
                     )
                 }
+                // Film/series (Turbo/Hydrax) + server lain: kick autoplay tanpa OK remote.
+                ensureWebAutoplay()
             }
         }
 
@@ -1216,6 +1221,8 @@ class PlayerActivity : AppCompatActivity() {
         prepareAnimeSkipTimes()
         playbackOpenedAt = SystemClock.elapsedRealtime()
         playCurrentServer()
+        // Auto-next: pastikan episode baru langsung play tanpa OK.
+        ensureWebAutoplay()
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
@@ -1598,6 +1605,38 @@ class PlayerActivity : AppCompatActivity() {
         webView.evaluateJavascript(js, null)
     }
 
+    /** Paksa play tanpa OK remote — dipakai saat buka film/series & auto-next episode. */
+    private fun ensureWebAutoplay() {
+        if (!this::webView.isInitialized || webView.visibility != View.VISIBLE) return
+        hideHandler.removeCallbacks(autoplayKickRunnable)
+        autoplayKickAttempts = 0
+        hideHandler.postDelayed(autoplayKickRunnable, 400)
+    }
+
+    private var autoplayKickAttempts = 0
+    private val autoplayKickRunnable = object : Runnable {
+        override fun run() {
+            if (!this@PlayerActivity::webView.isInitialized || webView.visibility != View.VISIBLE) return
+            if (webVideoActive) return
+            autoplayKickAttempts++
+            val js = """
+                (function(){
+                  try{
+                    if(typeof window.__wuPlay==="function"){ window.__wuPlay(); return "play"; }
+                    var f=document.querySelector("iframe#wuEmbed, iframe");
+                    if(f&&f.contentWindow){ f.contentWindow.postMessage("__wuPlay","*"); return "post"; }
+                  }catch(e){}
+                  return "noop";
+                })();
+            """.trimIndent()
+            runCatching { webView.evaluateJavascript(js, null) }
+            if (autoplayKickAttempts < 12 && !webVideoActive) {
+                val nextDelay = if (autoplayKickAttempts < 5) 500L else 900L
+                hideHandler.postDelayed(this, nextDelay)
+            }
+        }
+    }
+
     private fun requestQualityPicker() {
         qualityDialogShown = false
         hideHandler.removeCallbacks(qualityTimeoutRunnable)
@@ -1714,6 +1753,7 @@ class PlayerActivity : AppCompatActivity() {
         hideHandler.removeCallbacks(hideSkipOpRunnable)
         hideHandler.removeCallbacks(skipPromptTicker)
         hideHandler.removeCallbacks(showPauseHudRunnable)
+        hideHandler.removeCallbacks(autoplayKickRunnable)
         qualityDialog?.dismiss()
         qualityDialog = null
         if (this::webView.isInitialized) {

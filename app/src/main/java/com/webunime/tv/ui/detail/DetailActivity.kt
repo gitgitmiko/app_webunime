@@ -18,6 +18,7 @@ import com.webunime.tv.R
 import com.webunime.tv.WebunimeApp
 import com.webunime.tv.data.CatalogItem
 import com.webunime.tv.data.Episode
+import com.webunime.tv.data.PlaybackPrefs
 import com.webunime.tv.data.PlayerRouter
 import com.webunime.tv.data.PlayerServer
 import com.webunime.tv.data.WatchSessionStore
@@ -505,8 +506,14 @@ class DetailActivity : AppCompatActivity() {
         selectedPlayer = players.firstOrNull { it.url == selectedPlayer?.url } ?: players.firstOrNull()
         if (players.isEmpty()) {
             Toast.makeText(this, R.string.error_no_players, Toast.LENGTH_SHORT).show()
+            applyServerPickerVisibility(show = false)
             return
         }
+        val showPicker = PlayerRouter.isAnimeContent(item, players) ||
+            PlaybackPrefs.showFilmServerPicker(this)
+        applyServerPickerVisibility(showPicker)
+        if (!showPicker) return
+
         players.forEachIndexed { index, server ->
             val btn = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
                 text = server.displayName()
@@ -539,6 +546,12 @@ class DetailActivity : AppCompatActivity() {
             }
             serverContainer.addView(btn)
         }
+    }
+
+    private fun applyServerPickerVisibility(show: Boolean) {
+        val vis = if (show) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.serverLabel)?.visibility = vis
+        findViewById<View>(R.id.serverScroll)?.visibility = vis
     }
 
     private fun startPlayback() {

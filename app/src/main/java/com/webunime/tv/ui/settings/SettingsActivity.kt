@@ -15,6 +15,7 @@ import com.webunime.tv.R
 import com.webunime.tv.WebunimeApp
 import com.webunime.tv.data.AppUpdateChecker
 import com.webunime.tv.data.AppUpdateInfo
+import com.webunime.tv.data.PlaybackPrefs
 import com.webunime.tv.data.ScrapeTriggerClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -54,6 +55,13 @@ class SettingsActivity : AppCompatActivity() {
         startScrapeBtn = findViewById(R.id.settingsStartScrape)
         refreshCatalogBtn = findViewById(R.id.settingsRefreshCatalog)
 
+        val filmServersBtn = findViewById<MaterialButton>(R.id.settingsToggleFilmServers)
+        bindFilmServersToggle(filmServersBtn)
+        filmServersBtn.setOnClickListener {
+            PlaybackPrefs.toggleShowFilmServerPicker(this)
+            bindFilmServersToggle(filmServersBtn)
+        }
+
         val checkBtn = findViewById<MaterialButton>(R.id.settingsCheckUpdate)
         checkBtn.setOnClickListener { checkForUpdate() }
         checkBtn.requestFocus()
@@ -92,6 +100,14 @@ class SettingsActivity : AppCompatActivity() {
             return true
         }
         return super.dispatchKeyEvent(event)
+    }
+
+    private fun bindFilmServersToggle(btn: MaterialButton) {
+        val shown = PlaybackPrefs.showFilmServerPicker(this)
+        btn.setText(
+            if (shown) R.string.settings_film_servers_shown
+            else R.string.settings_film_servers_hidden,
+        )
     }
 
     private fun isScrapeLocked(): Boolean =
