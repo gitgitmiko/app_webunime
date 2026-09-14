@@ -8,9 +8,11 @@ enum class CatalogSection(val fileName: String, val apiName: String) {
     INDONESIA("indonesia.json", "indonesia"),
     HORROR("horror.json", "horror"),
     SERIES_LATEST("series-latest.json", "series-latest"),
-    SERIES("series.json", "series"),
+    /** Index ringan (~0.5MB) — detail episode di-hydrate dari series.json. */
+    SERIES("series-index.json", "series"),
     ANIME_LATEST("anime-latest.json", "anime-latest"),
-    ANIME("anime.json", "anime"),
+    /** Index ringan (~1.3MB) — detail episode di-hydrate dari anime.json. */
+    ANIME("anime-index.json", "anime"),
     ANIME_MOVIES("anime-movies.json", "anime-movies"),
     ;
 

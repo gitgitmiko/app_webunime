@@ -147,15 +147,77 @@ data class CatalogItem(
     }
 
     fun isHydrated(): Boolean =
-        !players.isNullOrEmpty() ||
-            !episodes.isNullOrEmpty() ||
-            (sinopsis?.length ?: 0) > 320
+        !players.isNullOrEmpty() || !episodes.isNullOrEmpty()
 
     companion object {
         private val PARENT_COLLECTIONS = setOf(
             "movies", "series", "horror", "indonesia", "anime", "anime-movies",
         )
     }
+}
+
+/**
+ * Shell katalog tanpa [episodes]/[players] — Moshi mengabaikan field JSON berat
+ * supaya anime.json / series.json (~puluhan MB) tidak OOM di TV.
+ */
+@JsonClass(generateAdapter = false)
+data class CatalogItemShell(
+    val id: Int? = null,
+    val type: String? = null,
+    val nama: String? = null,
+    val judul: String? = null,
+    val tahun: String? = null,
+    val thumbnail: String? = null,
+    val thumbnail_landscape: String? = null,
+    val rating: String? = null,
+    val quality: String? = null,
+    val negara: String? = null,
+    val is_new: Boolean? = null,
+    val durasi: String? = null,
+    val genre: List<String>? = null,
+    val sinopsis: String? = null,
+    val slug: String? = null,
+    val catalog: String? = null,
+    val source: String? = null,
+    val rilis: String? = null,
+    val rilis_iso: String? = null,
+    val episodes_count: Int? = null,
+    val anime_slug: String? = null,
+    val series_slug: String? = null,
+    val episode: Int? = null,
+    val season: Int? = null,
+    val episode_source: String? = null,
+    val mal_id: Int? = null,
+) {
+    fun toCatalogItem(): CatalogItem =
+        CatalogItem(
+            id = id,
+            type = type,
+            nama = nama,
+            judul = judul,
+            tahun = tahun,
+            thumbnail = thumbnail,
+            thumbnail_landscape = thumbnail_landscape,
+            rating = rating,
+            quality = quality,
+            negara = negara,
+            is_new = is_new,
+            durasi = durasi,
+            genre = genre,
+            sinopsis = sinopsis,
+            slug = slug,
+            catalog = catalog,
+            source = source,
+            rilis = rilis,
+            rilis_iso = rilis_iso,
+            episodes_count = episodes_count,
+            anime_slug = anime_slug,
+            series_slug = series_slug,
+            episode = episode,
+            season = season,
+            episode_source = episode_source,
+            mal_id = mal_id,
+        )
 }
 
 /**
@@ -303,13 +365,20 @@ data class CatalogSnapshot(
 ) {
     fun findBySlug(slug: String): CatalogItem? {
         if (slug.isBlank()) return null
+        val key = slug.trim()
         val all = movies + series + horror + indonesia + anime + animeMovies
-        all.firstOrNull { it.slug == slug }?.let { return it }
+        all.firstOrNull { it.slug.equals(key, ignoreCase = true) }?.let { return it }
         // Feed anime-terbaru: hanya anime_slug — ambil entri penuh dari katalog anime
-        anime.firstOrNull { it.slug == slug || it.anime_slug == slug }?.let { return it }
-        animeMovies.firstOrNull { it.slug == slug || it.anime_slug == slug }?.let { return it }
+        anime.firstOrNull {
+            it.slug.equals(key, ignoreCase = true) || it.anime_slug.equals(key, ignoreCase = true)
+        }?.let { return it }
+        animeMovies.firstOrNull {
+            it.slug.equals(key, ignoreCase = true) || it.anime_slug.equals(key, ignoreCase = true)
+        }?.let { return it }
         // Feed series-terbaru: series_slug → entri penuh di series.json
-        series.firstOrNull { it.slug == slug || it.series_slug == slug }?.let { return it }
+        series.firstOrNull {
+            it.slug.equals(key, ignoreCase = true) || it.series_slug.equals(key, ignoreCase = true)
+        }?.let { return it }
         return null
     }
 

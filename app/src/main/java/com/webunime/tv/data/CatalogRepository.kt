@@ -11,6 +11,8 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okio.buffer
+import okio.source
 import java.io.File
 import java.util.Calendar
 import java.util.concurrent.ConcurrentHashMap
@@ -30,11 +32,15 @@ class CatalogRepository(
 
     private val listType = Types.newParameterizedType(List::class.java, CatalogItem::class.java)
     private val listAdapter = moshi.adapter<List<CatalogItem>>(listType)
+    private val shellListType =
+        Types.newParameterizedType(List::class.java, CatalogItemShell::class.java)
+    private val shellListAdapter = moshi.adapter<List<CatalogItemShell>>(shellListType)
+    private val itemAdapter = moshi.adapter(CatalogItem::class.java)
 
     private val client = OkHttpClient.Builder()
-        .connectTimeout(12, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .callTimeout(40, TimeUnit.SECONDS)
+        .connectTimeout(20, TimeUnit.SECONDS)
+        .readTimeout(180, TimeUnit.SECONDS)
+        .callTimeout(240, TimeUnit.SECONDS)
         .build()
 
     private val cacheDir: File
@@ -142,23 +148,50 @@ class CatalogRepository(
     suspend fun ensureSection(section: CatalogSection): CatalogSnapshot = sectionMutex.withLock {
         withContext(Dispatchers.IO) {
             if (section in loadedSections) return@withContext snapshot
-            val list = readList(section.fileName)
-            loadedSections.add(section)
-            snapshot = when (section) {
-                CatalogSection.MOVIES -> snapshot.copy(movies = list)
-                CatalogSection.INDONESIA -> snapshot.copy(indonesia = list)
-                CatalogSection.HORROR -> snapshot.copy(horror = list)
-                CatalogSection.SERIES_LATEST -> snapshot.copy(seriesLatest = list)
-                CatalogSection.SERIES -> snapshot.copy(series = list)
-                CatalogSection.ANIME_LATEST -> snapshot.copy(animeLatest = list)
-                CatalogSection.ANIME -> snapshot.copy(anime = list)
-                CatalogSection.ANIME_MOVIES -> snapshot.copy(animeMovies = list)
+            // Anime/Series browse pakai *-index.json (~1MB). Fallback ke file penuh (shell) bila index belum ada.
+            var list = readList(section.fileName)
+            if (list.isEmpty()) {
+                list = when (section) {
+                    CatalogSection.ANIME -> readList("anime.json", lightweight = true)
+                    CatalogSection.SERIES -> readList("series.json", lightweight = true)
+                    else -> emptyList()
+                }
             }
+            if (list.isEmpty()) {
+                val file = File(cacheDir, section.fileName)
+                if (file.exists() && file.length() > 50_000L) {
+                    file.delete()
+                    list = readList(section.fileName)
+                    if (list.isEmpty()) {
+                        list = when (section) {
+                            CatalogSection.ANIME -> readList("anime.json", lightweight = true)
+                            CatalogSection.SERIES -> readList("series.json", lightweight = true)
+                            else -> emptyList()
+                        }
+                    }
+                }
+            }
+            // Kosong pun ditandai loaded agar tidak retry parse berkali-kali.
+            loadedSections.add(section)
+            if (list.isEmpty()) return@withContext snapshot
+            snapshot = applySection(section, list)
             snapshot = enrichThumbnails(snapshot)
             for (item in list) remember(item, section.apiName)
             snapshot
         }
     }
+
+    private fun applySection(section: CatalogSection, list: List<CatalogItem>): CatalogSnapshot =
+        when (section) {
+            CatalogSection.MOVIES -> snapshot.copy(movies = list)
+            CatalogSection.INDONESIA -> snapshot.copy(indonesia = list)
+            CatalogSection.HORROR -> snapshot.copy(horror = list)
+            CatalogSection.SERIES_LATEST -> snapshot.copy(seriesLatest = list)
+            CatalogSection.SERIES -> snapshot.copy(series = list)
+            CatalogSection.ANIME_LATEST -> snapshot.copy(animeLatest = list)
+            CatalogSection.ANIME -> snapshot.copy(anime = list)
+            CatalogSection.ANIME_MOVIES -> snapshot.copy(animeMovies = list)
+        }
 
     suspend fun ensureSections(sections: Collection<CatalogSection>): CatalogSnapshot {
         for (section in sections) ensureSection(section)
@@ -260,7 +293,7 @@ class CatalogRepository(
         if (cached != null && cached.isHydrated()) return cached
         sectionFor(col)?.let { ensureSection(it) }
         val found = snapshot.findBySlug(s)?.let { remember(it, col) }
-        return found ?: cached
+        return hydrateIfNeeded(found ?: cached, col)
     }
 
     suspend fun findBySlugEnsured(
@@ -268,20 +301,35 @@ class CatalogRepository(
         collectionHint: String? = null,
     ): CatalogItem? {
         if (slug.isBlank()) return null
+        val key = slug.trim()
         val hint = collectionHint?.takeIf { it.isNotBlank() }
         if (hint != null) {
             sectionFor(hint)?.let { ensureSection(it) }
-            snapshot.findBySlug(slug)?.let { return remember(it, hint) }
-            if (hint == "anime-latest") {
-                ensureSection(CatalogSection.ANIME)
-                snapshot.findBySlug(slug)?.let { return remember(it, "anime") }
+            snapshot.findBySlug(key)?.let {
+                return hydrateIfNeeded(remember(it, hint), hint)
             }
-            if (hint == "series-latest") {
+            if (hint == "anime-latest" || hint == "anime") {
+                ensureSection(CatalogSection.ANIME)
+                snapshot.findBySlug(key)?.let {
+                    return hydrateIfNeeded(remember(it, "anime"), "anime")
+                }
+                hydrateFromFile("anime.json", key)?.let {
+                    return remember(it, "anime")
+                }
+            }
+            if (hint == "series-latest" || hint == "series") {
                 ensureSection(CatalogSection.SERIES)
-                snapshot.findBySlug(slug)?.let { return remember(it, "series") }
+                snapshot.findBySlug(key)?.let {
+                    return hydrateIfNeeded(remember(it, "series"), "series")
+                }
+                hydrateFromFile("series.json", key)?.let {
+                    return remember(it, "series")
+                }
             }
         }
-        snapshot.findBySlug(slug)?.let { return it }
+        snapshot.findBySlug(key)?.let {
+            return hydrateIfNeeded(it, it.detailCollection())
+        }
         val order = listOf(
             CatalogSection.MOVIES,
             CatalogSection.INDONESIA,
@@ -295,9 +343,39 @@ class CatalogRepository(
         for (section in order) {
             if (section in loadedSections) continue
             ensureSection(section)
-            snapshot.findBySlug(slug)?.let { return remember(it, section.apiName) }
+            snapshot.findBySlug(key)?.let {
+                return hydrateIfNeeded(remember(it, section.apiName), section.apiName)
+            }
         }
-        return snapshot.findBySlug(slug)
+        hydrateFromFile("anime.json", key)?.let { return remember(it, "anime") }
+        hydrateFromFile("series.json", key)?.let { return remember(it, "series") }
+        return snapshot.findBySlug(key)?.let { hydrateIfNeeded(it, it.detailCollection()) }
+    }
+
+    private suspend fun hydrateIfNeeded(item: CatalogItem?, collection: String?): CatalogItem? {
+        if (item == null) return null
+        if (item.isHydrated()) return item
+        val slug = item.slug?.takeIf { it.isNotBlank() }
+            ?: item.anime_slug?.takeIf { it.isNotBlank() }
+            ?: item.series_slug?.takeIf { it.isNotBlank() }
+            ?: return item
+        val col = (collection ?: item.detailCollection()).lowercase()
+        val file = when {
+            col.contains("anime") && !col.contains("movie") -> "anime.json"
+            col.contains("series") -> "series.json"
+            else -> return item
+        }
+        return withContext(Dispatchers.IO) {
+            ensureHeavyFile(file)
+            hydrateFromFile(file, slug)?.let { remember(it, col) } ?: item
+        }
+    }
+
+    /** Pastikan anime.json / series.json ada di cache (unduh on-demand untuk detail). */
+    private fun ensureHeavyFile(fileName: String) {
+        val cached = File(cacheDir, fileName)
+        if (cached.exists() && cached.length() > 2) return
+        runCatching { downloadAndCache(fileName, cacheBust = false) }
     }
 
     suspend fun ensureLocalLoaded(): CatalogSnapshot {
@@ -489,18 +567,77 @@ class CatalogRepository(
         )
     }
 
-    private fun readList(fileName: String): List<CatalogItem> {
+    private fun readList(fileName: String, lightweight: Boolean = false): List<CatalogItem> {
         val cached = File(cacheDir, fileName)
-        val json = when {
-            cached.exists() && cached.length() > 2 -> cached.readText(Charsets.UTF_8)
-            else -> runCatching {
-                context.assets.open("data/$fileName").bufferedReader().use { it.readText() }
-            }.getOrNull()
-        } ?: return emptyList()
+        val fromCache = if (cached.exists() && cached.length() > 2) {
+            parseListFile(cached, lightweight)
+        } else {
+            emptyList()
+        }
+        if (fromCache.isNotEmpty()) return fromCache
 
         return runCatching {
-            listAdapter.fromJson(json).orEmpty().map { normalizeCatalogUrls(it) }
+            context.assets.open("data/$fileName").use { input ->
+                parseListStream(input, lightweight)
+            }
         }.getOrDefault(emptyList())
+    }
+
+    private fun parseListFile(file: File, lightweight: Boolean): List<CatalogItem> =
+        runCatching {
+            file.inputStream().use { parseListStream(it, lightweight) }
+        }.getOrDefault(emptyList())
+
+    private fun parseListStream(input: java.io.InputStream, lightweight: Boolean): List<CatalogItem> {
+        val source = input.source().buffer()
+        return source.use {
+            if (lightweight) {
+                shellListAdapter.fromJson(it).orEmpty().map { shell ->
+                    normalizeCatalogUrls(shell.toCatalogItem())
+                }
+            } else {
+                listAdapter.fromJson(it).orEmpty().map { normalizeCatalogUrls(it) }
+            }
+        }
+    }
+
+    /** Baca satu judul penuh (termasuk episodes/players) dari file besar tanpa load semua. */
+    private fun hydrateFromFile(fileName: String, slug: String): CatalogItem? {
+        val key = slug.trim()
+        if (key.isBlank()) return null
+        val cached = File(cacheDir, fileName)
+        if (cached.exists() && cached.length() > 2) {
+            findItemInFile(cached, key)?.let { return it }
+        }
+        return runCatching {
+            context.assets.open("data/$fileName").use { input ->
+                findItemInStream(input, key)
+            }
+        }.getOrNull()
+    }
+
+    private fun findItemInFile(file: File, slug: String): CatalogItem? =
+        runCatching {
+            file.inputStream().use { findItemInStream(it, slug) }
+        }.getOrNull()
+
+    private fun findItemInStream(input: java.io.InputStream, slug: String): CatalogItem? {
+        val source = input.source().buffer()
+        source.use {
+            val reader = com.squareup.moshi.JsonReader.of(it)
+            reader.beginArray()
+            while (reader.hasNext()) {
+                val item = itemAdapter.fromJson(reader) ?: continue
+                if (item.slug.equals(slug, ignoreCase = true) ||
+                    item.anime_slug.equals(slug, ignoreCase = true) ||
+                    item.series_slug.equals(slug, ignoreCase = true)
+                ) {
+                    return normalizeCatalogUrls(item)
+                }
+            }
+            reader.endArray()
+        }
+        return null
     }
 
     private fun normalizeCatalogUrls(item: CatalogItem): CatalogItem {
@@ -583,11 +720,32 @@ class CatalogRepository(
                     .build()
                 client.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) error("HTTP ${response.code} for $fileName")
-                    val body = response.body?.string().orEmpty()
-                    if (body.length < 2) error("Empty body $fileName")
-                    val trimmed = body.trimStart()
-                    if (!trimmed.startsWith("[")) error("Invalid JSON root $fileName")
-                    File(cacheDir, fileName).writeText(body, Charsets.UTF_8)
+                    val body = response.body ?: error("Empty body $fileName")
+                    val tmp = File(cacheDir, "$fileName.part")
+                    tmp.outputStream().use { out ->
+                        body.byteStream().use { input -> input.copyTo(out) }
+                    }
+                    if (tmp.length() < 2L) {
+                        tmp.delete()
+                        error("Empty body $fileName")
+                    }
+                    // Validasi root JSON array tanpa load seluruh file ke RAM.
+                    tmp.inputStream().buffered().use { raw ->
+                        var c = raw.read()
+                        while (c != -1 && c.toChar().isWhitespace()) {
+                            c = raw.read()
+                        }
+                        if (c.toChar() != '[') {
+                            tmp.delete()
+                            error("Invalid JSON root $fileName")
+                        }
+                    }
+                    val dest = File(cacheDir, fileName)
+                    if (dest.exists()) dest.delete()
+                    if (!tmp.renameTo(dest)) {
+                        tmp.copyTo(dest, overwrite = true)
+                        tmp.delete()
+                    }
                 }
             }
             if (result.isSuccess) return
@@ -612,13 +770,19 @@ class CatalogRepository(
 
     private fun remember(item: CatalogItem, collection: String): CatalogItem {
         val normalized = item.copy(catalog = item.catalog ?: collection)
+        fun put(key: String, value: CatalogItem) {
+            val prev = itemCache[key]
+            // Jangan timpa entri hydrated (punya episodes) dengan feed ringan.
+            if (prev != null && prev.isHydrated() && !value.isHydrated()) return
+            itemCache[key] = value
+        }
         val slug = normalized.slug?.lowercase()
-        if (!slug.isNullOrBlank()) itemCache["$collection:$slug"] = normalized
+        if (!slug.isNullOrBlank()) put("$collection:$slug", normalized)
         normalized.anime_slug?.lowercase()?.takeIf { it.isNotBlank() }?.let {
-            itemCache["anime:$it"] = normalized
+            put("anime:$it", normalized)
         }
         normalized.series_slug?.lowercase()?.takeIf { it.isNotBlank() }?.let {
-            itemCache["series:$it"] = normalized
+            put("series:$it", normalized)
         }
         return normalized
     }
@@ -672,11 +836,11 @@ class CatalogRepository(
 
         private val CATALOG_FILES = listOf(
             "movies.json",
-            "series.json",
+            "series-index.json",
             "series-latest.json",
             "horror.json",
             "indonesia.json",
-            "anime.json",
+            "anime-index.json",
             "anime-movies.json",
             "anime-latest.json",
         )
