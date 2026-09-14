@@ -680,6 +680,11 @@ class CatalogRepository(
                 Regex("""(?i)https?://image\.showcdnx\.com"""),
                 "https://poster.lk21official.cc",
             )
+            // Anoboy: domain lama mati/timeout → quest
+            .replace(
+                Regex("""(?i)https?://(?:www\.)?anoboy\.xyz"""),
+                "https://anoboy.quest",
+            )
     }
 
     private val playerHostAliases = listOf(

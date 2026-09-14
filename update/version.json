@@ -1,6 +1,6 @@
 {
-  "versionCode": 248,
-  "versionName": "1.11.28",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.28/WEBUNIME-TV-v1.11.28.apk",
-  "changelog": "Load Anime/Series jauh lebih cepat via index ringan; perbaikan judul tidak ditemukan dari Anime Episode Terbaru; hydrate detail on-demand."
+  "versionCode": 249,
+  "versionName": "1.11.29",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.29/WEBUNIME-TV-v1.11.29.apk",
+  "changelog": "Perbaikan poster Anoboy kosong (anoboy.xyz → anoboy.quest), contoh Yani Neko."
 }
