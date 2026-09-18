@@ -7,7 +7,7 @@
         <item name="defaultBrandColorDark">@color/wu_bg</item>
         <item name="defaultSearchColor">@color/wu_accent</item>
         <item name="defaultSearchIconColor">@color/wu_text</item>
-        <item name="defaultSearchBrightColor">@color/wu_accent</item>
+        <item name="defaultSearchBrightColor">@color/wu_accent_soft</item>
         <item name="browseTitleTextStyle">@style/Wu.BrowseTitle</item>
         <item name="rowHeaderStyle">@style/Wu.RowHeader</item>
         <!-- Dorong baris (Lanjutkan, dll.) di bawah band hero -->
@@ -15,16 +15,20 @@
     </style>
 
     <style name="Wu.BrowseTitle" parent="TextAppearance.Leanback.Title">
-        <item name="android:textColor">@color/wu_accent</item>
+        <item name="android:textColor">@color/wu_accent_soft</item>
         <item name="android:textSize">28sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0.04</item>
     </style>
 
     <style name="Wu.RowHeader" parent="Widget.Leanback.Row.Header">
         <item name="android:textColor">@color/wu_row_header</item>
-        <item name="android:textSize">18sp</item>
+        <item name="android:textSize">20sp</item>
         <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0.02</item>
+        <item name="android:paddingBottom">6dp</item>
     </style>
 
     <style name="Theme.WebunimeTv.Detail" parent="Theme.MaterialComponents.NoActionBar">
@@ -32,7 +36,7 @@
         <item name="colorPrimary">@color/wu_accent</item>
         <item name="colorPrimaryVariant">@color/wu_accent_dark</item>
         <item name="colorOnPrimary">@color/wu_text</item>
-        <item name="colorSecondary">@color/wu_accent</item>
+        <item name="colorSecondary">@color/wu_accent_soft</item>
         <item name="android:statusBarColor">@color/wu_bg</item>
         <item name="materialButtonOutlinedStyle">@style/Wu.Button.Outlined</item>
         <item name="alertDialogTheme">@style/Theme.WebunimeTv.AlertDialog</item>
@@ -66,8 +70,21 @@
 
     <style name="Wu.Button.Outlined" parent="Widget.MaterialComponents.Button.OutlinedButton">
         <item name="strokeColor">@color/wu_surface</item>
+        <item name="strokeWidth">1.5dp</item>
         <item name="android:textColor">@color/wu_text</item>
-        <item name="rippleColor">@color/wu_accent</item>
+        <item name="rippleColor">@color/wu_accent_soft</item>
+        <item name="cornerRadius">@dimen/button_corner_radius</item>
+        <item name="android:minHeight">48dp</item>
+    </style>
+
+    <style name="Wu.Button.Primary" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/wu_accent</item>
+        <item name="android:textColor">@color/wu_text</item>
+        <item name="rippleColor">@color/wu_accent_soft</item>
+        <item name="cornerRadius">@dimen/button_corner_radius</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:minHeight">48dp</item>
     </style>
 
     <style name="Theme.WebunimeTv.Player" parent="Theme.AppCompat.NoActionBar">
@@ -78,7 +95,9 @@
     <style name="Theme.WebunimeTv.Search" parent="Theme.Leanback">
         <item name="android:windowBackground">@color/wu_bg</item>
         <item name="defaultSearchColor">@color/wu_accent</item>
-        <item name="defaultSearchBrightColor">@color/wu_accent</item>
+        <item name="defaultSearchBrightColor">@color/wu_accent_soft</item>
         <item name="defaultBrandColor">@color/wu_bg</item>
+        <item name="defaultBrandColorDark">@color/wu_bg</item>
+        <item name="rowHeaderStyle">@style/Wu.RowHeader</item>
     </style>
 </resources>

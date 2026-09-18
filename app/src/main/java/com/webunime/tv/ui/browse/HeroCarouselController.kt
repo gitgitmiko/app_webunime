@@ -260,7 +260,7 @@ class HeroCarouselController(
                 importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
                 isFocusable = false
                 background = GradientDrawable().apply {
-                    cornerRadius = 3f * density
+                    cornerRadius = 6f * density
                     setColor(HeroBadgeStyles.genreColor(genre))
                 }
                 layoutParams = LinearLayout.LayoutParams(
@@ -277,7 +277,7 @@ class HeroCarouselController(
     private fun applyChipBackground(view: TextView, color: Int) {
         val bg = (view.background as? GradientDrawable)?.mutate() as? GradientDrawable
             ?: GradientDrawable().apply {
-                cornerRadius = 3f * context.resources.displayMetrics.density
+                cornerRadius = 6f * context.resources.displayMetrics.density
                 view.background = this
             }
         bg.setColor(color)
@@ -287,7 +287,7 @@ class HeroCarouselController(
         label.contains("CAM") || label.contains("TS") || label.contains("TC") ->
             Color.argb(0xE6, 0xB2, 0x5B, 0x00)
         label.contains("4K") || label.contains("UHD") || label.contains("BLU") ->
-            Color.argb(0xE6, 0xE5, 0x09, 0x14)
+            Color.argb(0xE6, 0xFF, 0x2D, 0x3A)
         label == "HD" || label.contains("1080") || label.contains("720") ->
             Color.argb(0xE6, 0x1A, 0x1A, 0x1A)
         else -> Color.argb(0xE6, 0x2F, 0x2F, 0x2F)
@@ -320,8 +320,8 @@ class HeroCarouselController(
         }
         dotsView.visibility = View.VISIBLE
         val density = context.resources.displayMetrics.density
-        val size = (8 * density).toInt()
-        val gap = (6 * density).toInt()
+        val size = (7 * density).toInt()
+        val gap = (8 * density).toInt()
         for (i in featured.indices) {
             val dot = View(context).apply {
                 layoutParams = LinearLayout.LayoutParams(size, size).also {
@@ -329,7 +329,7 @@ class HeroCarouselController(
                 }
                 background = GradientDrawable().apply {
                     shape = GradientDrawable.OVAL
-                    setColor(0x66FFFFFF)
+                    setColor(0x55FFFFFF)
                 }
                 importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
             }
@@ -346,15 +346,15 @@ class HeroCarouselController(
             val density = context.resources.displayMetrics.density
             val lp = dot.layoutParams as LinearLayout.LayoutParams
             if (i == index) {
-                bg.setColor(ContextCompat.getColor(context, R.color.wu_accent))
-                lp.width = (22 * density).toInt()
-                lp.height = (8 * density).toInt()
+                bg.setColor(ContextCompat.getColor(context, R.color.wu_accent_soft))
+                lp.width = (24 * density).toInt()
+                lp.height = (7 * density).toInt()
                 dot.layoutParams = lp
                 bg.cornerRadius = 4 * density
             } else {
-                bg.setColor(0x66FFFFFF)
-                lp.width = (8 * density).toInt()
-                lp.height = (8 * density).toInt()
+                bg.setColor(0x55FFFFFF)
+                lp.width = (7 * density).toInt()
+                lp.height = (7 * density).toInt()
                 dot.layoutParams = lp
                 bg.shape = GradientDrawable.OVAL
             }

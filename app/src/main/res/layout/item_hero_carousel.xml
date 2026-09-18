@@ -11,9 +11,9 @@
     android:gravity="center_vertical"
     android:orientation="vertical"
     android:paddingStart="48dp"
-    android:paddingTop="8dp"
+    android:paddingTop="12dp"
     android:paddingEnd="56dp"
-    android:paddingBottom="16dp">
+    android:paddingBottom="20dp">
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -28,12 +28,12 @@
             android:layout_height="wrap_content"
             android:background="@drawable/bg_hero_badge"
             android:focusable="false"
-            android:paddingLeft="10dp"
-            android:paddingTop="4dp"
-            android:paddingRight="10dp"
-            android:paddingBottom="4dp"
+            android:paddingLeft="12dp"
+            android:paddingTop="5dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="5dp"
             android:textColor="@color/wu_text"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textStyle="bold" />
 
         <TextView
@@ -43,12 +43,12 @@
             android:layout_marginStart="8dp"
             android:background="@drawable/bg_hero_quality"
             android:focusable="false"
-            android:paddingLeft="10dp"
-            android:paddingTop="4dp"
-            android:paddingRight="10dp"
-            android:paddingBottom="4dp"
+            android:paddingLeft="12dp"
+            android:paddingTop="5dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="5dp"
             android:textColor="@color/wu_text"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:visibility="gone" />
 
@@ -59,12 +59,12 @@
             android:layout_marginStart="8dp"
             android:background="@drawable/bg_hero_chip"
             android:focusable="false"
-            android:paddingLeft="10dp"
-            android:paddingTop="4dp"
-            android:paddingRight="10dp"
-            android:paddingBottom="4dp"
+            android:paddingLeft="12dp"
+            android:paddingTop="5dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="5dp"
             android:textColor="@color/wu_text"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:visibility="gone" />
 
@@ -75,13 +75,13 @@
             android:layout_marginStart="8dp"
             android:background="@drawable/bg_hero_new"
             android:focusable="false"
-            android:paddingLeft="10dp"
-            android:paddingTop="4dp"
-            android:paddingRight="10dp"
-            android:paddingBottom="4dp"
+            android:paddingLeft="12dp"
+            android:paddingTop="5dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="5dp"
             android:text="@string/hero_badge_new"
             android:textColor="@color/wu_text"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:visibility="gone" />
     </LinearLayout>
@@ -90,30 +90,32 @@
         android:id="@+id/browseHeroTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="14dp"
         android:ellipsize="end"
         android:focusable="false"
+        android:fontFamily="sans-serif-medium"
+        android:letterSpacing="0.01"
         android:maxLines="2"
         android:textColor="@color/wu_text"
-        android:textSize="28sp"
+        android:textSize="38sp"
         android:textStyle="bold" />
 
     <TextView
         android:id="@+id/browseHeroMeta"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="10dp"
         android:ellipsize="end"
         android:focusable="false"
         android:maxLines="1"
         android:textColor="@color/wu_text_dim"
-        android:textSize="14sp" />
+        android:textSize="15sp" />
 
     <LinearLayout
         android:id="@+id/browseHeroGenres"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="10dp"
         android:focusable="false"
         android:gravity="center_vertical"
         android:orientation="horizontal"
@@ -123,19 +125,19 @@
         android:id="@+id/browseHeroSynopsis"
         android:layout_width="@dimen/browse_hero_panel_width"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="12dp"
         android:ellipsize="end"
         android:focusable="false"
-        android:lineSpacingExtra="2dp"
-        android:maxLines="2"
+        android:lineSpacingExtra="3dp"
+        android:maxLines="3"
         android:textColor="@color/wu_text_dim"
-        android:textSize="14sp" />
+        android:textSize="15sp" />
 
     <LinearLayout
         android:id="@+id/browseHeroDots"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="16dp"
         android:focusable="false"
         android:gravity="center_vertical"
         android:orientation="horizontal" />

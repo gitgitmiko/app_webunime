@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Netflix-inspired palette -->
-    <color name="wu_bg">#141414</color>
-    <color name="wu_bg_elevated">#181818</color>
-    <color name="wu_surface">#2F2F2F</color>
-    <color name="wu_surface_soft">#1F1F1F</color>
-    <color name="wu_accent">#E50914</color>
-    <color name="wu_accent_dark">#B20710</color>
-    <color name="wu_text">#FFFFFF</color>
-    <color name="wu_text_dim">#B3B3B3</color>
-    <color name="wu_text_muted">#808080</color>
+    <!-- Cinematic soft-red palette -->
+    <color name="wu_bg">#0B0B0D</color>
+    <color name="wu_bg_elevated">#121214</color>
+    <color name="wu_surface">#2A2A2E</color>
+    <color name="wu_surface_soft">#1A1A1C</color>
+    <color name="wu_accent">#FF2D3A</color>
+    <color name="wu_accent_dark">#C41E28</color>
+    <color name="wu_accent_soft">#E85A64</color>
+    <color name="wu_text">#F5F5F7</color>
+    <color name="wu_text_dim">#B8B8BE</color>
+    <color name="wu_text_muted">#7A7A82</color>
     <color name="wu_focus">#FFFFFF</color>
-    <color name="wu_row_header">#E5E5E5</color>
+    <color name="wu_row_header">#EDEDF0</color>
     <color name="wu_overlay">#CC000000</color>
     <color name="wu_scrim">#99000000</color>
+    <color name="wu_card_info">#D9000000</color>
+    <color name="wu_card_info_focus">#E6000000</color>
 </resources>

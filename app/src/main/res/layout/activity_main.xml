@@ -16,7 +16,7 @@
         android:id="@+id/browseBackdropDim"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#66000000"
+        android:background="#7A000000"
         android:importantForAccessibility="no" />
 
     <View

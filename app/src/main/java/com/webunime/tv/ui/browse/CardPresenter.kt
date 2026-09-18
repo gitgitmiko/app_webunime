@@ -52,7 +52,7 @@ class CardPresenter(
             setMainImageDimensions(w, h)
             cardType = ImageCardView.CARD_TYPE_INFO_OVER
             setBackgroundColor(ContextCompat.getColor(context, R.color.wu_bg))
-            setInfoAreaBackgroundColor(Color.argb(0xD4, 0, 0, 0))
+            setInfoAreaBackgroundColor(ContextCompat.getColor(context, R.color.wu_card_info))
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 foreground = ContextCompat.getDrawable(context, R.drawable.bg_card_focus_ring)
             }
@@ -114,6 +114,9 @@ class CardPresenter(
         card.setTag(R.id.tag_catalog_item, null)
         card.setOnLongClickListener(null)
         card.setOnKeyListener(null)
+        card.animate().cancel()
+        card.scaleX = 1f
+        card.scaleY = 1f
         clearPosterRequest(card)
     }
 
@@ -141,7 +144,7 @@ class CardPresenter(
         const val VISIBLE_PER_ROW = 6
 
         fun gapPx(context: Context): Int =
-            (12f * context.resources.displayMetrics.density).toInt().coerceAtLeast(8)
+            (14f * context.resources.displayMetrics.density).toInt().coerceAtLeast(10)
 
         fun edgePadPx(context: Context): Int =
             (48f * context.resources.displayMetrics.density).toInt().coerceAtLeast(32)
@@ -244,7 +247,7 @@ class CardPresenter(
             label.contains("CAM") || label.contains("TS") || label.contains("TC") ->
                 Color.argb(0xE6, 0xB2, 0x5B, 0x00)
             label.contains("4K") || label.contains("UHD") || label.contains("BLU") ->
-                Color.argb(0xE6, 0xE5, 0x09, 0x14)
+                Color.argb(0xE6, 0xFF, 0x2D, 0x3A)
             label == "HD" || label.contains("1080") || label.contains("720") ->
                 Color.argb(0xE6, 0x1A, 0x1A, 0x1A)
             else -> Color.argb(0xE6, 0x2F, 0x2F, 0x2F)
@@ -290,7 +293,8 @@ class CardPresenter(
                 return
             }
 
-            val corner = (4f * card.resources.displayMetrics.density).toInt().coerceAtLeast(4)
+            val corner = card.resources.getDimensionPixelSize(R.dimen.card_corner_radius)
+                .coerceAtLeast(8)
             val options = RequestOptions()
                 .dontAnimate()
                 .skipMemoryCache(false)
@@ -432,11 +436,22 @@ class CardPresenter(
             findViewById(androidx.leanback.R.id.content_text)
 
         private fun ImageCardView.setupFocusBehavior() {
-            val accent = ContextCompat.getColor(context, R.color.wu_accent)
+            val accent = ContextCompat.getColor(context, R.color.wu_accent_soft)
             val titleNormal = ContextCompat.getColor(context, R.color.wu_text)
             val dim = ContextCompat.getColor(context, R.color.wu_text_dim)
-            setOnFocusChangeListener { _, hasFocus ->
+            val infoNormal = ContextCompat.getColor(context, R.color.wu_card_info)
+            val infoFocus = ContextCompat.getColor(context, R.color.wu_card_info_focus)
+            pivotX = width / 2f
+            pivotY = height / 2f
+            setOnFocusChangeListener { v, hasFocus ->
                 applyCardSize(this)
+                pivotX = v.width / 2f
+                pivotY = v.height / 2f
+                v.animate()
+                    .scaleX(if (hasFocus) FOCUS_SCALE else 1f)
+                    .scaleY(if (hasFocus) FOCUS_SCALE else 1f)
+                    .setDuration(FOCUS_ANIM_MS)
+                    .start()
                 titleTextView()?.let { tv ->
                     applyTitleWrap(tv)
                     tv.setTextColor(if (hasFocus) accent else titleNormal)
@@ -447,14 +462,17 @@ class CardPresenter(
                     tv.ellipsize = TextUtils.TruncateAt.END
                     tv.setTextColor(if (hasFocus) titleNormal else dim)
                 }
+                setInfoAreaBackgroundColor(if (hasFocus) infoFocus else infoNormal)
                 // API < 23: foreground tak tersedia — bedakan lewat warna info area.
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M && hasFocus) {
                     setInfoAreaBackgroundColor(
-                        if (hasFocus) Color.argb(0xE6, 0xE5, 0x09, 0x14)
-                        else Color.argb(0xD4, 0, 0, 0),
+                        Color.argb(0xE6, 0xFF, 0x2D, 0x3A),
                     )
                 }
             }
         }
+
+        private const val FOCUS_SCALE = 1.08f
+        private const val FOCUS_ANIM_MS = 160L
     }
 }

@@ -10,34 +10,38 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingStart="48dp"
-        android:paddingTop="36dp"
-        android:paddingEnd="48dp"
-        android:paddingBottom="48dp">
+        android:paddingStart="56dp"
+        android:paddingTop="40dp"
+        android:paddingEnd="56dp"
+        android:paddingBottom="56dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.02"
             android:text="@string/settings"
-            android:textColor="@color/wu_accent"
-            android:textSize="28sp"
+            android:textColor="@color/wu_accent_soft"
+            android:textSize="30sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/settingsVersion"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
             android:textColor="@color/wu_text_dim"
             android:textSize="15sp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="36dp"
+            android:layout_marginTop="40dp"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.02"
             android:text="@string/settings_section_update"
             android:textColor="@color/wu_row_header"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:textStyle="bold" />
 
         <com.google.android.material.button.MaterialButton
@@ -45,13 +49,13 @@
             style="@style/Wu.Button.Outlined"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="16dp"
             android:focusable="true"
-            android:minWidth="280dp"
+            android:minWidth="300dp"
             android:text="@string/settings_check_update"
             android:textAllCaps="false"
             android:textSize="16sp"
-            app:cornerRadius="4dp" />
+            app:cornerRadius="@dimen/button_corner_radius" />
 
         <TextView
             android:layout_width="match_parent"
@@ -64,10 +68,12 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="36dp"
+            android:layout_marginTop="40dp"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.02"
             android:text="@string/settings_section_playback"
             android:textColor="@color/wu_row_header"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:textStyle="bold" />
 
         <com.google.android.material.button.MaterialButton
@@ -75,13 +81,13 @@
             style="@style/Wu.Button.Outlined"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="16dp"
             android:focusable="true"
-            android:minWidth="280dp"
+            android:minWidth="300dp"
             android:text="@string/settings_film_servers_hidden"
             android:textAllCaps="false"
             android:textSize="16sp"
-            app:cornerRadius="4dp" />
+            app:cornerRadius="@dimen/button_corner_radius" />
 
         <TextView
             android:layout_width="match_parent"
@@ -94,10 +100,12 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="36dp"
+            android:layout_marginTop="40dp"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.02"
             android:text="@string/settings_section_catalog"
             android:textColor="@color/wu_row_header"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:textStyle="bold" />
 
         <com.google.android.material.button.MaterialButton
@@ -105,13 +113,13 @@
             style="@style/Wu.Button.Outlined"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="16dp"
             android:focusable="true"
-            android:minWidth="280dp"
+            android:minWidth="300dp"
             android:text="@string/settings_start_scrape"
             android:textAllCaps="false"
             android:textSize="16sp"
-            app:cornerRadius="4dp" />
+            app:cornerRadius="@dimen/button_corner_radius" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/settingsRefreshCatalog"
@@ -120,11 +128,11 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:focusable="true"
-            android:minWidth="280dp"
+            android:minWidth="300dp"
             android:text="@string/settings_refresh_catalog"
             android:textAllCaps="false"
             android:textSize="16sp"
-            app:cornerRadius="4dp" />
+            app:cornerRadius="@dimen/button_corner_radius" />
 
         <TextView
             android:id="@+id/settingsCatalogStatus"

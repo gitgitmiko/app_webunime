@@ -110,11 +110,28 @@ class DetailActivity : AppCompatActivity() {
         }
         val thumb = item.thumbnail
         val thumbAlt = item.thumbnailAlt
-        val posterReq = Glide.with(this).load(thumb?.let { PosterGlide.model(it) }).centerCrop()
-        val backdropReq = Glide.with(this).load(thumb?.let { PosterGlide.model(it) }).centerCrop()
+        val landscape = item.thumbnail_landscape
+        val corner = resources.getDimensionPixelSize(R.dimen.card_corner_radius)
+        val posterOpts = com.bumptech.glide.request.RequestOptions().transform(
+            com.bumptech.glide.load.resource.bitmap.CenterCrop(),
+            com.bumptech.glide.load.resource.bitmap.RoundedCorners(corner),
+        )
+        val posterReq = Glide.with(this)
+            .load(thumb?.let { PosterGlide.model(it) })
+            .apply(posterOpts)
+        val backdropUrl = landscape?.takeIf { it.isNotBlank() } ?: thumb
+        val backdropReq = Glide.with(this)
+            .load(backdropUrl?.let { PosterGlide.model(it) })
+            .centerCrop()
         if (!thumbAlt.isNullOrBlank() && thumbAlt != thumb) {
-            posterReq.error(Glide.with(this).load(PosterGlide.model(thumbAlt)).centerCrop())
-            backdropReq.error(Glide.with(this).load(PosterGlide.model(thumbAlt)).centerCrop())
+            posterReq.error(
+                Glide.with(this)
+                    .load(PosterGlide.model(thumbAlt))
+                    .apply(posterOpts),
+            )
+            if (landscape.isNullOrBlank()) {
+                backdropReq.error(Glide.with(this).load(PosterGlide.model(thumbAlt)).centerCrop())
+            }
         }
         posterReq.into(poster)
         backdropReq.into(backdrop)
@@ -427,6 +444,7 @@ class DetailActivity : AppCompatActivity() {
             }
             isFocusable = true
             isAllCaps = false
+            cornerRadius = resources.getDimensionPixelSize(R.dimen.button_corner_radius)
             if (watched) {
                 setTextColor(getColor(R.color.wu_text_dim))
             }
@@ -467,6 +485,7 @@ class DetailActivity : AppCompatActivity() {
             this.text = text
             isFocusable = true
             isAllCaps = false
+            cornerRadius = resources.getDimensionPixelSize(R.dimen.button_corner_radius)
             setOnClickListener { onClick() }
             if (selected) {
                 setBackgroundColor(getColor(R.color.wu_accent))
@@ -519,6 +538,7 @@ class DetailActivity : AppCompatActivity() {
                 text = server.displayName()
                 isFocusable = true
                 isAllCaps = false
+                cornerRadius = resources.getDimensionPixelSize(R.dimen.button_corner_radius)
                 // Geser kanan di baris server; atas kembali ke episode / play
                 if (index == 0) {
                     nextFocusUpId = R.id.playButton
