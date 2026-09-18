@@ -281,7 +281,11 @@ class MainActivity : FragmentActivity() {
         val episodeNum = card.episode?.takeIf { it > 0 }
         lifecycleScope.launch {
             val app = application as WebunimeApp
-            val found = app.catalogRepository.findBySlugEnsured(slug, card.detailCollection()) ?: run {
+            val found = app.catalogRepository.findBySlugEnsured(
+                slug = slug,
+                collectionHint = card.detailCollection(),
+                minEpisodesHint = episodeNum ?: 0,
+            ) ?: run {
                 Toast.makeText(this@MainActivity, "Judul tidak ditemukan di katalog", Toast.LENGTH_SHORT).show()
                 openDetail(slug, episodeNum, null, card.detailCollection())
                 return@launch

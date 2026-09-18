@@ -311,43 +311,51 @@ class CatalogRepository(
         return hydrateIfNeeded(seed, col)
     }
 
+    /**
+     * @param minEpisodesHint episode dari kartu feed (mis. anime-latest E11) agar detail
+     * tidak puas dengan assets stale yang lebih pendek.
+     */
     suspend fun findBySlugEnsured(
         slug: String,
         collectionHint: String? = null,
+        minEpisodesHint: Int = 0,
     ): CatalogItem? {
         if (slug.isBlank()) return null
         val key = slug.trim()
         val hint = collectionHint?.takeIf { it.isNotBlank() }
+        val floorHint = minEpisodesHint.coerceAtLeast(0)
         if (hint != null) {
             sectionFor(hint)?.let { ensureSection(it) }
             snapshot.findBySlug(key)?.let {
-                return hydrateIfNeeded(remember(it, hint), hint)
+                return hydrateIfNeeded(remember(it, hint), hint, floorHint)
             }
             if (hint == "anime-latest" || hint == "anime") {
                 ensureSection(CatalogSection.ANIME)
                 ensureSection(CatalogSection.ANIME_LATEST)
                 snapshot.findBySlug(key)?.let {
-                    return hydrateIfNeeded(remember(it, "anime"), "anime")
+                    return hydrateIfNeeded(remember(it, "anime"), "anime", floorHint)
                 }
                 return hydrateIfNeeded(
                     CatalogItem(slug = key, anime_slug = key, catalog = "anime", type = "anime"),
                     "anime",
+                    floorHint,
                 )
             }
             if (hint == "series-latest" || hint == "series") {
                 ensureSection(CatalogSection.SERIES)
                 ensureSection(CatalogSection.SERIES_LATEST)
                 snapshot.findBySlug(key)?.let {
-                    return hydrateIfNeeded(remember(it, "series"), "series")
+                    return hydrateIfNeeded(remember(it, "series"), "series", floorHint)
                 }
                 return hydrateIfNeeded(
                     CatalogItem(slug = key, series_slug = key, catalog = "series", type = "series"),
                     "series",
+                    floorHint,
                 )
             }
         }
         snapshot.findBySlug(key)?.let {
-            return hydrateIfNeeded(it, it.detailCollection())
+            return hydrateIfNeeded(it, it.detailCollection(), floorHint)
         }
         val order = listOf(
             CatalogSection.MOVIES,
@@ -363,15 +371,21 @@ class CatalogRepository(
             if (section in loadedSections) continue
             ensureSection(section)
             snapshot.findBySlug(key)?.let {
-                return hydrateIfNeeded(remember(it, section.apiName), section.apiName)
+                return hydrateIfNeeded(remember(it, section.apiName), section.apiName, floorHint)
             }
         }
-        hydrateFromFile("anime.json", key)?.let { return remember(it, "anime") }
-        hydrateFromFile("series.json", key)?.let { return remember(it, "series") }
-        return snapshot.findBySlug(key)?.let { hydrateIfNeeded(it, it.detailCollection()) }
+        return hydrateIfNeeded(
+            CatalogItem(slug = key, catalog = hint ?: "anime"),
+            hint ?: "anime",
+            floorHint,
+        )
     }
 
-    private suspend fun hydrateIfNeeded(item: CatalogItem?, collection: String?): CatalogItem? {
+    private suspend fun hydrateIfNeeded(
+        item: CatalogItem?,
+        collection: String?,
+        minEpisodesHint: Int = 0,
+    ): CatalogItem? {
         if (item == null) return null
         val slug = item.slug?.takeIf { it.isNotBlank() }
             ?: item.anime_slug?.takeIf { it.isNotBlank() }
@@ -384,11 +398,13 @@ class CatalogRepository(
             else -> return item
         }
         val online = isNetworkAvailable()
-        val heavyFresh = isHeavyFreshToday(file)
-        // Memory cache hydrated OK hanya jika heavy file hari ini masih valid (atau offline).
+        fun expectedFloor(): Int =
+            maxOf(minEpisodesHint, expectedEpisodeFloor(item))
+
+        // Memory: hanya terima hydrated yang sudah memenuhi floor episode.
         if (item.isHydrated() &&
-            !needsEpisodeRefresh(item, item) &&
-            (!online || heavyFresh)
+            !needsEpisodeRefresh(item, item, minEpisodesHint) &&
+            (!online || isHeavyFreshToday(file))
         ) {
             return item
         }
@@ -400,27 +416,56 @@ class CatalogRepository(
             ensureSection(CatalogSection.SERIES_LATEST)
         }
         return withContext(Dispatchers.IO) {
+            val need = expectedFloor()
             if (online) {
                 ensureHeavyFile(file, force = !isHeavyFreshToday(file))
             }
+            // Online: jangan langsung assets (sering stale, mis. Mebius Dust 2 vs 11).
             var hydrated = hydrateFromFile(file, slug, allowAssets = !online)
-            if (hydrated != null && needsEpisodeRefresh(hydrated, item) && online) {
+            var attempt = 0
+            while (
+                online &&
+                (hydrated == null || needsEpisodeRefresh(hydrated, item, minEpisodesHint)) &&
+                attempt < 2
+            ) {
+                attempt++
+                runCatching { heavyDayMarker(file).delete() }
+                val stale = File(cacheDir, file)
+                if (stale.exists() && stale.length() < minHeavyBytes(file)) {
+                    stale.delete()
+                }
                 ensureHeavyFile(file, force = true)
                 hydrated = hydrateFromFile(file, slug, allowAssets = false) ?: hydrated
             }
             if (hydrated == null) {
-                hydrated = hydrateFromFile(file, slug, allowAssets = true)
+                // Offline / unduhan gagal total: assets hanya jika tidak ada floor ketat,
+                // atau assets punya setidaknya sebanyak floor (jarang).
+                val fromAssets = hydrateFromFile(file, slug, allowAssets = true)
+                if (fromAssets != null) {
+                    val got = fromAssets.episodes?.size ?: 0
+                    if (!online || need <= 0 || got >= need) {
+                        hydrated = fromAssets
+                    }
+                }
+            }
+            // Jika masih pendek vs feed, jangan anggap “fresh” hari ini.
+            if (hydrated != null && needsEpisodeRefresh(hydrated, item, minEpisodesHint)) {
+                runCatching { heavyDayMarker(file).delete() }
             }
             hydrated?.let { remember(it, col) } ?: item
         }
     }
 
-    /** Feed/index bilang lebih banyak episode daripada yang sudah di-hydrate. */
-    private fun needsEpisodeRefresh(hydrated: CatalogItem, seed: CatalogItem): Boolean {
+    /** Feed/index/kartu bilang lebih banyak episode daripada hasil hydrate. */
+    private fun needsEpisodeRefresh(
+        hydrated: CatalogItem,
+        seed: CatalogItem,
+        minEpisodesHint: Int = 0,
+    ): Boolean {
         val got = hydrated.episodes?.size ?: 0
-        if (got <= 0 && hydrated.players.isNullOrEmpty()) return true
-        val expected = expectedEpisodeFloor(seed, hydrated)
-        return expected > 0 && got > 0 && got < expected
+        val expected = maxOf(minEpisodesHint, expectedEpisodeFloor(seed, hydrated))
+        if (expected <= 0) return got <= 0 && hydrated.players.isNullOrEmpty()
+        return got < expected
     }
 
     private fun expectedEpisodeFloor(vararg items: CatalogItem): Int {
@@ -518,6 +563,14 @@ class CatalogRepository(
             val cached = File(cacheDir, fileName)
             return cached.exists() && cached.length() > 2
         }
+        if (force) {
+            runCatching { heavyDayMarker(fileName).delete() }
+            val cached = File(cacheDir, fileName)
+            // Hapus salinan assets stale (~10MB) agar tidak dianggap “ada file”.
+            if (cached.exists() && cached.length() < minHeavyBytes(fileName)) {
+                cached.delete()
+            }
+        }
         purgeOldHeavyMarkers(fileName)
         val ok = runCatching {
             downloadAndCache(fileName, cacheBust = true, heavy = true)
@@ -526,7 +579,7 @@ class CatalogRepository(
         }.isSuccess
         if (ok) return true
         val cached = File(cacheDir, fileName)
-        return cached.exists() && cached.length() > 2
+        return cached.exists() && cached.length() >= minHeavyBytes(fileName)
     }
 
     suspend fun ensureLocalLoaded(): CatalogSnapshot {

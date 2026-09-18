@@ -221,7 +221,11 @@ class PlayerActivity : AppCompatActivity() {
         if (catalogItem == null && contentSlug.isNotBlank()) {
             lifecycleScope.launch {
                 val found = (application as WebunimeApp).catalogRepository
-                    .findBySlugEnsured(contentSlug, contentCollection)
+                    .findBySlugEnsured(
+                        slug = contentSlug,
+                        collectionHint = contentCollection,
+                        minEpisodesHint = contentEpisode ?: 0,
+                    )
                 if (isFinishing || found == null) return@launch
                 catalogItem = found
                 if (contentCollection.isNullOrBlank()) contentCollection = found.detailCollection()

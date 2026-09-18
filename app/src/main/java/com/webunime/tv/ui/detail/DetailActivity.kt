@@ -61,7 +61,11 @@ class DetailActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             val found = (application as WebunimeApp).catalogRepository
-                .findBySlugEnsured(slug, collectionHint)
+                .findBySlugEnsured(
+                    slug = slug,
+                    collectionHint = collectionHint,
+                    minEpisodesHint = preferEpisode ?: 0,
+                )
             if (isFinishing) return@launch
             loading.visibility = View.GONE
             if (found == null) {
