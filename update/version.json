@@ -1,6 +1,6 @@
 {
-  "versionCode": 254,
-  "versionName": "1.11.34",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.34/WEBUNIME-TV-v1.11.34.apk",
-  "changelog": "Fix detail anime: unduh ulang anime.json jika episode di cache kurang dari feed terbaru (mis. kartu E12, detail masih 4)."
+  "versionCode": 255,
+  "versionName": "1.11.35",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.35/WEBUNIME-TV-v1.11.35.apk",
+  "changelog": "Katalog detail anime/series unduh dari GitHub per hari (tolak cache/assets stale). Favorit & lanjutkan menonton tetap lokal."
 }

@@ -1,6 +1,9 @@
 package com.webunime.tv.data
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.Build
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -21,7 +24,11 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Katalog dari JSON publik repo WEBUNIME (GitHub raw / jsDelivr),
- * dengan fallback cache lokal + assets bawaan.
+ * dengan fallback assets bawaan (offline).
+ *
+ * Cache disk permanen hanya untuk file browse ringan (sync harian).
+ * anime.json / series.json: cache per hari dari GitHub (bukan assets stale).
+ * Lanjutkan menonton + favorit: [LibraryRepository] (SharedPreferences).
  */
 class CatalogRepository(
     private val context: Context,
@@ -37,10 +44,12 @@ class CatalogRepository(
     private val shellListAdapter = moshi.adapter<List<CatalogItemShell>>(shellListType)
     private val itemAdapter = moshi.adapter(CatalogItem::class.java)
 
+    /** Timeout longgar: anime.json ~40MB. */
     private val client = OkHttpClient.Builder()
-        .connectTimeout(20, TimeUnit.SECONDS)
-        .readTimeout(180, TimeUnit.SECONDS)
-        .callTimeout(240, TimeUnit.SECONDS)
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(10, TimeUnit.MINUTES)
+        .writeTimeout(2, TimeUnit.MINUTES)
+        .callTimeout(12, TimeUnit.MINUTES)
         .build()
 
     private val cacheDir: File
@@ -295,9 +304,16 @@ class CatalogRepository(
         sectionFor(col)?.let { ensureSection(it) }
         val found = snapshot.findBySlug(s)?.let { remember(it, col) }
         val seed = found ?: cached
-        if (cached != null && cached.isHydrated() && !needsEpisodeRefresh(cached, seed ?: cached)) {
-            return cached
+        val heavyFile = when {
+            col.contains("anime") && !col.contains("movie") -> "anime.json"
+            col.contains("series") -> "series.json"
+            else -> null
         }
+        val cacheOk = cached != null &&
+            cached.isHydrated() &&
+            !needsEpisodeRefresh(cached, seed ?: cached) &&
+            (heavyFile == null || !isNetworkAvailable() || isHeavyFreshToday(heavyFile))
+        if (cacheOk) return cached
         return hydrateIfNeeded(seed, col)
     }
 
@@ -373,7 +389,13 @@ class CatalogRepository(
             col.contains("series") -> "series.json"
             else -> return item
         }
-        if (item.isHydrated() && !needsEpisodeRefresh(item, item)) {
+        val online = isNetworkAvailable()
+        val heavyFresh = isHeavyFreshToday(file)
+        // Memory cache hydrated OK hanya jika heavy file hari ini masih valid (atau offline).
+        if (item.isHydrated() &&
+            !needsEpisodeRefresh(item, item) &&
+            (!online || heavyFresh)
+        ) {
             return item
         }
         if (file == "anime.json") {
@@ -384,12 +406,16 @@ class CatalogRepository(
             ensureSection(CatalogSection.SERIES_LATEST)
         }
         return withContext(Dispatchers.IO) {
-            ensureHeavyFile(file, force = false)
-            var hydrated = hydrateFromFile(file, slug)
-            if (hydrated != null && needsEpisodeRefresh(hydrated, item)) {
-                // Cache anime.json/series.json sering tertinggal dari anime-latest (mis. kartu E12, detail masih 4).
+            if (online) {
+                ensureHeavyFile(file, force = !isHeavyFreshToday(file))
+            }
+            var hydrated = hydrateFromFile(file, slug, allowAssets = !online)
+            if (hydrated != null && needsEpisodeRefresh(hydrated, item) && online) {
                 ensureHeavyFile(file, force = true)
-                hydrated = hydrateFromFile(file, slug) ?: hydrated
+                hydrated = hydrateFromFile(file, slug, allowAssets = false) ?: hydrated
+            }
+            if (hydrated == null) {
+                hydrated = hydrateFromFile(file, slug, allowAssets = true)
             }
             hydrated?.let { remember(it, col) } ?: item
         }
@@ -434,11 +460,79 @@ class CatalogRepository(
         return floor
     }
 
-    /** Pastikan anime.json / series.json ada di cache (unduh on-demand untuk detail). */
-    private fun ensureHeavyFile(fileName: String, force: Boolean = false) {
+    private fun isNetworkAvailable(): Boolean {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+            ?: return false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val network = cm.activeNetwork ?: return false
+            val caps = cm.getNetworkCapabilities(network) ?: return false
+            return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        }
+        @Suppress("DEPRECATION")
+        return cm.activeNetworkInfo?.isConnected == true
+    }
+
+    private fun heavyDayMarker(fileName: String): File =
+        File(cacheDir, "$fileName.${todayKey()}")
+
+    private fun minHeavyBytes(fileName: String): Long = when (fileName) {
+        // GitHub anime.json ~40MB; assets stale ~10MB — tolak salinan assets.
+        "anime.json" -> 20_000_000L
+        "series.json" -> 3_000_000L
+        else -> 2L
+    }
+
+    private fun isHeavyFreshToday(fileName: String): Boolean {
         val cached = File(cacheDir, fileName)
-        if (!force && cached.exists() && cached.length() > 2) return
-        runCatching { downloadAndCache(fileName, cacheBust = force) }
+        if (!cached.exists() || cached.length() < minHeavyBytes(fileName)) return false
+        return heavyDayMarker(fileName).exists()
+    }
+
+    private fun markHeavyFreshToday(fileName: String) {
+        purgeOldHeavyMarkers(fileName)
+        runCatching { heavyDayMarker(fileName).writeText("ok") }
+    }
+
+    private fun purgeOldHeavyMarkers(fileName: String) {
+        val prefix = "$fileName."
+        val keep = heavyDayMarker(fileName).name
+        cacheDir.listFiles()?.forEach { f ->
+            if (f.isFile && f.name.startsWith(prefix) && f.name != keep && f.name != fileName) {
+                f.delete()
+            }
+        }
+    }
+
+    private fun invalidateHeavyItemCache(fileName: String) {
+        val prefixes = when (fileName) {
+            "anime.json" -> listOf("anime:", "anime-latest:")
+            "series.json" -> listOf("series:", "series-latest:")
+            else -> return
+        }
+        itemCache.keys
+            .filter { key -> prefixes.any { key.startsWith(it) } }
+            .forEach { itemCache.remove(it) }
+    }
+
+    /**
+     * anime.json / series.json: unduh dari GitHub bila belum ada cache hari ini.
+     * @return true jika file disk siap dipakai (fresh atau ada fallback file).
+     */
+    private fun ensureHeavyFile(fileName: String, force: Boolean = false): Boolean {
+        if (!force && isHeavyFreshToday(fileName)) return true
+        if (!isNetworkAvailable()) {
+            val cached = File(cacheDir, fileName)
+            return cached.exists() && cached.length() > 2
+        }
+        purgeOldHeavyMarkers(fileName)
+        val ok = runCatching {
+            downloadAndCache(fileName, cacheBust = true, heavy = true)
+            markHeavyFreshToday(fileName)
+            invalidateHeavyItemCache(fileName)
+        }.isSuccess
+        if (ok) return true
+        val cached = File(cacheDir, fileName)
+        return cached.exists() && cached.length() > 2
     }
 
     suspend fun ensureLocalLoaded(): CatalogSnapshot {
@@ -469,6 +563,8 @@ class CatalogRepository(
 
     suspend fun refreshFromGithub(): Int = withContext(Dispatchers.IO) {
         val ok = downloadCatalogFiles(cacheBust = false)
+        // Heavy terpisah: gagal unduh tidak gagalkan sync ringan.
+        downloadHeavyCatalogFiles()
         snapshot = CatalogSnapshot()
         loadedSections.clear()
         itemCache.clear()
@@ -479,7 +575,9 @@ class CatalogRepository(
 
     suspend fun forceRefreshFromGithub(): Int = refreshMutex.withLock {
         val ok = withContext(Dispatchers.IO) {
-            downloadCatalogFiles(cacheBust = true)
+            val light = downloadCatalogFiles(cacheBust = true)
+            downloadHeavyCatalogFiles()
+            light
         }
         snapshot = CatalogSnapshot()
         loadedSections.clear()
@@ -555,6 +653,25 @@ class CatalogRepository(
         var ok = 0
         for (name in CATALOG_FILES) {
             if (runCatching { downloadAndCache(name, cacheBust) }.isSuccess) ok++
+        }
+        return ok
+    }
+
+    /** Unduh anime.json + series.json (cache per hari). Gagal diabaikan. */
+    private fun downloadHeavyCatalogFiles(): Int {
+        if (!isNetworkAvailable()) return 0
+        var ok = 0
+        for (name in HEAVY_FILES) {
+            if (isHeavyFreshToday(name)) {
+                ok++
+                continue
+            }
+            val success = runCatching {
+                downloadAndCache(name, cacheBust = true, heavy = true)
+                markHeavyFreshToday(name)
+                invalidateHeavyItemCache(name)
+            }.isSuccess
+            if (success) ok++
         }
         return ok
     }
@@ -665,13 +782,19 @@ class CatalogRepository(
     }
 
     /** Baca satu judul penuh (termasuk episodes/players) dari file besar tanpa load semua. */
-    private fun hydrateFromFile(fileName: String, slug: String): CatalogItem? {
+    private fun hydrateFromFile(
+        fileName: String,
+        slug: String,
+        allowAssets: Boolean = true,
+    ): CatalogItem? {
         val key = slug.trim()
         if (key.isBlank()) return null
         val cached = File(cacheDir, fileName)
-        if (cached.exists() && cached.length() > 2) {
+        val minBytes = if (allowAssets) 2L else minHeavyBytes(fileName)
+        if (cached.exists() && cached.length() >= minBytes) {
             findItemInFile(cached, key)?.let { return it }
         }
+        if (!allowAssets) return null
         return runCatching {
             context.assets.open("data/$fileName").use { input ->
                 findItemInStream(input, key)
@@ -767,12 +890,16 @@ class CatalogRepository(
         return out
     }
 
-    private fun downloadAndCache(fileName: String, cacheBust: Boolean = false) {
-        val bust = if (cacheBust) "?t=${System.currentTimeMillis()}" else ""
+    private fun downloadAndCache(
+        fileName: String,
+        cacheBust: Boolean = false,
+        heavy: Boolean = false,
+    ) {
+        val bust = if (cacheBust || heavy) "?t=${System.currentTimeMillis()}" else ""
         val urls = buildList {
             add("$GITHUB_RAW_BASE$fileName$bust")
-            if (cacheBust) add("$GITHUB_JSDELIVR_BASE$fileName$bust")
-        }
+            add("$GITHUB_JSDELIVR_BASE$fileName$bust")
+        }.distinct()
         var lastError: Throwable? = null
         for (url in urls) {
             val result = runCatching {
@@ -780,7 +907,7 @@ class CatalogRepository(
                     .url(url)
                     .header("User-Agent", "WEBUNIME-TV/1.0")
                     .apply {
-                        if (cacheBust) {
+                        if (cacheBust || heavy) {
                             header("Cache-Control", "no-cache, no-store, must-revalidate")
                             header("Pragma", "no-cache")
                         }
@@ -796,6 +923,11 @@ class CatalogRepository(
                     if (tmp.length() < 2L) {
                         tmp.delete()
                         error("Empty body $fileName")
+                    }
+                    if (heavy && tmp.length() < minHeavyBytes(fileName)) {
+                        val size = tmp.length()
+                        tmp.delete()
+                        error("Heavy file too small $fileName ($size)")
                     }
                     // Validasi root JSON array tanpa load seluruh file ke RAM.
                     tmp.inputStream().buffered().use { raw ->
@@ -917,6 +1049,12 @@ class CatalogRepository(
             "anime-index.json",
             "anime-movies.json",
             "anime-latest.json",
+        )
+
+        /** File berat: cache per hari dari GitHub (bukan assets stale). */
+        private val HEAVY_FILES = listOf(
+            "anime.json",
+            "series.json",
         )
     }
 }
