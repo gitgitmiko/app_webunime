@@ -24,11 +24,16 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Katalog dari JSON publik repo WEBUNIME (GitHub raw / jsDelivr),
- * dengan fallback assets bawaan (offline).
+ * dengan baseline di assets APK + cache lokal `filesDir/catalog`.
  *
- * Cache disk permanen hanya untuk file browse ringan (sync harian).
- * anime.json / series.json: cache per hari dari GitHub (bukan assets stale).
- * Lanjutkan menonton + favorit: [LibraryRepository] (SharedPreferences).
+ * Alur:
+ * 1. Assets (inject saat build) = data awal lengkap (episodes + players).
+ * 2. Pertama kali file berat belum ada di disk → salin dari assets ke lokal.
+ * 3. Paling banyak sekali per hari: unduh GitHub, replace file lokal jika lebih baru/lengkap.
+ * 4. Detail selalu pilih sumber terbaik (disk vs assets) yang punya players —
+ *    jangan kembalikan shell kosong meski unduhan gagal.
+ *
+ * Browse ringan: sync harian file index. Library: [LibraryRepository].
  */
 class CatalogRepository(
     private val context: Context,
@@ -398,8 +403,6 @@ class CatalogRepository(
             else -> return item
         }
         val online = isNetworkAvailable()
-        fun expectedFloor(): Int =
-            maxOf(minEpisodesHint, expectedEpisodeFloor(item))
 
         // Memory: hanya terima hydrated yang sudah memenuhi floor episode.
         if (item.isHydrated() &&
@@ -416,45 +419,92 @@ class CatalogRepository(
             ensureSection(CatalogSection.SERIES_LATEST)
         }
         return withContext(Dispatchers.IO) {
-            val need = expectedFloor()
-            if (online) {
-                ensureHeavyFile(file, force = !isHeavyFreshToday(file))
-            }
-            // Online: jangan langsung assets (sering stale, mis. Mebius Dust 2 vs 11).
-            var hydrated = hydrateFromFile(file, slug, allowAssets = !online)
-            var attempt = 0
-            while (
-                online &&
-                (hydrated == null || needsEpisodeRefresh(hydrated, item, minEpisodesHint)) &&
-                attempt < 2
-            ) {
-                attempt++
-                runCatching { heavyDayMarker(file).delete() }
-                val stale = File(cacheDir, file)
-                if (stale.exists() && stale.length() < minHeavyBytes(file)) {
-                    stale.delete()
-                }
+            // Baseline lokal dari APK agar play selalu punya players meski GitHub gagal.
+            seedHeavyFromAssetsIfNeeded(file)
+
+            if (online && !isHeavyFreshToday(file)) {
                 ensureHeavyFile(file, force = true)
-                hydrated = hydrateFromFile(file, slug, allowAssets = false) ?: hydrated
             }
-            if (hydrated == null) {
-                // Offline / unduhan gagal total: assets hanya jika tidak ada floor ketat,
-                // atau assets punya setidaknya sebanyak floor (jarang).
-                val fromAssets = hydrateFromFile(file, slug, allowAssets = true)
-                if (fromAssets != null) {
-                    val got = fromAssets.episodes?.size ?: 0
-                    if (!online || need <= 0 || got >= need) {
-                        hydrated = fromAssets
-                    }
-                }
+
+            var hydrated = pickBestHydrated(
+                hydrateFromDisk(file, slug),
+                hydrateFromAssets(file, slug),
+                item.takeIf { it.isHydrated() },
+            )
+
+            // Masih pendek vs feed → paksa unduh ulang sekali, lalu pilih terbaik lagi.
+            if (online &&
+                (hydrated == null || needsEpisodeRefresh(hydrated, item, minEpisodesHint))
+            ) {
+                runCatching { heavyDayMarker(file).delete() }
+                ensureHeavyFile(file, force = true)
+                hydrated = pickBestHydrated(
+                    hydrateFromDisk(file, slug),
+                    hydrateFromAssets(file, slug),
+                    hydrated,
+                    item.takeIf { it.isHydrated() },
+                )
             }
-            // Jika masih pendek vs feed, jangan anggap “fresh” hari ini.
+
+            // Masih pendek → jangan tandai fresh hari ini (besok/retry unduh lagi).
             if (hydrated != null && needsEpisodeRefresh(hydrated, item, minEpisodesHint)) {
                 runCatching { heavyDayMarker(file).delete() }
             }
-            hydrated?.let { remember(it, col) } ?: item
+
+            // Terakhir: jangan pernah buang judul yang sudah punya server.
+            hydrated?.let { remember(it, col) }
+                ?: pickBestHydrated(hydrateFromAssets(file, slug), item)?.let { remember(it, col) }
+                ?: item
         }
     }
+
+    /** Skor: episode ber-players > players judul > jumlah episode. */
+    private fun hydrateScore(item: CatalogItem): Long {
+        val epsWithPlayers =
+            item.episodes.orEmpty().count { !it.players.isNullOrEmpty() }.toLong()
+        val topPlayers = item.players.orEmpty().count { !it.url.isNullOrBlank() }.toLong()
+        val eps = (item.episodes?.size ?: 0).toLong()
+        return epsWithPlayers * 1_000_000L + topPlayers * 1_000L + eps
+    }
+
+    private fun pickBestHydrated(vararg candidates: CatalogItem?): CatalogItem? =
+        candidates.filterNotNull().maxByOrNull { hydrateScore(it) }
+
+    /** Salin anime.json/series.json dari assets ke disk jika belum ada / lebih kecil. */
+    private fun seedHeavyFromAssetsIfNeeded(fileName: String) {
+        val dest = File(cacheDir, fileName)
+        val destLen = if (dest.exists()) dest.length() else 0L
+        // Sudah cukup besar (cache GitHub / seed sebelumnya) → jangan salin ulang.
+        if (destLen >= minHeavyBytes(fileName)) return
+        runCatching {
+            context.assets.open("data/$fileName").use { input ->
+                val tmp = File(cacheDir, "$fileName.seed")
+                tmp.outputStream().use { out -> input.copyTo(out) }
+                if (tmp.length() <= destLen) {
+                    tmp.delete()
+                    return
+                }
+                if (dest.exists()) dest.delete()
+                if (!tmp.renameTo(dest)) {
+                    tmp.copyTo(dest, overwrite = true)
+                    tmp.delete()
+                }
+            }
+        }
+    }
+
+    private fun hydrateFromDisk(fileName: String, slug: String): CatalogItem? {
+        val cached = File(cacheDir, fileName)
+        if (!cached.exists() || cached.length() < 2L) return null
+        return findItemInFile(cached, slug)
+    }
+
+    private fun hydrateFromAssets(fileName: String, slug: String): CatalogItem? =
+        runCatching {
+            context.assets.open("data/$fileName").use { input ->
+                findItemInStream(input, slug)
+            }
+        }.getOrNull()
 
     /** Feed/index/kartu bilang lebih banyak episode daripada hasil hydrate. */
     private fun needsEpisodeRefresh(
@@ -515,7 +565,7 @@ class CatalogRepository(
         File(cacheDir, "$fileName.${todayKey()}")
 
     private fun minHeavyBytes(fileName: String): Long = when (fileName) {
-        // GitHub anime.json ~40MB; assets stale ~10MB — tolak salinan assets.
+        // anime.json publik ~40MB; tolak unduhan/cache yang terpotong.
         "anime.json" -> 20_000_000L
         "series.json" -> 3_000_000L
         else -> 2L
@@ -558,6 +608,7 @@ class CatalogRepository(
      * @return true jika file disk siap dipakai (fresh atau ada fallback file).
      */
     private fun ensureHeavyFile(fileName: String, force: Boolean = false): Boolean {
+        seedHeavyFromAssetsIfNeeded(fileName)
         if (!force && isHeavyFreshToday(fileName)) return true
         if (!isNetworkAvailable()) {
             val cached = File(cacheDir, fileName)
@@ -566,7 +617,7 @@ class CatalogRepository(
         if (force) {
             runCatching { heavyDayMarker(fileName).delete() }
             val cached = File(cacheDir, fileName)
-            // Hapus salinan assets stale (~10MB) agar tidak dianggap “ada file”.
+            // Hapus salinan terlalu kecil (seed/assets lama) sebelum unduh GitHub.
             if (cached.exists() && cached.length() < minHeavyBytes(fileName)) {
                 cached.delete()
             }
@@ -578,8 +629,10 @@ class CatalogRepository(
             invalidateHeavyItemCache(fileName)
         }.isSuccess
         if (ok) return true
+        // Unduhan gagal: tetap OK jika lokal (seed assets / cache lama) ada.
+        seedHeavyFromAssetsIfNeeded(fileName)
         val cached = File(cacheDir, fileName)
-        return cached.exists() && cached.length() >= minHeavyBytes(fileName)
+        return cached.exists() && cached.length() > 2
     }
 
     suspend fun ensureLocalLoaded(): CatalogSnapshot {
@@ -639,8 +692,11 @@ class CatalogRepository(
         ok
     }
 
-    /** Prefetch anime.json/series.json di latar — jangan panggil di cold-start kritis. */
+    /** Prefetch anime.json/series.json di latar — seed assets dulu, lalu sync GitHub hari ini. */
     suspend fun prefetchHeavyCatalogInBackground() = withContext(Dispatchers.IO) {
+        for (name in HEAVY_FILES) {
+            seedHeavyFromAssetsIfNeeded(name)
+        }
         downloadHeavyCatalogFiles()
     }
 
@@ -829,7 +885,7 @@ class CatalogRepository(
         }
     }
 
-    /** Baca satu judul penuh (termasuk episodes/players) dari file besar tanpa load semua. */
+    /** Baca satu judul penuh: disk dulu, lalu assets (untuk path lama). */
     private fun hydrateFromFile(
         fileName: String,
         slug: String,
@@ -837,17 +893,9 @@ class CatalogRepository(
     ): CatalogItem? {
         val key = slug.trim()
         if (key.isBlank()) return null
-        val cached = File(cacheDir, fileName)
-        val minBytes = if (allowAssets) 2L else minHeavyBytes(fileName)
-        if (cached.exists() && cached.length() >= minBytes) {
-            findItemInFile(cached, key)?.let { return it }
-        }
-        if (!allowAssets) return null
-        return runCatching {
-            context.assets.open("data/$fileName").use { input ->
-                findItemInStream(input, key)
-            }
-        }.getOrNull()
+        val disk = hydrateFromDisk(fileName, key)
+        if (!allowAssets) return disk
+        return pickBestHydrated(disk, hydrateFromAssets(fileName, key))
     }
 
     private fun findItemInFile(file: File, slug: String): CatalogItem? =
@@ -1022,10 +1070,12 @@ class CatalogRepository(
             val prev = itemCache[key]
             // Jangan timpa entri hydrated (punya episodes) dengan feed ringan.
             if (prev != null && prev.isHydrated() && !value.isHydrated()) return
-            // Prefer katalog yang punya lebih banyak episode (hindari cache stale 4 eps vs feed E12).
-            val prevEps = prev?.episodes?.size ?: 0
-            val nextEps = value.episodes?.size ?: 0
-            if (prev != null && prev.isHydrated() && value.isHydrated() && nextEps < prevEps) return
+            // Prefer sumber dengan lebih banyak episode ber-players.
+            if (prev != null && prev.isHydrated() && value.isHydrated() &&
+                hydrateScore(value) < hydrateScore(prev)
+            ) {
+                return
+            }
             itemCache[key] = value
         }
         val slug = normalized.slug?.lowercase()
@@ -1099,7 +1149,7 @@ class CatalogRepository(
             "anime-latest.json",
         )
 
-        /** File berat: cache per hari dari GitHub (bukan assets stale). */
+        /** File berat: baseline assets APK + replace dari GitHub sekali/hari. */
         private val HEAVY_FILES = listOf(
             "anime.json",
             "series.json",

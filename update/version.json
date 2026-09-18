@@ -1,6 +1,6 @@
 {
-  "versionCode": 257,
-  "versionName": "1.11.37",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.37/WEBUNIME-TV-v1.11.37.apk",
-  "changelog": "Fix detail anime: pakai episode dari kartu feed sebagai target; jangan jatuh ke assets stale (mis. Mebius Dust E11 vs 2 eps)."
+  "versionCode": 258,
+  "versionName": "1.11.38",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.38/WEBUNIME-TV-v1.11.38.apk",
+  "changelog": "Katalog lokal: anime.json lengkap di APK; cek GitHub sekali sehari lalu merge ke storage; fix 'tidak ada server' saat unduhan gagal."
 }

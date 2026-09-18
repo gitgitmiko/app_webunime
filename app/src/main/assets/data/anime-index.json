@@ -15,8 +15,7 @@
     "slug": "kamen-rider-my-th",
     "source": "https://anoboy.quest/2026/09/kamen-rider-my-th/",
     "season_label": "",
-    "id": 1,
-    "is_new": true
+    "id": 1
   },
   {
     "type": "anime",
@@ -52,8 +51,8 @@
     "thumbnail": "https://anoboy.quest/img/upload/01as-Hanazakari%20no%20Kimitachi%20e%20Season%202.jpg",
     "rating": "6.9",
     "votes": "",
-    "durasi": "4 eps",
-    "episodes_count": 4,
+    "durasi": "24 Menit",
+    "episodes_count": 5,
     "genre": [
       "Romance",
       "Shoujo"
@@ -76,7 +75,7 @@
     "rating": "8.4",
     "votes": "",
     "durasi": "24 Menit",
-    "episodes_count": 3,
+    "episodes_count": 4,
     "genre": [
       "Action",
       "Military",
@@ -100,7 +99,7 @@
     "rating": "6.7",
     "votes": "",
     "durasi": "23 Menit",
-    "episodes_count": 3,
+    "episodes_count": 4,
     "genre": [
       "Fantasy",
       "Romance"
@@ -123,7 +122,7 @@
     "rating": "7.1",
     "votes": "",
     "durasi": "24 Menit",
-    "episodes_count": 3,
+    "episodes_count": 4,
     "genre": [
       "Comedy",
       "Romance",
@@ -147,7 +146,7 @@
     "rating": "",
     "votes": "",
     "durasi": "24 Menit",
-    "episodes_count": 3,
+    "episodes_count": 4,
     "genre": [
       "Fantasy",
       "Romance"
@@ -169,8 +168,8 @@
     "thumbnail": "https://anoboy.quest/img/upload/01as-Bungou%20Stray%20Dogs%20Wan%20Season%202.jpg",
     "rating": "7.6",
     "votes": "",
-    "durasi": "4 eps",
-    "episodes_count": 4,
+    "durasi": "11 Menit",
+    "episodes_count": 5,
     "genre": [
       "Slice of Life",
       "Comedy",
@@ -193,8 +192,8 @@
     "thumbnail": "https://anoboy.quest/img/upload/01as-Super%20no%20Ura%20de%20Yani%20Suu%20Futari.jpg",
     "rating": "8.4",
     "votes": "",
-    "durasi": "9 eps",
-    "episodes_count": 9,
+    "durasi": "23 Menit",
+    "episodes_count": 10,
     "genre": [
       "Romance",
       "Seinen"
@@ -216,8 +215,8 @@
     "thumbnail": "https://anoboy.quest/img/upload/01as-Yani%20Neko.jpg",
     "rating": "6.8",
     "votes": "",
-    "durasi": "9 eps",
-    "episodes_count": 9,
+    "durasi": "23 Menit",
+    "episodes_count": 10,
     "genre": [
       "Comedy",
       "Seinen"
@@ -261,8 +260,8 @@
     "thumbnail": "https://anoboy.quest/img/upload/01as-Otome%20Kaijuu%20Caram%C3%A9liser.jpg",
     "rating": "7.1",
     "votes": "",
-    "durasi": "10 eps",
-    "episodes_count": 10,
+    "durasi": "24 Menit",
+    "episodes_count": 11,
     "genre": [
       "Romance",
       "Supernatural",
@@ -403,7 +402,7 @@
     "thumbnail": "https://anoboy.quest/img/upload/01as-Grow%20Up%20Show%20Himawari%20no%20Circus-dan.jpeg",
     "rating": "7.2",
     "votes": "",
-    "durasi": "10 eps",
+    "durasi": "24 Menit",
     "episodes_count": 10,
     "genre": [
       "Historical",
@@ -426,7 +425,7 @@
     "thumbnail": "https://anoboy.quest/img/upload/01as-Tenmaku%20no%20Jaadugar.jpeg",
     "rating": "8.3",
     "votes": "",
-    "durasi": "11 eps",
+    "durasi": "23 Menit",
     "episodes_count": 11,
     "genre": [
       "Drama",
@@ -449,7 +448,7 @@
     "thumbnail": "https://anoboy.quest/img/upload/01as-Oni%20no%20Hanayome.jpeg",
     "rating": "7",
     "votes": "",
-    "durasi": "10 eps",
+    "durasi": "24 Menit",
     "episodes_count": 10,
     "genre": [
       "Fantasy",
@@ -474,7 +473,7 @@
     "thumbnail": "https://anoboy.quest/img/upload/01as-Kimi%20wo%20Aisuru%20Ki%20wa%20Nai.jpeg",
     "rating": "6.6",
     "votes": "",
-    "durasi": "4 eps",
+    "durasi": "???",
     "episodes_count": 4,
     "genre": [
       "Fantasy",
@@ -497,7 +496,7 @@
     "thumbnail": "https://anoboy.quest/img/upload/01as-Hanaori-san%20wa%20Tensei%20shitemo%20Kenka%20ga%20Shitai.jpg",
     "rating": "6.8",
     "votes": "",
-    "durasi": "9 eps",
+    "durasi": "24 Menit",
     "episodes_count": 9,
     "genre": [
       "Comedy",
@@ -547,7 +546,7 @@
     "thumbnail": "https://anoboy.quest/img/upload/01as-Mahou%20Shoujo%20Lyrical%20Nanoha%20EXCEEDS.jpg",
     "rating": "7.1",
     "votes": "",
-    "durasi": "4 eps",
+    "durasi": "???",
     "episodes_count": 4,
     "genre": [
       "Action"
@@ -587,7 +586,7 @@
     "thumbnail": "https://anoboy.quest/img/upload/01as-Let's%20Go%20Kaiki-gumi.jpg",
     "rating": "6.2",
     "votes": "",
-    "durasi": "10 eps",
+    "durasi": "24 Menit",
     "episodes_count": 10,
     "genre": [
       "Comedy",
@@ -611,7 +610,7 @@
     "thumbnail": "https://anoboy.quest/img/upload/01as-Tetsunabe%20no%20Jan!.jpg",
     "rating": "6.9",
     "votes": "",
-    "durasi": "10 eps",
+    "durasi": "???",
     "episodes_count": 10,
     "genre": [
       "Action",
@@ -635,7 +634,7 @@
     "thumbnail": "https://anoboy.quest/img/upload/01as-Seihantai%20na%20Kimi%20to%20Boku%20Season%202.jpg",
     "rating": "8.3",
     "votes": "",
-    "durasi": "4 eps",
+    "durasi": "24 Menit",
     "episodes_count": 4,
     "genre": [
       "Comedy",
@@ -660,7 +659,7 @@
     "thumbnail": "https://anoboy.quest/img/upload/01as-Kimi%20no%20Koto%20ga%20Daidaidaidaidaisuki%20Season%203.jpeg",
     "rating": "8.3",
     "votes": "",
-    "durasi": "4 eps",
+    "durasi": "23 Menit",
     "episodes_count": 4,
     "genre": [
       "Comedy",
@@ -687,7 +686,7 @@
     "thumbnail": "https://anoboy.quest/img/upload/01as-Sayonara%20Lara.jpg",
     "rating": "7.5",
     "votes": "",
-    "durasi": "10 eps",
+    "durasi": "???",
     "episodes_count": 10,
     "genre": [
       "Fantasy",
@@ -1186,7 +1185,7 @@
     "rating": "5.83",
     "votes": null,
     "durasi": "23 Menit",
-    "episodes_count": 10,
+    "episodes_count": 11,
     "genre": [
       "Action",
       "Supernatural"
@@ -1210,7 +1209,7 @@
     "rating": "7.02",
     "votes": 5657,
     "durasi": "23 Menit",
-    "episodes_count": 11,
+    "episodes_count": 12,
     "genre": [
       "Action",
       "Adventure",
@@ -1262,8 +1261,8 @@
     "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2026/07/Tomb-Rider-King-v2.jpg",
     "rating": "6.76",
     "votes": 4773,
-    "durasi": "10 eps",
-    "episodes_count": 10,
+    "durasi": "23 Menit",
+    "episodes_count": 11,
     "genre": [
       "Action",
       "Adventure",
@@ -1287,8 +1286,8 @@
     "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2026/07/158371.jpg",
     "rating": "8.15",
     "votes": 758,
-    "durasi": "10 eps",
-    "episodes_count": 10,
+    "durasi": "11 eps",
+    "episodes_count": 11,
     "genre": [
       "Action",
       "Fantasy"
@@ -1332,8 +1331,8 @@
     "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2026/07/Otome-Game-Sekai-wa-Mob-Seasaon-2-v2.jpg",
     "rating": "6.79",
     "votes": 3465,
-    "durasi": "10 eps",
-    "episodes_count": 10,
+    "durasi": "24 Menit",
+    "episodes_count": 11,
     "genre": [
       "Fantasy",
       "Isekai",
@@ -1384,8 +1383,8 @@
     "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2026/07/bx194829-bZKwhfo60EuFv2vv2.jpg",
     "rating": "7.39",
     "votes": null,
-    "durasi": "10 eps",
-    "episodes_count": 10,
+    "durasi": "23 Menit",
+    "episodes_count": 11,
     "genre": [
       "Action",
       "Fantasy"
@@ -1407,8 +1406,8 @@
     "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2026/07/157105a.jpg",
     "rating": "7.72",
     "votes": 5974,
-    "durasi": "10 eps",
-    "episodes_count": 10,
+    "durasi": "24 Menit",
+    "episodes_count": 11,
     "genre": [
       "Action",
       "Fantasy"
@@ -1431,8 +1430,8 @@
     "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2026/07/158138.jpg",
     "rating": "6.57",
     "votes": 193,
-    "durasi": "10 eps",
-    "episodes_count": 10,
+    "durasi": "11 eps",
+    "episodes_count": 11,
     "genre": [
       "Action",
       "Adventure",
@@ -1458,8 +1457,8 @@
     "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2026/07/M.jpg",
     "rating": "6.49",
     "votes": null,
-    "durasi": "11 eps",
-    "episodes_count": 11,
+    "durasi": "24 Menit",
+    "episodes_count": 12,
     "genre": [
       "Fantasy",
       "Romance"
@@ -1482,8 +1481,8 @@
     "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2026/07/bx169582-quL8VMg45fcu.png",
     "rating": "6.56",
     "votes": 1948,
-    "durasi": "10 eps",
-    "episodes_count": 10,
+    "durasi": "23 Menit",
+    "episodes_count": 11,
     "genre": [
       "Action",
       "Adventure",
@@ -1507,8 +1506,8 @@
     "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2026/07/Grand-Blue-Season-3.jpg",
     "rating": "8.38",
     "votes": 7868,
-    "durasi": "10 eps",
-    "episodes_count": 10,
+    "durasi": "24 Menit",
+    "episodes_count": 11,
     "genre": [
       "Adult Cast",
       "Comedy",
@@ -1533,8 +1532,8 @@
     "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2026/07/Buchigire-Reijou-wa-Houfuku.jpg",
     "rating": "7.00",
     "votes": 3539,
-    "durasi": "10 eps",
-    "episodes_count": 10,
+    "durasi": "23 Menit",
+    "episodes_count": 11,
     "genre": [
       "Drama",
       "Fantasy"
@@ -1557,8 +1556,8 @@
     "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2026/07/158339.jpg",
     "rating": "7.32",
     "votes": 264,
-    "durasi": "10 eps",
-    "episodes_count": 10,
+    "durasi": "24 Menit",
+    "episodes_count": 11,
     "genre": [
       "Drama",
       "Romance"
@@ -1581,8 +1580,8 @@
     "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2026/04/156078.jpg",
     "rating": "6.92",
     "votes": 223,
-    "durasi": "23 eps",
-    "episodes_count": 23,
+    "durasi": "23 Menit",
+    "episodes_count": 24,
     "genre": [
       "Drama"
     ],
@@ -1603,8 +1602,8 @@
     "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2026/07/157046.jpg",
     "rating": "6.78",
     "votes": 6493,
-    "durasi": "10 eps",
-    "episodes_count": 10,
+    "durasi": "23 Menit",
+    "episodes_count": 11,
     "genre": [
       "Action",
       "Adventure",
@@ -2409,8 +2408,8 @@
     "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2026/04/155824.jpg",
     "rating": "9.00",
     "votes": 45070,
-    "durasi": "16 eps",
-    "episodes_count": 16,
+    "durasi": "25 Menit",
+    "episodes_count": 17,
     "genre": [
       "Drama",
       "Fantasy",
@@ -3059,7 +3058,7 @@
     "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2025/10/151242.jpg",
     "rating": "7.10",
     "votes": 3716,
-    "durasi": "45 eps",
+    "durasi": "23 Menit",
     "episodes_count": 45,
     "genre": [
       "Action",
@@ -19912,7 +19911,7 @@
     "rating": "7.3",
     "votes": "",
     "durasi": "23 Menit",
-    "episodes_count": 10,
+    "episodes_count": 11,
     "genre": [
       "Drama",
       "Historical",
@@ -19936,7 +19935,7 @@
     "rating": "7.5",
     "votes": "",
     "durasi": "23 Menit",
-    "episodes_count": 9,
+    "episodes_count": 10,
     "genre": [
       "Fantasy",
       "School"
@@ -19959,7 +19958,7 @@
     "rating": "7.2",
     "votes": "",
     "durasi": "24 Menit",
-    "episodes_count": 9,
+    "episodes_count": 10,
     "genre": [
       "Comedy",
       "Girls Love",
@@ -20032,7 +20031,7 @@
     "rating": "6.8",
     "votes": "",
     "durasi": "23 Menit",
-    "episodes_count": 9,
+    "episodes_count": 10,
     "genre": [
       "Comedy",
       "Historical"
@@ -20055,7 +20054,7 @@
     "rating": "",
     "votes": "",
     "durasi": "22 Menit",
-    "episodes_count": 9,
+    "episodes_count": 10,
     "genre": [
       "Mystery",
       "Sci-Fi",

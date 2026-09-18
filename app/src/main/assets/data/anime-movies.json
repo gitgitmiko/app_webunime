@@ -2,6 +2,244 @@
   {
     "type": "anime-movie",
     "source_site": "samehadaku",
+    "nama": "Gintama Movie 3: Yoshiwara Daienjou",
+    "judul": "Gintama Movie 3: Yoshiwara Daienjou",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2026/08/bx197474-jTeY1G9gtD8i.jpg",
+    "rating": "8.77",
+    "votes": null,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Comedy",
+      "Historical",
+      "Samurai",
+      "Sci-Fi",
+      "Shounen"
+    ],
+    "sinopsis": "Movie remake dari arc Yoshiwara Enjou.",
+    "related": [],
+    "slug": "gintama-movie-3-yoshiwara-daienjou",
+    "source": "https://v2.samehadaku.how/anime/gintama-movie-3-yoshiwara-daienjou/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Gintama Movie 3: Yoshiwara Daienjou Episode 1 [END]",
+        "slug": "gintama-movie-3-yoshiwara-daienjou-episode-1-end",
+        "source": "https://v2.samehadaku.how/gintama-movie-3-yoshiwara-daienjou-episode-1-end/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "wibufile",
+            "label": "Wibufile 480p",
+            "url": "https://api.wibufile.com/embed/c405510d-d527-437b-89a2-7ef3425ccfce",
+            "default": true,
+            "post": "52356",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/kMtWyZIL#BsWqtog3Vwb3ZZWRFPRfE2gVo_oR0iT9sSF17i6zutQ",
+            "default": false,
+            "post": "52356",
+            "nume": "6"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "wibufile",
+        "label": "Wibufile 480p",
+        "url": "https://api.wibufile.com/embed/c405510d-d527-437b-89a2-7ef3425ccfce",
+        "default": true,
+        "post": "52356",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/kMtWyZIL#BsWqtog3Vwb3ZZWRFPRfE2gVo_oR0iT9sSF17i6zutQ",
+        "default": false,
+        "post": "52356",
+        "nume": "6"
+      }
+    ],
+    "id": 1
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Assassination Classroom the Movie: Our Time",
+    "judul": "Assassination Classroom the Movie: Our Time",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2026/07/Assassination-Classroom-the-Movie-Our-Time.jpg",
+    "rating": "7.62",
+    "votes": 1401,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Comedy",
+      "School",
+      "Shounen"
+    ],
+    "sinopsis": "Anime movie Assassination Classroom the Movie: Our Time.",
+    "related": [],
+    "slug": "assassination-classroom-the-movie-our-time",
+    "source": "https://v2.samehadaku.how/anime/assassination-classroom-the-movie-our-time/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Assassination Classroom the Movie: Our Time Episode Movie",
+        "slug": "assassination-classroom-the-movie-our-time-episode-movie",
+        "source": "https://v2.samehadaku.how/assassination-classroom-the-movie-our-time-episode-movie/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "vip-streaming",
+            "label": "VIP STREAMING",
+            "url": "https://filedon.co/embed/SRmZq82zfh",
+            "default": true,
+            "post": "51558",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "wibufile",
+            "label": "Wibufile 480p",
+            "url": "https://api.wibufile.com/embed/6112c2b3-8556-4b0c-83c4-1437916f6656",
+            "default": false,
+            "post": "51558",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "wibufile",
+            "label": "Wibufile 720p",
+            "url": "https://s0.wibufile.com/video01/AK-MMnJ-MP4HD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "51558",
+            "nume": "3"
+          },
+          {
+            "no": 4,
+            "server": "wibufile",
+            "label": "Wibufile 1080p",
+            "url": "https://s0.wibufile.com/video01/AK-MMnJ-FULLHD-SAMEHADAKU.CARE.mp4",
+            "default": false,
+            "post": "51558",
+            "nume": "4"
+          },
+          {
+            "no": 5,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/cnh0gDZb#2qGZJT9eGAL2U5PsN41rLWOp_WfX8WL0xOOgvYGooFA",
+            "default": false,
+            "post": "51558",
+            "nume": "5"
+          },
+          {
+            "no": 6,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/pjpXWALJ#TO7WtKfVPWU8SwEwy1HkLiQ6_9qPQ15KwxZ8YyANegU",
+            "default": false,
+            "post": "51558",
+            "nume": "6"
+          },
+          {
+            "no": 7,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/PXBBDZZC#KIOvg642rR0IJhrPF_Dt5wAIUuHGMpAz9kWBIKkaE0g",
+            "default": false,
+            "post": "51558",
+            "nume": "7"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 2,
+        "server": "wibufile",
+        "label": "Wibufile 480p",
+        "url": "https://api.wibufile.com/embed/6112c2b3-8556-4b0c-83c4-1437916f6656",
+        "default": false,
+        "post": "51558",
+        "nume": "2"
+      },
+      {
+        "no": 1,
+        "server": "vip-streaming",
+        "label": "VIP STREAMING",
+        "url": "https://filedon.co/embed/SRmZq82zfh",
+        "default": true,
+        "post": "51558",
+        "nume": "1"
+      },
+      {
+        "no": 3,
+        "server": "wibufile",
+        "label": "Wibufile 720p",
+        "url": "https://s0.wibufile.com/video01/AK-MMnJ-MP4HD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "51558",
+        "nume": "3"
+      },
+      {
+        "no": 4,
+        "server": "wibufile",
+        "label": "Wibufile 1080p",
+        "url": "https://s0.wibufile.com/video01/AK-MMnJ-FULLHD-SAMEHADAKU.CARE.mp4",
+        "default": false,
+        "post": "51558",
+        "nume": "4"
+      },
+      {
+        "no": 5,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/cnh0gDZb#2qGZJT9eGAL2U5PsN41rLWOp_WfX8WL0xOOgvYGooFA",
+        "default": false,
+        "post": "51558",
+        "nume": "5"
+      },
+      {
+        "no": 6,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/pjpXWALJ#TO7WtKfVPWU8SwEwy1HkLiQ6_9qPQ15KwxZ8YyANegU",
+        "default": false,
+        "post": "51558",
+        "nume": "6"
+      },
+      {
+        "no": 7,
+        "server": "mega",
+        "label": "Mega 1080p",
+        "url": "https://mega.nz/embed/PXBBDZZC#KIOvg642rR0IJhrPF_Dt5wAIUuHGMpAz9kWBIKkaE0g",
+        "default": false,
+        "post": "51558",
+        "nume": "7"
+      }
+    ],
+    "id": 2
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
     "nama": "Tensei shitara Slime Datta Ken Movie 2: Soukai no Namida-hen",
     "judul": "Tensei shitara Slime Datta Ken Movie 2: Soukai no Namida-hen",
     "tahun": "",
@@ -208,7 +446,7 @@
         "nume": "7"
       }
     ],
-    "id": 1
+    "id": 3
   },
   {
     "type": "anime-movie",
@@ -220,7 +458,7 @@
     "rating": "8.7",
     "votes": 136624,
     "durasi": "Movie",
-    "episodes_count": 1,
+    "episodes_count": 2,
     "genre": [
       "Action",
       "Historical",
@@ -357,128 +595,92 @@
             "nume": "13"
           }
         ]
+      },
+      {
+        "episode": 1,
+        "title": "Kimetsu no Yaiba The Movie – Infinity Castle Part 1 BluRay v2",
+        "slug": "kimetsu-no-yaiba-the-movie-infinity-castle-part-1-v2",
+        "source": "https://v2.samehadaku.how/kimetsu-no-yaiba-the-movie-infinity-castle-part-1-v2/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "vip-streaming",
+            "label": "VIP STREAMING",
+            "url": "https://filedon.co/embed/20304yEkif",
+            "default": true,
+            "post": "51650",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "mega",
+            "label": "Mega 480p",
+            "url": "https://mega.nz/embed/5y9lFKhC#53gf1f5lr5EdRBN5rCJKCiEV2jYiY4O_qKa9u1ZRHHU",
+            "default": false,
+            "post": "51650",
+            "nume": "6"
+          },
+          {
+            "no": 3,
+            "server": "mega",
+            "label": "Mega 720p",
+            "url": "https://mega.nz/embed/T1RmxIAJ#7A020JRDNSl26PPxIr2Bbwsl8Rd4CRsw1XormpBGhmo",
+            "default": false,
+            "post": "51650",
+            "nume": "7"
+          },
+          {
+            "no": 4,
+            "server": "mega",
+            "label": "Mega 1080p",
+            "url": "https://mega.nz/embed/F6NhmbjJ#cl9ImEu8Nr62WuTQtX17_4DF-dYRaOB4IAcG9u_lpRM",
+            "default": false,
+            "post": "51650",
+            "nume": "8"
+          }
+        ]
       }
     ],
     "players": [
       {
-        "no": 2,
-        "server": "wibufile",
-        "label": "Wibufile 480p",
-        "url": "https://api.wibufile.com/embed/e551a06f-a8a8-4c74-baf5-9b69c4a8d1c8",
-        "default": false,
-        "post": "47644",
-        "nume": "2"
-      },
-      {
         "no": 1,
-        "server": "mega",
-        "label": "Mega 480p",
-        "url": "https://mega.nz/embed/2wQQhJba#s_-s3kaw28XOBZ_nQAClUTO9p3yIAWqmhigEe5EXY7c",
+        "server": "vip-streaming",
+        "label": "VIP STREAMING",
+        "url": "https://filedon.co/embed/20304yEkif",
         "default": true,
-        "post": "47644",
+        "post": "51650",
         "nume": "1"
       },
       {
-        "no": 3,
-        "server": "wibufile",
-        "label": "Wibufile 360p",
-        "url": "https://s0.wibufile.com/video01/KnY-TMICP1-360p-SAMEHADAKU.CARE.mp4",
+        "no": 2,
+        "server": "mega",
+        "label": "Mega 480p",
+        "url": "https://mega.nz/embed/5y9lFKhC#53gf1f5lr5EdRBN5rCJKCiEV2jYiY4O_qKa9u1ZRHHU",
         "default": false,
-        "post": "47644",
-        "nume": "3"
+        "post": "51650",
+        "nume": "6"
+      },
+      {
+        "no": 3,
+        "server": "mega",
+        "label": "Mega 720p",
+        "url": "https://mega.nz/embed/T1RmxIAJ#7A020JRDNSl26PPxIr2Bbwsl8Rd4CRsw1XormpBGhmo",
+        "default": false,
+        "post": "51650",
+        "nume": "7"
       },
       {
         "no": 4,
         "server": "mega",
-        "label": "Mega 720p",
-        "url": "https://mega.nz/embed/CpICEZBA#0fjRPlYf3QbQximOZ37JFu2jyHvKyZCVMFNd9X-JwZI",
-        "default": false,
-        "post": "47644",
-        "nume": "4"
-      },
-      {
-        "no": 5,
-        "server": "wibufile",
-        "label": "Wibufile 720p",
-        "url": "https://s0.wibufile.com/video01/KnY-TMICP1-MP4HD-SAMEHADAKU.CARE.mp4",
-        "default": false,
-        "post": "47644",
-        "nume": "5"
-      },
-      {
-        "no": 6,
-        "server": "wibufile",
-        "label": "Wibufile 1080p",
-        "url": "https://s0.wibufile.com/video01/KnY-TMICP1-FULLHD-SAMEHADAKU.CARE.mp4",
-        "default": false,
-        "post": "47644",
-        "nume": "6"
-      },
-      {
-        "no": 7,
-        "server": "mega",
-        "label": "Mega 360p",
-        "url": "https://mega.nz/embed/CElV3QzS#Bx7eubMW6cs5KyddV9qtYO4vz7Zoq9KFwTIaHwNopH0",
-        "default": false,
-        "post": "47644",
-        "nume": "7"
-      },
-      {
-        "no": 8,
-        "server": "mega",
         "label": "Mega 1080p",
-        "url": "https://mega.nz/embed/aU1BiLCC#LHT48cBC0b7dMpK0ti8V6ROmTJKiYL1l2i0NouW_gaI",
+        "url": "https://mega.nz/embed/F6NhmbjJ#cl9ImEu8Nr62WuTQtX17_4DF-dYRaOB4IAcG9u_lpRM",
         "default": false,
-        "post": "47644",
+        "post": "51650",
         "nume": "8"
-      },
-      {
-        "no": 9,
-        "server": "pucuk",
-        "label": "Pucuk 480p",
-        "url": "https://filedon.co/embed/I2i9Yu4cNh",
-        "default": false,
-        "post": "47644",
-        "nume": "9"
-      },
-      {
-        "no": 10,
-        "server": "pucuk",
-        "label": "Pucuk 360p",
-        "url": "https://filedon.co/embed/R2ZtcjAvJw",
-        "default": false,
-        "post": "47644",
-        "nume": "10"
-      },
-      {
-        "no": 11,
-        "server": "pucuk",
-        "label": "Pucuk 720p",
-        "url": "https://filedon.co/embed/y7ytDw0ZUL",
-        "default": false,
-        "post": "47644",
-        "nume": "11"
-      },
-      {
-        "no": 12,
-        "server": "pucuk",
-        "label": "Pucuk 1080p",
-        "url": "https://filedon.co/embed/XsMHoZoxpC",
-        "default": false,
-        "post": "47644",
-        "nume": "12"
-      },
-      {
-        "no": 13,
-        "server": "nakama",
-        "label": "nakama",
-        "url": "https://pixeldrain.com/api/file/M6xoQSxR",
-        "default": false,
-        "post": "47644",
-        "nume": "13"
       }
     ],
-    "id": 2
+    "id": 4
   },
   {
     "type": "anime-movie",
@@ -768,7 +970,7 @@
         "nume": "14"
       }
     ],
-    "id": 3
+    "id": 5
   },
   {
     "type": "anime-movie",
@@ -1019,7 +1221,7 @@
         "nume": "12"
       }
     ],
-    "id": 4
+    "id": 6
   },
   {
     "type": "anime-movie",
@@ -1217,7 +1419,7 @@
         "nume": "9"
       }
     ],
-    "id": 5
+    "id": 7
   },
   {
     "type": "anime-movie",
@@ -1451,7 +1653,7 @@
         "nume": "15"
       }
     ],
-    "id": 6
+    "id": 8
   },
   {
     "type": "anime-movie",
@@ -1648,7 +1850,7 @@
         "nume": "12"
       }
     ],
-    "id": 7
+    "id": 9
   },
   {
     "type": "anime-movie",
@@ -1880,7 +2082,7 @@
         "nume": "15"
       }
     ],
-    "id": 8
+    "id": 10
   },
   {
     "type": "anime-movie",
@@ -2077,7 +2279,7 @@
         "nume": "12"
       }
     ],
-    "id": 9
+    "id": 11
   },
   {
     "type": "anime-movie",
@@ -2312,7 +2514,7 @@
         "nume": "15"
       }
     ],
-    "id": 10
+    "id": 12
   },
   {
     "type": "anime-movie",
@@ -2619,7 +2821,7 @@
         "nume": "20"
       }
     ],
-    "id": 11
+    "id": 13
   },
   {
     "type": "anime-movie",
@@ -2819,7 +3021,7 @@
         "nume": "12"
       }
     ],
-    "id": 12
+    "id": 14
   },
   {
     "type": "anime-movie",
@@ -3055,7 +3257,7 @@
         "nume": "14"
       }
     ],
-    "id": 13
+    "id": 15
   },
   {
     "type": "anime-movie",
@@ -3199,7 +3401,7 @@
         "nume": "11"
       }
     ],
-    "id": 14
+    "id": 16
   },
   {
     "type": "anime-movie",
@@ -3344,7 +3546,7 @@
         "nume": "6"
       }
     ],
-    "id": 15
+    "id": 17
   },
   {
     "type": "anime-movie",
@@ -3488,7 +3690,7 @@
         "nume": "6"
       }
     ],
-    "id": 16
+    "id": 18
   },
   {
     "type": "anime-movie",
@@ -3667,7 +3869,7 @@
         "nume": "8"
       }
     ],
-    "id": 17
+    "id": 19
   },
   {
     "type": "anime-movie",
@@ -3686,7 +3888,7 @@
       "Fantasy",
       "Shounen"
     ],
-    "sinopsis": "Nonton Black Clover: Mahou Tei no Ken Subtitle Indonesia, kalian bisa download episode terbaru Black Clover: Mahou Tei no Ken Sub Indo secara gratis di website streaming Samehadaku format mkv mp4 dan HD",
+    "sinopsis": "Anime movie Black Clover: Mahou Tei no Ken.",
     "related": [],
     "slug": "black-clover-mahou-tei-no-ken",
     "source": "https://v2.samehadaku.how/anime/black-clover-mahou-tei-no-ken/",
@@ -3812,7 +4014,7 @@
         "nume": "6"
       }
     ],
-    "id": 18
+    "id": 20
   },
   {
     "type": "anime-movie",
@@ -3959,7 +4161,7 @@
         "nume": "6"
       }
     ],
-    "id": 19
+    "id": 21
   },
   {
     "type": "anime-movie",
@@ -4087,7 +4289,7 @@
         "nume": "5"
       }
     ],
-    "id": 20
+    "id": 22
   },
   {
     "type": "anime-movie",
@@ -4119,7 +4321,35 @@
         "slug": "dragon-ball-super-movie-super-hero",
         "source": "https://v2.samehadaku.how/dragon-ball-super-movie-super-hero/",
         "date": "",
-        "players": []
+        "players": [
+          {
+            "no": 1,
+            "server": "server-1",
+            "label": "Server 1 480p",
+            "url": "https://mega.nz/embed/ucxF3Z6b#AHSD9PgYNl4PHIjiEepOv_IOPOiRNYB2oAs0dmSKAWw",
+            "default": true,
+            "post": "19645",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "server-2",
+            "label": "Server 2 720p",
+            "url": "https://mega.nz/embed/OVgRVQTQ#oPcoq0KW-1hNabHrz7Wmm1scxhSQYO0SRFrOnnq3Lvc",
+            "default": false,
+            "post": "19645",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "server-3",
+            "label": "Server 3 1080p",
+            "url": "https://mega.nz/embed/ecg0DQJR#mG8a7XfYZ-lDbVcdHO1CPunzUQYdGS4zACgYp60mrhE",
+            "default": false,
+            "post": "19645",
+            "nume": "3"
+          }
+        ]
       },
       {
         "episode": 1,
@@ -4241,7 +4471,7 @@
         "nume": "6"
       }
     ],
-    "id": 21
+    "id": 23
   },
   {
     "type": "anime-movie",
@@ -4350,7 +4580,7 @@
         "nume": "4"
       }
     ],
-    "id": 22
+    "id": 24
   },
   {
     "type": "anime-movie",
@@ -4458,7 +4688,7 @@
         "nume": "4"
       }
     ],
-    "id": 23
+    "id": 25
   },
   {
     "type": "anime-movie",
@@ -4565,7 +4795,98 @@
         "nume": "4"
       }
     ],
-    "id": 24
+    "id": 26
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Nanatsu no Taizai Movie 2: Hikari ni Norowareshi Mono-tachi",
+    "judul": "Nanatsu no Taizai Movie 2: Hikari ni Norowareshi Mono-tachi",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2021/10/113360l.jpg",
+    "rating": "7.12",
+    "votes": 25593,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Adventure",
+      "Fantasy",
+      "Shounen"
+    ],
+    "sinopsis": "Nanatsu no Taizai, berlatar pada dunia dimana manusia dan makhluk lainnya hidup berdampingan. Kerajaan Britania yang dilindungi oleh Ksatria Suci Pengguna Sihir hebat, ditakuti dan sangat dihormati oleh banyak orang.",
+    "related": [],
+    "slug": "nanatsu-no-taizai-movie-2-hikari-ni-norowareshi-mono-tachi",
+    "source": "https://v2.samehadaku.how/anime/nanatsu-no-taizai-movie-2-hikari-ni-norowareshi-mono-tachi/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Nanatsu no Taizai Movie 2: Hikari ni Norowareshi Mono-tachi",
+        "slug": "nanatsu-no-taizai-movie-2-hikari-ni-norowareshi-mono-tachi",
+        "source": "https://v2.samehadaku.how/nanatsu-no-taizai-movie-2-hikari-ni-norowareshi-mono-tachi/",
+        "date": "",
+        "players": [
+          {
+            "no": 1,
+            "server": "server-1",
+            "label": "Server 1 480p",
+            "url": "https://mega.nz/embed/JZ4STYZL#cvCQemEspj3qXzgi4JDoC3JNcB5r1qD3i0q6srFC75w",
+            "default": true,
+            "post": "14100",
+            "nume": "1"
+          },
+          {
+            "no": 2,
+            "server": "server-2",
+            "label": "Server 2 720p",
+            "url": "https://mega.nz/embed/kZpjHQ6Z#b-JEsi-A4qOjkftbEBSCJCDjXAj4F64_9f78e-OONTM",
+            "default": false,
+            "post": "14100",
+            "nume": "2"
+          },
+          {
+            "no": 3,
+            "server": "server-3",
+            "label": "Server 3 1080p",
+            "url": "https://mega.nz/embed/MV5W3SpT#okGmWe9LQjB6QaiLXYsIDJ2tn3GE1sIsBooviSmEXpM",
+            "default": false,
+            "post": "14100",
+            "nume": "3"
+          }
+        ]
+      }
+    ],
+    "players": [
+      {
+        "no": 1,
+        "server": "server-1",
+        "label": "Server 1 480p",
+        "url": "https://mega.nz/embed/JZ4STYZL#cvCQemEspj3qXzgi4JDoC3JNcB5r1qD3i0q6srFC75w",
+        "default": true,
+        "post": "14100",
+        "nume": "1"
+      },
+      {
+        "no": 2,
+        "server": "server-2",
+        "label": "Server 2 720p",
+        "url": "https://mega.nz/embed/kZpjHQ6Z#b-JEsi-A4qOjkftbEBSCJCDjXAj4F64_9f78e-OONTM",
+        "default": false,
+        "post": "14100",
+        "nume": "2"
+      },
+      {
+        "no": 3,
+        "server": "server-3",
+        "label": "Server 3 1080p",
+        "url": "https://mega.nz/embed/MV5W3SpT#okGmWe9LQjB6QaiLXYsIDJ2tn3GE1sIsBooviSmEXpM",
+        "default": false,
+        "post": "14100",
+        "nume": "3"
+      }
+    ],
+    "id": 27
   },
   {
     "type": "anime-movie",
@@ -4677,7 +4998,42 @@
         "nume": "4"
       }
     ],
-    "id": 25
+    "id": 28
+  },
+  {
+    "type": "anime-movie",
+    "source_site": "samehadaku",
+    "nama": "Kimetsu no Yaiba Movie – Mugen Train",
+    "judul": "Kimetsu no Yaiba Movie – Mugen Train",
+    "tahun": "",
+    "thumbnail": "https://v2.samehadaku.how/wp-content/uploads/2021/04/106947.jpg",
+    "rating": "8.71",
+    "votes": 58110,
+    "durasi": "Movie",
+    "episodes_count": 1,
+    "genre": [
+      "Action",
+      "Historical",
+      "Shounen",
+      "Supernatural"
+    ],
+    "sinopsis": "Tanjiro Kamado, bergabung dengan Inosuke Hashibira, seorang anak laki-laki yang dibesarkan oleh babi hutan yang memakai kepala babi hutan, dan Zenitsu Agatsuma, seorang anak laki-laki ketakutan yang mengungkapkan kekuatan aslinya ketika dia tidur, naik Kereta Infinity dalam misi baru dengan Pilar Api, Kyojuro Rengoku , Untuk mengalahkan iblis yang telah menyiksa orang-orang dan membunuh para pembunuh iblis yang menentangnya!‌‌",
+    "related": [],
+    "slug": "kimetsu-no-yaiba-movie-mugen-train",
+    "source": "https://v2.samehadaku.how/anime/kimetsu-no-yaiba-movie-mugen-train/",
+    "season_label": "",
+    "episodes": [
+      {
+        "episode": 1,
+        "title": "Kimetsu no Yaiba Movie – Mugen Train",
+        "slug": "anime-movie",
+        "source": "https://v2.samehadaku.how//anime-movie/",
+        "date": "",
+        "players": []
+      }
+    ],
+    "players": [],
+    "id": 29
   },
   {
     "type": "anime-movie",
@@ -4696,7 +5052,7 @@
       "Comedy",
       "Drama"
     ],
-    "sinopsis": "Nonton Digimon Adventure: Last Evolution Kizuna Subtitle Indonesia, kalian bisa download episode terbaru Digimon Adventure: Last Evolution Kizuna Sub Indo secara gratis di website streaming Samehadaku format mkv mp4 dan HD",
+    "sinopsis": "Anime movie Digimon Adventure: Last Evolution Kizuna.",
     "related": [],
     "slug": "digimon-adventure-last-evolution-kizuna",
     "source": "https://v2.samehadaku.how/anime/digimon-adventure-last-evolution-kizuna/",
@@ -4786,7 +5142,7 @@
         "nume": "4"
       }
     ],
-    "id": 26
+    "id": 30
   },
   {
     "type": "anime-movie",
@@ -4984,7 +5340,7 @@
         "nume": "9"
       }
     ],
-    "id": 27
+    "id": 31
   },
   {
     "type": "anime-movie",
@@ -5162,7 +5518,7 @@
         "nume": "8"
       }
     ],
-    "id": 28
+    "id": 32
   },
   {
     "type": "anime-movie",
@@ -5325,7 +5681,7 @@
         "nume": "7"
       }
     ],
-    "id": 29
+    "id": 33
   },
   {
     "type": "anime-movie",
@@ -5397,7 +5753,7 @@
         "nume": "2"
       }
     ],
-    "id": 30
+    "id": 34
   },
   {
     "type": "anime-movie",
@@ -5472,6 +5828,6 @@
         "nume": "2"
       }
     ],
-    "id": 31
+    "id": 35
   }
 ]
