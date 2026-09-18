@@ -1,6 +1,6 @@
 {
-  "versionCode": 255,
-  "versionName": "1.11.35",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.35/WEBUNIME-TV-v1.11.35.apk",
-  "changelog": "Katalog detail anime/series unduh dari GitHub per hari (tolak cache/assets stale). Favorit & lanjutkan menonton tetap lokal."
+  "versionCode": 256,
+  "versionName": "1.11.36",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.36/WEBUNIME-TV-v1.11.36.apk",
+  "changelog": "Cold start ringan: hero dulu, baris katalog lazy saat scroll + skeleton loading. Browse tidak parse anime.json penuh."
 }

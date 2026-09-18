@@ -18,8 +18,8 @@ enum class CatalogSection(val fileName: String, val apiName: String) {
     ;
 
     companion object {
-        /** Cukup untuk hero + cold start cepat (tanpa series/anime penuh). */
-        val STARTUP: List<CatalogSection> = listOf(MOVIES, INDONESIA, HORROR)
+        /** Cukup untuk hero cold start (movies saja). Baris lain lazy saat scroll. */
+        val STARTUP: List<CatalogSection> = listOf(MOVIES)
 
         val ALL: List<CatalogSection> = entries.toList()
     }

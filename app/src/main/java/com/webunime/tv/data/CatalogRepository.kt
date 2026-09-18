@@ -158,28 +158,11 @@ class CatalogRepository(
     suspend fun ensureSection(section: CatalogSection): CatalogSnapshot = sectionMutex.withLock {
         withContext(Dispatchers.IO) {
             if (section in loadedSections) return@withContext snapshot
-            // Anime/Series browse pakai *-index.json (~1MB). Fallback ke file penuh (shell) bila index belum ada.
+            // Anime/Series browse hanya *-index.json. Jangan parse anime.json/series.json penuh di sini.
             var list = readList(section.fileName)
-            if (list.isEmpty()) {
-                list = when (section) {
-                    CatalogSection.ANIME -> readList("anime.json", lightweight = true)
-                    CatalogSection.SERIES -> readList("series.json", lightweight = true)
-                    else -> emptyList()
-                }
-            }
-            if (list.isEmpty()) {
-                val file = File(cacheDir, section.fileName)
-                if (file.exists() && file.length() > 50_000L) {
-                    file.delete()
-                    list = readList(section.fileName)
-                    if (list.isEmpty()) {
-                        list = when (section) {
-                            CatalogSection.ANIME -> readList("anime.json", lightweight = true)
-                            CatalogSection.SERIES -> readList("series.json", lightweight = true)
-                            else -> emptyList()
-                        }
-                    }
-                }
+            if (list.isEmpty() && isNetworkAvailable()) {
+                runCatching { downloadAndCache(section.fileName, cacheBust = true) }
+                list = readList(section.fileName)
             }
             // Kosong pun ditandai loaded agar tidak retry parse berkali-kali.
             loadedSections.add(section)
@@ -225,9 +208,20 @@ class CatalogRepository(
     ): CatalogPage {
         val section = sectionFor(collection) ?: return CatalogPage(collection = collection)
         ensureSection(section)
+        // Enrich thumb best-effort: jangan blokir feed latest dengan parse index penuh.
         when (section) {
-            CatalogSection.SERIES_LATEST -> ensureSection(CatalogSection.SERIES)
-            CatalogSection.ANIME_LATEST -> ensureSection(CatalogSection.ANIME)
+            CatalogSection.SERIES_LATEST ->
+                if (CatalogSection.SERIES in loadedSections ||
+                    File(cacheDir, CatalogSection.SERIES.fileName).exists()
+                ) {
+                    ensureSection(CatalogSection.SERIES)
+                }
+            CatalogSection.ANIME_LATEST ->
+                if (CatalogSection.ANIME in loadedSections ||
+                    File(cacheDir, CatalogSection.ANIME.fileName).exists()
+                ) {
+                    ensureSection(CatalogSection.ANIME)
+                }
             else -> Unit
         }
 
@@ -563,8 +557,6 @@ class CatalogRepository(
 
     suspend fun refreshFromGithub(): Int = withContext(Dispatchers.IO) {
         val ok = downloadCatalogFiles(cacheBust = false)
-        // Heavy terpisah: gagal unduh tidak gagalkan sync ringan.
-        downloadHeavyCatalogFiles()
         snapshot = CatalogSnapshot()
         loadedSections.clear()
         itemCache.clear()
@@ -575,9 +567,7 @@ class CatalogRepository(
 
     suspend fun forceRefreshFromGithub(): Int = refreshMutex.withLock {
         val ok = withContext(Dispatchers.IO) {
-            val light = downloadCatalogFiles(cacheBust = true)
-            downloadHeavyCatalogFiles()
-            light
+            downloadCatalogFiles(cacheBust = true)
         }
         snapshot = CatalogSnapshot()
         loadedSections.clear()
@@ -594,6 +584,11 @@ class CatalogRepository(
             githubRefreshDone.set(true)
         }
         ok
+    }
+
+    /** Prefetch anime.json/series.json di latar — jangan panggil di cold-start kritis. */
+    suspend fun prefetchHeavyCatalogInBackground() = withContext(Dispatchers.IO) {
+        downloadHeavyCatalogFiles()
     }
 
     /** Alias Settings lama yang menyebut API. */

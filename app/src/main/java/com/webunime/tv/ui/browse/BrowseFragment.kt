@@ -186,14 +186,14 @@ class BrowseFragment : BrowseSupportFragment() {
             val listRow = row as? ListRow ?: return@OnItemViewSelectedListener
             if (listRow is HeroListRow) {
                 lastItemIndex = 0
-                drainDeferredRows()
+                maybeAppendDeferredRows(forcePrefetch = true)
                 return@OnItemViewSelectedListener
             }
             val selectedIndex =
                 (rowViewHolder as? ListRowPresenter.ViewHolder)?.selectedPosition ?: -1
             if (selectedIndex >= 0) lastItemIndex = selectedIndex
             maybeLoadMore(listRow.headerItem.id, selectedIndex)
-            drainDeferredRows()
+            maybeAppendDeferredRows()
         }
     }
 
@@ -380,7 +380,8 @@ class BrowseFragment : BrowseSupportFragment() {
             view?.let { clearOpaqueBackgrounds(it) }
             restoreRetries = 0
             view?.post(restoreSelectionRunnable)
-            view?.post { drainDeferredRows() }
+            // Prefetch 2 baris film pertama supaya home tidak kosong; sisanya saat scroll.
+            view?.post { maybeAppendDeferredRows(forcePrefetch = true) }
         }
     }
 
@@ -426,41 +427,49 @@ class BrowseFragment : BrowseSupportFragment() {
     private fun allocRowId(): Long = nextRowId++
 
     /**
-     * Muat sisa baris katalog di latar belakang (2 per batch),
-     * tidak menunggu user sampai ke bawah.
+     * Lazy vertikal: muat baris katalog berikutnya saat fokus mendekati bawah
+     * (atau prefetch awal 1–2 baris). Skeleton loading tampil selama parse.
      */
-    private fun drainDeferredRows() {
+    private fun maybeAppendDeferredRows(forcePrefetch: Boolean = false) {
         if (!isAdded || !this::rowsAdapter.isInitialized) return
         if (deferredRowIndex >= deferredRowSpecs.size) return
         if (appendRowsJob?.isActive == true) return
+        if (suppressDeferredAppend) return
+
+        val nearBottom = forcePrefetch ||
+            selectedPosition < 0 ||
+            selectedPosition >= rowsAdapter.size() - DEFERRED_FOCUS_THRESHOLD
+        if (!nearBottom) return
 
         val repo = (requireActivity().application as WebunimeApp).catalogRepository
+        val batch = if (forcePrefetch && deferredRowIndex == 0) {
+            INITIAL_DEFERRED_PREFETCH
+        } else {
+            1
+        }
         appendRowsJob = viewLifecycleOwner.lifecycleScope.launch {
-            while (isAdded && deferredRowIndex < deferredRowSpecs.size) {
+            repeat(batch) {
+                if (!isAdded || deferredRowIndex >= deferredRowSpecs.size) return@repeat
                 while (suppressDeferredAppend) {
                     kotlinx.coroutines.delay(120)
                     if (!isAdded) return@launch
                 }
-                val batch = minOf(2, deferredRowSpecs.size - deferredRowIndex)
-                repeat(batch) {
-                    if (!isAdded || deferredRowIndex >= deferredRowSpecs.size) return@repeat
-                    val spec = deferredRowSpecs[deferredRowIndex]
-                    deferredRowIndex++
-                    val loadingRowPos = rowsAdapter.size()
-                    addLoadingRow(spec.title)
-                    val page = runCatching {
-                        repo.listCollectionPage(
-                            collection = spec.collection,
-                            page = 1,
-                            genre = spec.genre,
-                            sort = spec.sort,
-                        )
-                    }.getOrNull()
-                    if (!isAdded) return@launch
-                    removeLoadingRowAt(loadingRowPos)
-                    if (page != null && page.items.isNotEmpty()) {
-                        addApiCardRow(spec, page)
-                    }
+                val spec = deferredRowSpecs[deferredRowIndex]
+                deferredRowIndex++
+                val loadingRowPos = rowsAdapter.size()
+                addLoadingRow(spec.title)
+                val page = runCatching {
+                    repo.listCollectionPage(
+                        collection = spec.collection,
+                        page = 1,
+                        genre = spec.genre,
+                        sort = spec.sort,
+                    )
+                }.getOrNull()
+                if (!isAdded) return@launch
+                removeLoadingRowAt(loadingRowPos)
+                if (page != null && page.items.isNotEmpty()) {
+                    addApiCardRow(spec, page)
                 }
             }
         }
@@ -832,6 +841,10 @@ class BrowseFragment : BrowseSupportFragment() {
 
     companion object {
         private const val PREFETCH_THRESHOLD = 3
+        /** Fokus dalam N baris dari bawah → muat baris deferred berikutnya. */
+        private const val DEFERRED_FOCUS_THRESHOLD = 2
+        /** Prefetch awal setelah hero (Film + Top Film). */
+        private const val INITIAL_DEFERRED_PREFETCH = 2
         private const val CONTINUE_ROW_LIMIT = 10
         const val TYPE_CONTINUE = "continue"
         const val TYPE_FAVORITE = "favorite"

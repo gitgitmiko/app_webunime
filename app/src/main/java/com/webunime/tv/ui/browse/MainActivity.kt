@@ -76,6 +76,11 @@ class MainActivity : FragmentActivity() {
                 browseFragment()?.reloadRows()
             }
 
+            // Prefetch anime.json/series.json di latar — tidak blokir home.
+            launch(Dispatchers.IO) {
+                runCatching { repo.prefetchHeavyCatalogInBackground() }
+            }
+
             val info = updateDeferred.await()
             if (!isFinishing && info != null) {
                 showUpdateDialog(info)

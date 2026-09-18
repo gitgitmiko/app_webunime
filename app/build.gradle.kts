@@ -11,8 +11,8 @@ android {
         applicationId = "com.webunime.tv"
         minSdk = 21
         targetSdk = 34
-        versionCode = 255
-        versionName = "1.11.35"
+        versionCode = 256
+        versionName = "1.11.36"
 
         // Proxy Vercel (PAT GitHub hanya di server). Key bukan token GitHub.
         buildConfigField(
