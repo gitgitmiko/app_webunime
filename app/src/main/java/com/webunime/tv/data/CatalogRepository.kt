@@ -292,10 +292,13 @@ class CatalogRepository(
         val s = slug.trim()
         if (col.isBlank() || s.isBlank()) return null
         val cached = itemCache["$col:${s.lowercase()}"]
-        if (cached != null && cached.isHydrated()) return cached
         sectionFor(col)?.let { ensureSection(it) }
         val found = snapshot.findBySlug(s)?.let { remember(it, col) }
-        return hydrateIfNeeded(found ?: cached, col)
+        val seed = found ?: cached
+        if (cached != null && cached.isHydrated() && !needsEpisodeRefresh(cached, seed ?: cached)) {
+            return cached
+        }
+        return hydrateIfNeeded(seed, col)
     }
 
     suspend fun findBySlugEnsured(
@@ -312,21 +315,25 @@ class CatalogRepository(
             }
             if (hint == "anime-latest" || hint == "anime") {
                 ensureSection(CatalogSection.ANIME)
+                ensureSection(CatalogSection.ANIME_LATEST)
                 snapshot.findBySlug(key)?.let {
                     return hydrateIfNeeded(remember(it, "anime"), "anime")
                 }
-                hydrateFromFile("anime.json", key)?.let {
-                    return remember(it, "anime")
-                }
+                return hydrateIfNeeded(
+                    CatalogItem(slug = key, anime_slug = key, catalog = "anime", type = "anime"),
+                    "anime",
+                )
             }
             if (hint == "series-latest" || hint == "series") {
                 ensureSection(CatalogSection.SERIES)
+                ensureSection(CatalogSection.SERIES_LATEST)
                 snapshot.findBySlug(key)?.let {
                     return hydrateIfNeeded(remember(it, "series"), "series")
                 }
-                hydrateFromFile("series.json", key)?.let {
-                    return remember(it, "series")
-                }
+                return hydrateIfNeeded(
+                    CatalogItem(slug = key, series_slug = key, catalog = "series", type = "series"),
+                    "series",
+                )
             }
         }
         snapshot.findBySlug(key)?.let {
@@ -356,7 +363,6 @@ class CatalogRepository(
 
     private suspend fun hydrateIfNeeded(item: CatalogItem?, collection: String?): CatalogItem? {
         if (item == null) return null
-        if (item.isHydrated()) return item
         val slug = item.slug?.takeIf { it.isNotBlank() }
             ?: item.anime_slug?.takeIf { it.isNotBlank() }
             ?: item.series_slug?.takeIf { it.isNotBlank() }
@@ -367,17 +373,72 @@ class CatalogRepository(
             col.contains("series") -> "series.json"
             else -> return item
         }
+        if (item.isHydrated() && !needsEpisodeRefresh(item, item)) {
+            return item
+        }
+        if (file == "anime.json") {
+            ensureSection(CatalogSection.ANIME)
+            ensureSection(CatalogSection.ANIME_LATEST)
+        } else if (file == "series.json") {
+            ensureSection(CatalogSection.SERIES)
+            ensureSection(CatalogSection.SERIES_LATEST)
+        }
         return withContext(Dispatchers.IO) {
-            ensureHeavyFile(file)
-            hydrateFromFile(file, slug)?.let { remember(it, col) } ?: item
+            ensureHeavyFile(file, force = false)
+            var hydrated = hydrateFromFile(file, slug)
+            if (hydrated != null && needsEpisodeRefresh(hydrated, item)) {
+                // Cache anime.json/series.json sering tertinggal dari anime-latest (mis. kartu E12, detail masih 4).
+                ensureHeavyFile(file, force = true)
+                hydrated = hydrateFromFile(file, slug) ?: hydrated
+            }
+            hydrated?.let { remember(it, col) } ?: item
         }
     }
 
+    /** Feed/index bilang lebih banyak episode daripada yang sudah di-hydrate. */
+    private fun needsEpisodeRefresh(hydrated: CatalogItem, seed: CatalogItem): Boolean {
+        val got = hydrated.episodes?.size ?: 0
+        if (got <= 0 && hydrated.players.isNullOrEmpty()) return true
+        val expected = expectedEpisodeFloor(seed, hydrated)
+        return expected > 0 && got > 0 && got < expected
+    }
+
+    private fun expectedEpisodeFloor(vararg items: CatalogItem): Int {
+        var floor = 0
+        for (item in items) {
+            floor = maxOf(
+                floor,
+                item.episodes_count ?: 0,
+                item.episode ?: 0,
+                item.episodes?.size ?: 0,
+            )
+            val key = item.detailSlug().takeIf { it.isNotBlank() } ?: continue
+            snapshot.findBySlug(key)?.let { snap ->
+                floor = maxOf(floor, snap.episodes_count ?: 0, snap.episode ?: 0)
+            }
+            for (latest in snapshot.animeLatest) {
+                if (latest.anime_slug.equals(key, ignoreCase = true) ||
+                    latest.slug.equals(key, ignoreCase = true)
+                ) {
+                    floor = maxOf(floor, latest.episode ?: 0, latest.episodes_count ?: 0)
+                }
+            }
+            for (latest in snapshot.seriesLatest) {
+                if (latest.series_slug.equals(key, ignoreCase = true) ||
+                    latest.slug.equals(key, ignoreCase = true)
+                ) {
+                    floor = maxOf(floor, latest.episode ?: 0, latest.episodes_count ?: 0)
+                }
+            }
+        }
+        return floor
+    }
+
     /** Pastikan anime.json / series.json ada di cache (unduh on-demand untuk detail). */
-    private fun ensureHeavyFile(fileName: String) {
+    private fun ensureHeavyFile(fileName: String, force: Boolean = false) {
         val cached = File(cacheDir, fileName)
-        if (cached.exists() && cached.length() > 2) return
-        runCatching { downloadAndCache(fileName, cacheBust = false) }
+        if (!force && cached.exists() && cached.length() > 2) return
+        runCatching { downloadAndCache(fileName, cacheBust = force) }
     }
 
     suspend fun ensureLocalLoaded(): CatalogSnapshot {
@@ -781,6 +842,10 @@ class CatalogRepository(
             val prev = itemCache[key]
             // Jangan timpa entri hydrated (punya episodes) dengan feed ringan.
             if (prev != null && prev.isHydrated() && !value.isHydrated()) return
+            // Prefer katalog yang punya lebih banyak episode (hindari cache stale 4 eps vs feed E12).
+            val prevEps = prev?.episodes?.size ?: 0
+            val nextEps = value.episodes?.size ?: 0
+            if (prev != null && prev.isHydrated() && value.isHydrated() && nextEps < prevEps) return
             itemCache[key] = value
         }
         val slug = normalized.slug?.lowercase()
