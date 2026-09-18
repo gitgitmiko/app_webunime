@@ -85,7 +85,7 @@ class CatalogRepository(
     fun isSnapshotReady(): Boolean =
         homeLoaded ||
             heroItems.isNotEmpty() ||
-            snapshot.movies.isNotEmpty() ||
+        snapshot.movies.isNotEmpty() ||
             snapshot.indonesia.isNotEmpty() ||
             snapshot.horror.isNotEmpty() ||
             snapshot.marvel.isNotEmpty() ||
@@ -655,7 +655,7 @@ class CatalogRepository(
             val ok = refreshFromGithub()
             if (ok > 0) {
                 prefs.edit().putString(KEY_LAST_SYNC_DAY, todayKey()).apply()
-                githubRefreshDone.set(true)
+            githubRefreshDone.set(true)
             }
             ok
         }
@@ -903,24 +903,8 @@ class CatalogRepository(
             file.inputStream().use { findItemInStream(it, slug) }
         }.getOrNull()
 
-    private fun findItemInStream(input: java.io.InputStream, slug: String): CatalogItem? {
-        val source = input.source().buffer()
-        source.use {
-            val reader = com.squareup.moshi.JsonReader.of(it)
-            reader.beginArray()
-            while (reader.hasNext()) {
-                val item = itemAdapter.fromJson(reader) ?: continue
-                if (item.slug.equals(slug, ignoreCase = true) ||
-                    item.anime_slug.equals(slug, ignoreCase = true) ||
-                    item.series_slug.equals(slug, ignoreCase = true)
-                ) {
-                    return normalizeCatalogUrls(item)
-                }
-            }
-            reader.endArray()
-        }
-        return null
-    }
+    private fun findItemInStream(input: java.io.InputStream, slug: String): CatalogItem? =
+        CatalogJson.findBySlug(input, slug)?.let { normalizeCatalogUrls(it) }
 
     private fun normalizeCatalogUrls(item: CatalogItem): CatalogItem {
         val thumb = rewriteDeadPosterHost(item.thumbnail)
@@ -999,18 +983,18 @@ class CatalogRepository(
         var lastError: Throwable? = null
         for (url in urls) {
             val result = runCatching {
-                val request = Request.Builder()
-                    .url(url)
-                    .header("User-Agent", "WEBUNIME-TV/1.0")
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", "WEBUNIME-TV/1.0")
                     .apply {
                         if (cacheBust || heavy) {
                             header("Cache-Control", "no-cache, no-store, must-revalidate")
                             header("Pragma", "no-cache")
                         }
                     }
-                    .build()
-                client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) error("HTTP ${response.code} for $fileName")
+            .build()
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) error("HTTP ${response.code} for $fileName")
                     val body = response.body ?: error("Empty body $fileName")
                     val tmp = File(cacheDir, "$fileName.part")
                     tmp.outputStream().use { out ->

@@ -1,6 +1,6 @@
 {
-  "versionCode": 258,
-  "versionName": "1.11.38",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.38/WEBUNIME-TV-v1.11.38.apk",
-  "changelog": "Katalog lokal: anime.json lengkap di APK; cek GitHub sekali sehari lalu merge ke storage; fix 'tidak ada server' saat unduhan gagal."
+  "versionCode": 259,
+  "versionName": "1.11.39",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.39/WEBUNIME-TV-v1.11.39.apk",
+  "changelog": "Fix episode anime kosong: hydrate skip judul besar (One Piece) tanpa parse penuh; parse hanya judul yang dibuka."
 }

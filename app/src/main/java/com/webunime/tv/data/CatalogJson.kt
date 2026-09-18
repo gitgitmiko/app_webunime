@@ -1,8 +1,14 @@
 package com.webunime.tv.data
 
 import android.util.Log
+import com.squareup.moshi.JsonReader
+import com.squareup.moshi.JsonWriter
+import okio.Buffer
+import okio.buffer
+import okio.source
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.InputStream
 
 /**
  * Parser katalog tahan banting. Moshi reflection sering gagal diam-diam
@@ -27,6 +33,138 @@ internal object CatalogJson {
                 fromObject(o)?.let { add(it) }
             }
         }
+    }
+
+    /**
+     * Cari satu judul di array JSON besar tanpa parse penuh setiap item.
+     * Judul non-match: [JsonReader.skipValue] pada `episodes`/`players` (hindari OOM One Piece).
+     * Judul match: parse via org.json (lebih toleran dari Moshi reflection).
+     */
+    fun findBySlug(input: InputStream, slug: String): CatalogItem? {
+        val key = slug.trim()
+        if (key.isBlank()) return null
+        return runCatching {
+            input.source().buffer().use { source ->
+                val reader = JsonReader.of(source)
+                reader.isLenient = true
+                if (reader.peek() != JsonReader.Token.BEGIN_ARRAY) return@runCatching null
+                reader.beginArray()
+                while (reader.hasNext()) {
+                    readObjectIfSlugMatches(reader, key)?.let { return@runCatching it }
+                }
+                if (reader.hasNext() || reader.peek() == JsonReader.Token.END_ARRAY) {
+                    runCatching { reader.endArray() }
+                }
+                null
+            }
+        }.onFailure {
+            Log.w(TAG, "findBySlug gagal ($key): ${it.message}")
+        }.getOrNull()
+    }
+
+    private fun readObjectIfSlugMatches(reader: JsonReader, target: String): CatalogItem? {
+        if (reader.peek() != JsonReader.Token.BEGIN_OBJECT) {
+            reader.skipValue()
+            return null
+        }
+        reader.beginObject()
+        val light = JSONObject()
+        var matched = false
+        var episodes: List<Episode>? = null
+        var players: List<PlayerServer>? = null
+
+        while (reader.hasNext()) {
+            val name = reader.nextName()
+            when (name) {
+                "slug", "anime_slug", "series_slug" -> {
+                    val v = nextLooseString(reader)
+                    if (v != null) {
+                        light.put(name, v)
+                        if (v.equals(target, ignoreCase = true)) matched = true
+                    }
+                }
+                "episodes" -> {
+                    if (matched) {
+                        episodes = runCatching {
+                            parseEpisodes(JSONArray(valueToJson(reader)))
+                        }.getOrNull()
+                    } else {
+                        reader.skipValue()
+                    }
+                }
+                "players" -> {
+                    if (matched) {
+                        players = runCatching {
+                            parsePlayers(JSONArray(valueToJson(reader)))
+                        }.getOrNull()
+                    } else {
+                        reader.skipValue()
+                    }
+                }
+                "related" -> reader.skipValue()
+                else -> putLightField(light, name, reader)
+            }
+        }
+        reader.endObject()
+        if (!matched) return null
+        val base = fromObject(light) ?: return null
+        return base.copy(
+            episodes = episodes ?: base.episodes,
+            players = players ?: base.players,
+        )
+    }
+
+    private fun putLightField(into: JSONObject, name: String, reader: JsonReader) {
+        when (reader.peek()) {
+            JsonReader.Token.NULL -> reader.nextNull()
+            JsonReader.Token.BOOLEAN -> into.put(name, reader.nextBoolean())
+            JsonReader.Token.NUMBER, JsonReader.Token.STRING -> {
+                when (val v = reader.readJsonValue()) {
+                    null -> Unit
+                    is Number -> into.put(name, v)
+                    else -> into.put(name, v.toString())
+                }
+            }
+            JsonReader.Token.BEGIN_ARRAY -> {
+                runCatching {
+                    into.put(name, JSONArray(valueToJson(reader)))
+                }.onFailure { runCatching { reader.skipValue() } }
+            }
+            JsonReader.Token.BEGIN_OBJECT -> reader.skipValue()
+            else -> reader.skipValue()
+        }
+    }
+
+    private fun nextLooseString(reader: JsonReader): String? {
+        when (reader.peek()) {
+            JsonReader.Token.NULL -> {
+                reader.skipValue()
+                return null
+            }
+            JsonReader.Token.STRING ->
+                return reader.nextString().trim().takeIf { it.isNotEmpty() }
+            JsonReader.Token.NUMBER ->
+                return reader.readJsonValue()?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+            JsonReader.Token.BOOLEAN ->
+                return reader.nextBoolean().toString()
+            else -> {
+                reader.skipValue()
+                return null
+            }
+        }
+    }
+
+    /** Salin satu value JSON sebagai teks (hanya untuk item yang sudah match). */
+    private fun valueToJson(reader: JsonReader): String {
+        val buffer = Buffer()
+        val writer = JsonWriter.of(buffer)
+        writer.serializeNulls = true
+        try {
+            writer.jsonValue(reader.readJsonValue())
+        } finally {
+            writer.close()
+        }
+        return buffer.readUtf8()
     }
 
     private fun fromObject(o: JSONObject): CatalogItem? {
