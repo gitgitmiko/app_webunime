@@ -1,6 +1,6 @@
 {
-  "versionCode": 252,
-  "versionName": "1.11.32",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.32/WEBUNIME-TV-v1.11.32.apk",
-  "changelog": "UI cinematic: hero lebih besar, kartu premium + fokus scale, aksen merah soft di home/detail/search/settings."
+  "versionCode": 253,
+  "versionName": "1.11.33",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.33/WEBUNIME-TV-v1.11.33.apk",
+  "changelog": "Cegah screensaver TV saat nonton (KEEP_SCREEN_ON) — video tidak ikut pause sendiri."
 }

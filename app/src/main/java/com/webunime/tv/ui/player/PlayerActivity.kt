@@ -10,6 +10,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.view.KeyEvent
 import android.view.View
+import android.view.WindowManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -154,6 +155,8 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Cegah screensaver TV saat nonton — tanpa ini layar dim / video ikut pause.
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.activity_player)
 
         playerView = findViewById(R.id.exoPlayerView)
