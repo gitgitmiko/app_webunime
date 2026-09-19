@@ -26,14 +26,16 @@ object PlayerRouter {
 
     /** Sama seperti web: episode aktif → players judul → episode lain yang punya server. */
     private fun resolvePlayers(item: CatalogItem, episode: Episode?): List<PlayerServer> {
-        episode?.players?.takeIf { it.isNotEmpty() }?.let { return it }
-        item.players?.takeIf { it.isNotEmpty() }?.let { return it }
+        nonBlankPlayers(episode?.players)?.let { return it }
+        nonBlankPlayers(item.players)?.let { return it }
         return item.episodes.orEmpty()
             .asReversed()
-            .firstOrNull { !it.players.isNullOrEmpty() }
-            ?.players
+            .firstNotNullOfOrNull { nonBlankPlayers(it.players) }
             .orEmpty()
     }
+
+    private fun nonBlankPlayers(list: List<PlayerServer>?): List<PlayerServer>? =
+        list?.filter { !it.url.isNullOrBlank() }?.takeIf { it.isNotEmpty() }
 
     private fun matchesFilmKey(p: PlayerServer, key: String): Boolean {
         val s = (p.server ?: "").lowercase()

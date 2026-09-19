@@ -701,9 +701,23 @@ class CatalogRepository(
         return true
     }
 
-    fun cachedItem(collection: String, slug: String): CatalogItem? =
-        itemCache["$collection:${slug.lowercase()}"]
-            ?: snapshot.findBySlug(slug)
+    fun cachedItem(collection: String, slug: String): CatalogItem? {
+        val key = slug.trim().lowercase()
+        if (key.isBlank()) return null
+        val col = collection.trim().lowercase().ifBlank { "movies" }
+        itemCache["$col:$key"]?.let { return it }
+        // Detail sering remember di anime:/series: — jangan jatuh ke shell browse.
+        itemCache["anime:$key"]?.takeIf { it.isHydrated() }?.let { return it }
+        itemCache["series:$key"]?.takeIf { it.isHydrated() }?.let { return it }
+        itemCache.values.firstOrNull {
+            it.isHydrated() && (
+                it.slug.equals(slug, ignoreCase = true) ||
+                    it.anime_slug.equals(slug, ignoreCase = true) ||
+                    it.series_slug.equals(slug, ignoreCase = true)
+                )
+        }?.let { return it }
+        return snapshot.findBySlug(slug)
+    }
 
     /** Baca sync-status.json publik (tanpa token), dengan cache-bust. */
     suspend fun fetchSyncStatus(): CatalogSyncStatus? = withContext(Dispatchers.IO) {

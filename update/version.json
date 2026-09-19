@@ -1,6 +1,6 @@
 {
-  "versionCode": 261,
-  "versionName": "1.11.41",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.41/WEBUNIME-TV-v1.11.41.apk",
-  "changelog": "Tanpa anime/series-index: browse baca anime.json/series.json (shell ringan) saat scroll; detail tetap hydrate penuh."
+  "versionCode": 262,
+  "versionName": "1.11.42",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.42/WEBUNIME-TV-v1.11.42.apk",
+  "changelog": "Blogspot-only: jangan skip/timeout-failover server Anoboy; hydrate ulang saat ganti episode agar tidak 'tidak ada server'."
 }

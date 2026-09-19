@@ -131,6 +131,13 @@ class PlayerActivity : AppCompatActivity() {
                     if(v && v.currentTime>0.35 && (!v.paused || v.readyState>=2)){
                       return JSON.stringify({p:v.currentTime||0,d:v.duration||0,play:v.paused?0:1});
                     }
+                    // Blogger sering pakai iframe YouTube/google — parent tanpa <video>.
+                    // Anggap player siap supaya timeout tidak skip server Blogspot-only.
+                    var fr=document.querySelector(
+                      'iframe[src*="youtube"],iframe[src*="youtu.be"],iframe[src*="googleusercontent"],'+
+                      'iframe[src*="blogger"],iframe[src*="video.google"],.ppVepb,video'
+                    );
+                    if(fr) return JSON.stringify({ready:1,p:0,d:0});
                   }catch(e){}
                   return '{}';
                 })();
@@ -142,7 +149,12 @@ class PlayerActivity : AppCompatActivity() {
                     val o = org.json.JSONObject(text)
                     val p = o.optDouble("p", 0.0)
                     val d = o.optDouble("d", 0.0)
-                    if (p > 0.35) markWebPlaybackActive(p, d)
+                    if (p > 0.35) {
+                        markWebPlaybackActive(p, d)
+                    } else if (o.optInt("ready", 0) == 1 && isBloggerPlayerUrl()) {
+                        // Batalkan timeout failover; tunggu onPlay/progress untuk mark active.
+                        hideHandler.removeCallbacks(webFailTimeoutRunnable)
+                    }
                 }
             }
             if (!webVideoActive) {
@@ -251,7 +263,9 @@ class PlayerActivity : AppCompatActivity() {
 
         serverIndex = 0
         loadEpisodeContext()
-        if (catalogItem == null && contentSlug.isNotBlank()) {
+        // Shell browse (tanpa episodes/players) sering masuk cache — hydrate selalu
+        // supaya ganti episode / Blogspot-only tidak dianggap "tidak ada server".
+        if (contentSlug.isNotBlank() && catalogItem?.isHydrated() != true) {
             lifecycleScope.launch {
                 val found = (application as WebunimeApp).catalogRepository
                     .findBySlugEnsured(
@@ -260,11 +274,7 @@ class PlayerActivity : AppCompatActivity() {
                         minEpisodesHint = contentEpisode ?: 0,
                     )
                 if (isFinishing || found == null) return@launch
-                catalogItem = found
-                if (contentCollection.isNullOrBlank()) contentCollection = found.detailCollection()
-                episodeList = found.episodes.orEmpty()
-                    .sortedWith(compareBy({ it.season ?: 0 }, { it.episode ?: 0 }))
-                episodeIndex = resolveEpisodeIndex(contentEpisode, contentEpisodeSlug)
+                applyCatalogItem(found)
                 prepareAnimeSkipTimes()
             }
         }
@@ -279,8 +289,13 @@ class PlayerActivity : AppCompatActivity() {
             contentCollection ?: "movies",
             contentSlug,
         ) ?: (application as WebunimeApp).catalogRepository.snapshot.findBySlug(contentSlug)
+        if (item != null) applyCatalogItem(item)
+    }
+
+    private fun applyCatalogItem(item: CatalogItem) {
         catalogItem = item
-        episodeList = item?.episodes.orEmpty()
+        if (contentCollection.isNullOrBlank()) contentCollection = item.detailCollection()
+        episodeList = item.episodes.orEmpty()
             .sortedWith(compareBy({ it.season ?: 0 }, { it.episode ?: 0 }))
         episodeIndex = resolveEpisodeIndex(contentEpisode, contentEpisodeSlug)
     }
@@ -594,6 +609,12 @@ class PlayerActivity : AppCompatActivity() {
         // Sudah play → jangan lompat server (Bug: Blogspot play tapi tetap failover).
         if (webVideoActive) return
         if (failoverInProgress) return
+        // Blogspot/Anoboy: timeout sering false-positive (video di iframe / onPlay
+        // tidak sampai bridge). Jangan buang satu-satunya server yang tersedia.
+        if (reason == "timeout" && isBloggerPlayerUrl()) {
+            hideHandler.removeCallbacks(webFailTimeoutRunnable)
+            return
+        }
         if (serverIndex >= serverUrls.lastIndex) {
             Toast.makeText(this, R.string.error_play, Toast.LENGTH_LONG).show()
             return
@@ -1227,64 +1248,88 @@ class PlayerActivity : AppCompatActivity() {
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
             return
         }
-        val item = catalogItem ?: return
-        val ep = episodeList[nextIdx]
-        val players = PlayerRouter.preferredPlayers(item, ep)
-        if (players.isEmpty()) {
-            Toast.makeText(this, R.string.error_no_players, Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        persistProgress()
-        playJobGeneration++
-        hideHandler.removeCallbacks(webFailTimeoutRunnable)
-        hideHandler.removeCallbacks(webPlayProbeRunnable)
-        hideHandler.removeCallbacks(progressTicker)
-        exoPlayer?.release()
-        exoPlayer = null
-        if (this::webView.isInitialized) {
-            runCatching {
-                webView.stopLoading()
-                webView.loadUrl("about:blank")
+        val epHint = episodeList[nextIdx]
+        lifecycleScope.launch {
+            var item = catalogItem
+            var ep = epHint
+            var players = if (item != null) PlayerRouter.preferredPlayers(item, ep) else emptyList()
+            if (players.isEmpty() && contentSlug.isNotBlank()) {
+                val found = (application as WebunimeApp).catalogRepository
+                    .findBySlugEnsured(
+                        slug = contentSlug,
+                        collectionHint = contentCollection,
+                        minEpisodesHint = epHint.episode ?: 0,
+                    )
+                if (found != null) {
+                    applyCatalogItem(found)
+                    item = found
+                    ep = episodeList.getOrNull(nextIdx)
+                        ?: episodeList.firstOrNull {
+                            it.episode == epHint.episode &&
+                                (epHint.season == null || it.season == null || it.season == epHint.season)
+                        }
+                        ?: epHint
+                    players = PlayerRouter.preferredPlayers(found, ep)
+                }
             }
-        }
+            if (isFinishing) return@launch
+            if (item == null || players.isEmpty()) {
+                Toast.makeText(this@PlayerActivity, R.string.error_no_players, Toast.LENGTH_SHORT).show()
+                return@launch
+            }
 
-        episodeIndex = nextIdx
-        contentEpisode = ep.episode
-        contentThumb = item.thumbnail ?: contentThumb
-        titleView.text = buildString {
-            append(item.displayTitle())
-            append(" · ")
-            append(ep.displayTitle())
-        }
-        serverUrls = players.mapNotNull { it.url }
-        serverLabels = players.map { it.displayName() }
-        serverIndex = 0
-        failoverInProgress = false
-        exoFallbackUsed = false
-        webVideoActive = false
-        pendingSeekSec = 0
+            persistProgress()
+            playJobGeneration++
+            hideHandler.removeCallbacks(webFailTimeoutRunnable)
+            hideHandler.removeCallbacks(webPlayProbeRunnable)
+            hideHandler.removeCallbacks(progressTicker)
+            exoPlayer?.release()
+            exoPlayer = null
+            if (this@PlayerActivity::webView.isInitialized) {
+                runCatching {
+                    webView.stopLoading()
+                    webView.loadUrl("about:blank")
+                }
+            }
 
-        val saved = (application as WebunimeApp).watchSessions.get(contentSlug, contentEpisode)
-        resumePositionMs = if (!auto && saved != null && !saved.isFinished() &&
-            saved.positionMs >= WatchSessionStore.MIN_RESUME_MS
-        ) {
-            saved.positionMs
-        } else {
-            0L
-        }
+            episodeIndex = nextIdx.coerceIn(0, episodeList.lastIndex)
+            contentEpisode = ep.episode
+            contentEpisodeSlug = ep.slug
+            contentThumb = item.thumbnail ?: contentThumb
+            titleView.text = buildString {
+                append(item.displayTitle())
+                append(" · ")
+                append(ep.displayTitle())
+            }
+            serverUrls = players.mapNotNull { it.url }
+            serverLabels = players.map { it.displayName() }
+            serverIndex = 0
+            failoverInProgress = false
+            exoFallbackUsed = false
+            webVideoActive = false
+            pendingSeekSec = 0
 
-        val toastRes = when {
-            auto -> R.string.episode_auto_next
-            delta > 0 -> R.string.episode_next
-            else -> R.string.episode_prev
+            val saved = (application as WebunimeApp).watchSessions.get(contentSlug, contentEpisode)
+            resumePositionMs = if (!auto && saved != null && !saved.isFinished() &&
+                saved.positionMs >= WatchSessionStore.MIN_RESUME_MS
+            ) {
+                saved.positionMs
+            } else {
+                0L
+            }
+
+            val toastRes = when {
+                auto -> R.string.episode_auto_next
+                delta > 0 -> R.string.episode_next
+                else -> R.string.episode_prev
+            }
+            Toast.makeText(this@PlayerActivity, getString(toastRes, ep.displayTitle()), Toast.LENGTH_SHORT).show()
+            prepareAnimeSkipTimes()
+            playbackOpenedAt = SystemClock.elapsedRealtime()
+            playCurrentServer()
+            // Auto-next: pastikan episode baru langsung play tanpa OK.
+            ensureWebAutoplay()
         }
-        Toast.makeText(this, getString(toastRes, ep.displayTitle()), Toast.LENGTH_SHORT).show()
-        prepareAnimeSkipTimes()
-        playbackOpenedAt = SystemClock.elapsedRealtime()
-        playCurrentServer()
-        // Auto-next: pastikan episode baru langsung play tanpa OK.
-        ensureWebAutoplay()
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {

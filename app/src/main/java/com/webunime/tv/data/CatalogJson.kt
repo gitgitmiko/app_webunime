@@ -70,13 +70,19 @@ internal object CatalogJson {
         reader.beginObject()
         val light = JSONObject()
         var matched = false
+        var sawSlugKey = false
         var episodes: List<Episode>? = null
         var players: List<PlayerServer>? = null
+        // Hanya buffer jika episodes/players muncul SEBELUM key slug (urutan jarang).
+        // Setelah slug diketahui tidak cocok → skipValue (hindari OOM One Piece).
+        var pendingEpisodesJson: String? = null
+        var pendingPlayersJson: String? = null
 
         while (reader.hasNext()) {
             val name = reader.nextName()
             when (name) {
                 "slug", "anime_slug", "series_slug" -> {
+                    sawSlugKey = true
                     val v = nextLooseString(reader)
                     if (v != null) {
                         light.put(name, v)
@@ -84,21 +90,39 @@ internal object CatalogJson {
                     }
                 }
                 "episodes" -> {
-                    if (matched) {
-                        episodes = runCatching {
-                            parseEpisodes(JSONArray(valueToJson(reader)))
-                        }.getOrNull()
-                    } else {
-                        reader.skipValue()
+                    when {
+                        matched -> {
+                            pendingEpisodesJson = null
+                            episodes = runCatching {
+                                parseEpisodes(JSONArray(valueToJson(reader)))
+                            }.getOrNull()
+                        }
+                        !sawSlugKey -> {
+                            pendingEpisodesJson = runCatching { valueToJson(reader) }.getOrNull()
+                                ?: run {
+                                    runCatching { reader.skipValue() }
+                                    null
+                                }
+                        }
+                        else -> reader.skipValue()
                     }
                 }
                 "players" -> {
-                    if (matched) {
-                        players = runCatching {
-                            parsePlayers(JSONArray(valueToJson(reader)))
-                        }.getOrNull()
-                    } else {
-                        reader.skipValue()
+                    when {
+                        matched -> {
+                            pendingPlayersJson = null
+                            players = runCatching {
+                                parsePlayers(JSONArray(valueToJson(reader)))
+                            }.getOrNull()
+                        }
+                        !sawSlugKey -> {
+                            pendingPlayersJson = runCatching { valueToJson(reader) }.getOrNull()
+                                ?: run {
+                                    runCatching { reader.skipValue() }
+                                    null
+                                }
+                        }
+                        else -> reader.skipValue()
                     }
                 }
                 "related" -> reader.skipValue()
@@ -107,6 +131,12 @@ internal object CatalogJson {
         }
         reader.endObject()
         if (!matched) return null
+        if (episodes == null && pendingEpisodesJson != null) {
+            episodes = runCatching { parseEpisodes(JSONArray(pendingEpisodesJson)) }.getOrNull()
+        }
+        if (players == null && pendingPlayersJson != null) {
+            players = runCatching { parsePlayers(JSONArray(pendingPlayersJson)) }.getOrNull()
+        }
         val base = fromObject(light) ?: return null
         return base.copy(
             episodes = episodes ?: base.episodes,
