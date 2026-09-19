@@ -57,6 +57,8 @@ class PlayerActivity : AppCompatActivity() {
     private var sourceUrl: String = ""
     private var serverLabel: String = ""
     private var exoFallbackUsed = false
+    /** Retry singkat untuk putus CDN Wibufile sebelum failover. */
+    private var exoNetworkRetries = 0
 
     private var serverUrls: List<String> = emptyList()
     private var serverLabels: List<String> = emptyList()
@@ -205,6 +207,7 @@ class PlayerActivity : AppCompatActivity() {
         setContentView(R.layout.activity_player)
 
         playerView = findViewById(R.id.exoPlayerView)
+        playerView.useController = false
         webView = findViewById(R.id.webPlayer)
         titleBar = findViewById(R.id.playerTitleBar)
         titleView = findViewById(R.id.playerTitle)
@@ -569,6 +572,7 @@ class PlayerActivity : AppCompatActivity() {
         }
         failoverInProgress = false
         exoFallbackUsed = false
+        exoNetworkRetries = 0
         webVideoActive = false
         hideHandler.removeCallbacks(webFailTimeoutRunnable)
         hideHandler.removeCallbacks(webPlayProbeRunnable)
@@ -655,10 +659,13 @@ class PlayerActivity : AppCompatActivity() {
     private fun startExo(url: String, server: String) {
         playerView.visibility = View.VISIBLE
         webView.visibility = View.GONE
+        // Controller bawaan Exo sering menangkap D-pad/OK di TV → play ikut ter-pause.
+        playerView.useController = false
         modeView.text = "$server · ExoPlayer"
 
         exoPlayer?.release()
         exoPlayer = null
+        exoNetworkRetries = 0
 
         val httpFactory = DefaultHttpDataSource.Factory()
             .setUserAgent(
@@ -666,7 +673,7 @@ class PlayerActivity : AppCompatActivity() {
             )
             .setAllowCrossProtocolRedirects(true)
             .setConnectTimeoutMs(20_000)
-            .setReadTimeoutMs(45_000)
+            .setReadTimeoutMs(60_000)
 
         val headers = linkedMapOf<String, String>()
         PlayerRouter.refererFor(url)?.let { headers["Referer"] = it }
@@ -674,16 +681,17 @@ class PlayerActivity : AppCompatActivity() {
             httpFactory.setDefaultRequestProperties(headers)
         }
 
-        // Buffer lebih kecil: hemat RAM TV, 1080p cenderung lebih stabil (kurang GC/pressure).
-        // Default tetap pilih server 1080; yang diubah hanya seberapa banyak yang di-buffer.
+        val isWibuCdn = url.contains("wibufile", ignoreCase = true) ||
+            url.contains("wibuu.", ignoreCase = true)
+        // Wibufile = progressive MP4 CDN: buffer kecil → sering rebuffer (terasa "pause").
         val loadControl = DefaultLoadControl.Builder()
             .setBufferDurationsMs(
-                /* minBufferMs */ 12_000,
-                /* maxBufferMs */ 45_000,
-                /* bufferForPlaybackMs */ 1_500,
-                /* bufferForPlaybackAfterRebufferMs */ 3_000,
+                /* minBufferMs */ if (isWibuCdn) 35_000 else 12_000,
+                /* maxBufferMs */ if (isWibuCdn) 120_000 else 45_000,
+                /* bufferForPlaybackMs */ if (isWibuCdn) 2_500 else 1_500,
+                /* bufferForPlaybackAfterRebufferMs */ if (isWibuCdn) 6_000 else 3_000,
             )
-            .setTargetBufferBytes(18 * 1024 * 1024)
+            .setTargetBufferBytes(if (isWibuCdn) 48 * 1024 * 1024 else 18 * 1024 * 1024)
             .setPrioritizeTimeOverSizeThresholds(true)
             .build()
 
@@ -693,6 +701,7 @@ class PlayerActivity : AppCompatActivity() {
             .build()
             .also { exoPlayer = it }
 
+        player.setWakeMode(androidx.media3.common.C.WAKE_MODE_NETWORK)
         playerView.player = player
         player.setMediaItem(MediaItem.fromUri(url))
         player.prepare()
@@ -703,7 +712,10 @@ class PlayerActivity : AppCompatActivity() {
         player.playWhenReady = true
         player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
-                setTitleBarVisible(!isPlaying)
+                val p = exoPlayer
+                // Hanya tampilkan HUD saat user pause — jangan saat buffering (sering di Wibufile).
+                val userPaused = p != null && !p.playWhenReady
+                setTitleBarVisible(userPaused)
                 if (isPlaying) {
                     hideHandler.removeCallbacks(progressTicker)
                     hideHandler.post(progressTicker)
@@ -711,15 +723,53 @@ class PlayerActivity : AppCompatActivity() {
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
-                if (playbackState == Player.STATE_ENDED && contentSlug.isNotBlank()) {
-                    val p = exoPlayer
-                    val dur = p?.duration?.takeIf { it > 0 } ?: p?.currentPosition ?: 0L
-                    persistWatch(dur, dur, finished = true, flush = true)
-                    scheduleAutoNextEpisode()
+                val p = exoPlayer ?: return
+                when (playbackState) {
+                    Player.STATE_BUFFERING -> {
+                        if (p.playWhenReady) {
+                            modeView.text = "$server · buffering…"
+                        }
+                    }
+                    Player.STATE_READY -> {
+                        if (seekHintServerLabel.isNotEmpty() &&
+                            modeView.text?.contains('+') != true &&
+                            modeView.text?.startsWith('-') != true
+                        ) {
+                            modeView.text = seekHintServerLabel.ifBlank { "$server · ExoPlayer" }
+                        } else if (!modeView.text.isNullOrBlank() &&
+                            modeView.text?.contains("buffering") == true
+                        ) {
+                            modeView.text = "$server · ExoPlayer"
+                        }
+                    }
+                    Player.STATE_ENDED -> {
+                        if (contentSlug.isNotBlank()) {
+                            val dur = p.duration.takeIf { it > 0 } ?: p.currentPosition
+                            persistWatch(dur, dur, finished = true, flush = true)
+                            scheduleAutoNextEpisode()
+                        }
+                    }
                 }
             }
 
             override fun onPlayerError(error: PlaybackException) {
+                // CDN Wibufile sering putus sebentar — retry sebelum failover.
+                val retryable = error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED ||
+                    error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT ||
+                    error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS ||
+                    error.errorCode == PlaybackException.ERROR_CODE_TIMEOUT ||
+                    error.errorCode == PlaybackException.ERROR_CODE_IO_UNSPECIFIED
+                if (isWibuCdn && retryable && exoNetworkRetries < 2) {
+                    exoNetworkRetries++
+                    val pos = exoPlayer?.currentPosition?.coerceAtLeast(0L) ?: 0L
+                    modeView.text = "$server · reconnect ${exoNetworkRetries}…"
+                    runCatching {
+                        player.seekTo(pos)
+                        player.prepare()
+                        player.playWhenReady = true
+                    }
+                    return
+                }
                 val embed = EmbedResolver.pixeldrainEmbedUrl(sourceUrl)
                 if (!exoFallbackUsed && embed != null) {
                     exoFallbackUsed = true
@@ -1306,6 +1356,7 @@ class PlayerActivity : AppCompatActivity() {
             serverIndex = 0
             failoverInProgress = false
             exoFallbackUsed = false
+            exoNetworkRetries = 0
             webVideoActive = false
             pendingSeekSec = 0
 
@@ -1417,14 +1468,13 @@ class PlayerActivity : AppCompatActivity() {
                 val p = exoPlayer
                 if (p != null) {
                     p.playWhenReady = !p.playWhenReady
-                    showTitleThenAutoHide()
+                    setTitleBarVisible(!p.playWhenReady)
+                    if (p.playWhenReady) showTitleThenAutoHide()
                 }
             }
             return true
         }
-        if (playerView.visibility == View.VISIBLE && !isBackLike(event.keyCode) && !isSeekKey(event.keyCode)) {
-            if (playerView.dispatchKeyEvent(event)) return true
-        }
+        // Jangan teruskan D-pad ke PlayerView: controller bawaan bisa pause video.
         return super.dispatchKeyEvent(event)
     }
 
