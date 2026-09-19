@@ -1,6 +1,6 @@
 {
-  "versionCode": 267,
-  "versionName": "1.11.47",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.47/WEBUNIME-TV-v1.11.47.apk",
-  "changelog": "Update katalog Settings sekarang ikut unduh anime.json/series.json; auto-refresh jika ada episode tanpa server."
+  "versionCode": 268,
+  "versionName": "1.11.48",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.48/WEBUNIME-TV-v1.11.48.apk",
+  "changelog": "Hotfix crash Wibufile 1080: LoadControl custom diganti subclass DefaultLoadControl + buffer lebih kecil."
 }
