@@ -26,14 +26,10 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Katalog dari JSON publik repo WEBUNIME (GitHub raw / jsDelivr),
  * dengan baseline di assets APK + cache lokal `filesDir/catalog`.
  *
- * Alur:
- * 1. Assets (inject saat build) = data awal lengkap (episodes + players).
- * 2. Pertama kali file berat belum ada di disk → salin dari assets ke lokal.
- * 3. Paling banyak sekali per hari: unduh GitHub, replace file lokal jika lebih baru/lengkap.
- * 4. Detail selalu pilih sumber terbaik (disk vs assets) yang punya players —
- *    jangan kembalikan shell kosong meski unduhan gagal.
- *
- * Browse ringan: sync harian file index. Library: [LibraryRepository].
+ * Browse: film/dll file ringan di cold start; anime.json / series.json
+ * di-parse shell (tanpa episodes) saat remote scroll ke baris tersebut.
+ * Detail: hydrate satu judul penuh dari file berat (episodes + players).
+ * Sync GitHub paling banyak sekali per hari.
  */
 class CatalogRepository(
     private val context: Context,
@@ -163,11 +159,23 @@ class CatalogRepository(
     suspend fun ensureSection(section: CatalogSection): CatalogSnapshot = sectionMutex.withLock {
         withContext(Dispatchers.IO) {
             if (section in loadedSections) return@withContext snapshot
-            // Anime/Series browse hanya *-index.json. Jangan parse anime.json/series.json penuh di sini.
-            var list = readList(section.fileName)
+            // Anime/Series: baca file penuh tapi shell ringan (skip episodes/players) —
+            // dipanggil saat scroll ke baris itu, bukan di cold start.
+            val lightweight = section == CatalogSection.ANIME || section == CatalogSection.SERIES
+            if (lightweight) {
+                seedHeavyFromAssetsIfNeeded(section.fileName)
+                if (isNetworkAvailable() && !isHeavyFreshToday(section.fileName)) {
+                    ensureHeavyFile(section.fileName, force = false)
+                }
+            }
+            var list = readList(section.fileName, lightweight = lightweight)
             if (list.isEmpty() && isNetworkAvailable()) {
-                runCatching { downloadAndCache(section.fileName, cacheBust = true) }
-                list = readList(section.fileName)
+                if (lightweight) {
+                    ensureHeavyFile(section.fileName, force = true)
+                } else {
+                    runCatching { downloadAndCache(section.fileName, cacheBust = true) }
+                }
+                list = readList(section.fileName, lightweight = lightweight)
             }
             // Kosong pun ditandai loaded agar tidak retry parse berkali-kali.
             loadedSections.add(section)
@@ -213,22 +221,6 @@ class CatalogRepository(
     ): CatalogPage {
         val section = sectionFor(collection) ?: return CatalogPage(collection = collection)
         ensureSection(section)
-        // Enrich thumb best-effort: jangan blokir feed latest dengan parse index penuh.
-        when (section) {
-            CatalogSection.SERIES_LATEST ->
-                if (CatalogSection.SERIES in loadedSections ||
-                    File(cacheDir, CatalogSection.SERIES.fileName).exists()
-                ) {
-                    ensureSection(CatalogSection.SERIES)
-                }
-            CatalogSection.ANIME_LATEST ->
-                if (CatalogSection.ANIME in loadedSections ||
-                    File(cacheDir, CatalogSection.ANIME.fileName).exists()
-                ) {
-                    ensureSection(CatalogSection.ANIME)
-                }
-            else -> Unit
-        }
 
         var items = itemsFor(section).map { remember(it, section.apiName) }
         val query = q.trim()
@@ -1123,17 +1115,15 @@ class CatalogRepository(
 
         private val CATALOG_FILES = listOf(
             "movies.json",
-            "series-index.json",
             "series-latest.json",
             "horror.json",
             "marvel.json",
             "indonesia.json",
-            "anime-index.json",
             "anime-movies.json",
             "anime-latest.json",
         )
 
-        /** File berat: baseline assets APK + replace dari GitHub sekali/hari. */
+        /** File berat: sync harian + browse shell / hydrate detail. */
         private val HEAVY_FILES = listOf(
             "anime.json",
             "series.json",

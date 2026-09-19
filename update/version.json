@@ -1,6 +1,6 @@
 {
-  "versionCode": 260,
-  "versionName": "1.11.40",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.40/WEBUNIME-TV-v1.11.40.apk",
-  "changelog": "Fix Blogspot: seek relatif + jangan failover jika video sudah play; deteksi play via progress/probe."
+  "versionCode": 261,
+  "versionName": "1.11.41",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.41/WEBUNIME-TV-v1.11.41.apk",
+  "changelog": "Tanpa anime/series-index: browse baca anime.json/series.json (shell ringan) saat scroll; detail tetap hydrate penuh."
 }

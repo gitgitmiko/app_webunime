@@ -9,11 +9,11 @@ enum class CatalogSection(val fileName: String, val apiName: String) {
     HORROR("horror.json", "horror"),
     MARVEL("marvel.json", "marvel"),
     SERIES_LATEST("series-latest.json", "series-latest"),
-    /** Index ringan (~0.5MB) — detail episode di-hydrate dari series.json. */
-    SERIES("series-index.json", "series"),
+    /** File penuh — browse parse ringan (tanpa episodes); detail di-hydrate on-demand. */
+    SERIES("series.json", "series"),
     ANIME_LATEST("anime-latest.json", "anime-latest"),
-    /** Index ringan (~1.3MB) — detail episode di-hydrate dari anime.json. */
-    ANIME("anime-index.json", "anime"),
+    /** File penuh — browse parse ringan (tanpa episodes); detail di-hydrate on-demand. */
+    ANIME("anime.json", "anime"),
     ANIME_MOVIES("anime-movies.json", "anime-movies"),
     ;
 
