@@ -683,15 +683,16 @@ class PlayerActivity : AppCompatActivity() {
 
         val isWibuCdn = url.contains("wibufile", ignoreCase = true) ||
             url.contains("wibuu.", ignoreCase = true)
-        // Wibufile = progressive MP4 CDN: buffer kecil → sering rebuffer (terasa "pause").
+        // Wibufile progressive MP4: buffer agak lebih besar dari default, tapi
+        // jangan 48MB — di TV sering OOM/force-close (terutama 1080p).
         val loadControl = DefaultLoadControl.Builder()
             .setBufferDurationsMs(
-                /* minBufferMs */ if (isWibuCdn) 35_000 else 12_000,
-                /* maxBufferMs */ if (isWibuCdn) 120_000 else 45_000,
-                /* bufferForPlaybackMs */ if (isWibuCdn) 2_500 else 1_500,
-                /* bufferForPlaybackAfterRebufferMs */ if (isWibuCdn) 6_000 else 3_000,
+                /* minBufferMs */ if (isWibuCdn) 22_000 else 12_000,
+                /* maxBufferMs */ if (isWibuCdn) 70_000 else 45_000,
+                /* bufferForPlaybackMs */ if (isWibuCdn) 2_000 else 1_500,
+                /* bufferForPlaybackAfterRebufferMs */ if (isWibuCdn) 4_500 else 3_000,
             )
-            .setTargetBufferBytes(if (isWibuCdn) 48 * 1024 * 1024 else 18 * 1024 * 1024)
+            .setTargetBufferBytes(if (isWibuCdn) 24 * 1024 * 1024 else 18 * 1024 * 1024)
             .setPrioritizeTimeOverSizeThresholds(true)
             .build()
 
@@ -701,7 +702,8 @@ class PlayerActivity : AppCompatActivity() {
             .build()
             .also { exoPlayer = it }
 
-        player.setWakeMode(androidx.media3.common.C.WAKE_MODE_NETWORK)
+        // Jangan setWakeMode: butuh WAKE_LOCK (belum di manifest) → SecurityException
+        // force-close. FLAG_KEEP_SCREEN_ON di Activity sudah cukup.
         playerView.player = player
         player.setMediaItem(MediaItem.fromUri(url))
         player.prepare()

@@ -1,6 +1,6 @@
 {
-  "versionCode": 263,
-  "versionName": "1.11.43",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.43/WEBUNIME-TV-v1.11.43.apk",
-  "changelog": "Wibufile: buffer lebih besar + jangan pause palsu saat buffering; matikan controller Exo yang sering pause di TV."
+  "versionCode": 264,
+  "versionName": "1.11.44",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.44/WEBUNIME-TV-v1.11.44.apk",
+  "changelog": "Hotfix: Wibufile 1080 tidak force-close (hapus setWakeMode tanpa WAKE_LOCK); buffer tetap aman di TV."
 }
