@@ -1,6 +1,6 @@
 {
-  "versionCode": 265,
-  "versionName": "1.11.45",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.45/WEBUNIME-TV-v1.11.45.apk",
-  "changelog": "Jangan pinjam server episode lain jika episode dipilih kosong (ep6 tidak lagi putar ep11)."
+  "versionCode": 266,
+  "versionName": "1.11.46",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.46/WEBUNIME-TV-v1.11.46.apk",
+  "changelog": "Pause seperti YouTube: saat pause, buffer tetap jalan sampai jauh di depan; HUD tampilkan sisa buffer."
 }

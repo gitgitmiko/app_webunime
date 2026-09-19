@@ -26,7 +26,6 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.datasource.DefaultHttpDataSource
-import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
@@ -36,6 +35,7 @@ import com.webunime.tv.data.AniSkipClient
 import com.webunime.tv.data.CatalogItem
 import com.webunime.tv.data.EmbedResolver
 import com.webunime.tv.data.Episode
+import com.webunime.tv.data.PauseAwareLoadControl
 import com.webunime.tv.data.PlayerRouter
 import com.webunime.tv.data.WatchSession
 import com.webunime.tv.data.WatchSessionStore
@@ -683,18 +683,13 @@ class PlayerActivity : AppCompatActivity() {
 
         val isWibuCdn = url.contains("wibufile", ignoreCase = true) ||
             url.contains("wibuu.", ignoreCase = true)
-        // Wibufile progressive MP4: buffer agak lebih besar dari default, tapi
-        // jangan 48MB — di TV sering OOM/force-close (terutama 1080p).
-        val loadControl = DefaultLoadControl.Builder()
-            .setBufferDurationsMs(
-                /* minBufferMs */ if (isWibuCdn) 22_000 else 12_000,
-                /* maxBufferMs */ if (isWibuCdn) 70_000 else 45_000,
-                /* bufferForPlaybackMs */ if (isWibuCdn) 2_000 else 1_500,
-                /* bufferForPlaybackAfterRebufferMs */ if (isWibuCdn) 4_500 else 3_000,
-            )
-            .setTargetBufferBytes(if (isWibuCdn) 24 * 1024 * 1024 else 18 * 1024 * 1024)
-            .setPrioritizeTimeOverSizeThresholds(true)
-            .build()
+        // Saat pause: buffer terus sampai jauh di depan (mirip YouTube).
+        // Saat play: batas lebih ketat supaya RAM TV aman.
+        val loadControl = if (isWibuCdn) {
+            PauseAwareLoadControl.forWibufile()
+        } else {
+            PauseAwareLoadControl.forDefault()
+        }
 
         val player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(DefaultMediaSourceFactory(httpFactory))
@@ -718,6 +713,12 @@ class PlayerActivity : AppCompatActivity() {
                 // Hanya tampilkan HUD saat user pause — jangan saat buffering (sering di Wibufile).
                 val userPaused = p != null && !p.playWhenReady
                 setTitleBarVisible(userPaused)
+                if (userPaused) {
+                    hideHandler.removeCallbacks(exoBufferHudRunnable)
+                    hideHandler.post(exoBufferHudRunnable)
+                } else {
+                    hideHandler.removeCallbacks(exoBufferHudRunnable)
+                }
                 if (isPlaying) {
                     hideHandler.removeCallbacks(progressTicker)
                     hideHandler.post(progressTicker)
@@ -733,6 +734,10 @@ class PlayerActivity : AppCompatActivity() {
                         }
                     }
                     Player.STATE_READY -> {
+                        if (!p.playWhenReady) {
+                            updateExoBufferHud(server)
+                            return
+                        }
                         if (seekHintServerLabel.isNotEmpty() &&
                             modeView.text?.contains('+') != true &&
                             modeView.text?.startsWith('-') != true
@@ -788,8 +793,31 @@ class PlayerActivity : AppCompatActivity() {
         ignoreRemoteUntil = SystemClock.uptimeMillis() + REMOTE_GRACE_MS
         hideHandler.removeCallbacks(applySeekRunnable)
         hideHandler.removeCallbacks(clearSeekHintRunnable)
+        hideHandler.removeCallbacks(exoBufferHudRunnable)
         playerView.requestFocus()
         showTitleThenAutoHide()
+    }
+
+    /** Saat pause: tampilkan berapa detik sudah di-buffer di depan (YouTube-style). */
+    private val exoBufferHudRunnable = object : Runnable {
+        override fun run() {
+            val p = exoPlayer ?: return
+            if (p.playWhenReady || playerView.visibility != View.VISIBLE) return
+            updateExoBufferHud(serverLabel)
+            hideHandler.postDelayed(this, 1_000L)
+        }
+    }
+
+    private fun updateExoBufferHud(server: String) {
+        val p = exoPlayer ?: return
+        if (p.playWhenReady) return
+        val aheadMs = (p.bufferedPosition - p.currentPosition).coerceAtLeast(0L)
+        val aheadSec = (aheadMs / 1000L).toInt()
+        modeView.text = if (aheadSec > 0) {
+            "$server · pause · buffer ${formatSeekDuration(aheadSec)}"
+        } else {
+            "$server · pause · buffering…"
+        }
     }
 
     private fun setTitleBarVisible(visible: Boolean) {
@@ -1913,6 +1941,7 @@ class PlayerActivity : AppCompatActivity() {
         hideHandler.removeCallbacks(skipPromptTicker)
         hideHandler.removeCallbacks(showPauseHudRunnable)
         hideHandler.removeCallbacks(autoplayKickRunnable)
+        hideHandler.removeCallbacks(exoBufferHudRunnable)
         qualityDialog?.dismiss()
         qualityDialog = null
         if (this::webView.isInitialized) {
