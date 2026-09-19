@@ -1,6 +1,6 @@
 {
-  "versionCode": 268,
-  "versionName": "1.11.48",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.48/WEBUNIME-TV-v1.11.48.apk",
-  "changelog": "Hotfix crash Wibufile 1080: LoadControl custom diganti subclass DefaultLoadControl + buffer lebih kecil."
+  "versionCode": 269,
+  "versionName": "1.11.49",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.49/WEBUNIME-TV-v1.11.49.apk",
+  "changelog": "Kartu katalog: poster tampil utuh, judul dan meta di kanan."
 }

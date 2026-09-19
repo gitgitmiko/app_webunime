@@ -20,7 +20,9 @@ class RowLoadingPresenter : Presenter() {
         val ctx = parent.context
         val density = ctx.resources.displayMetrics.density
         fun dp(v: Int) = (v * density).toInt()
-        val (w, h) = CardPresenter.sizePx(ctx)
+        val m = CardPresenter.metricsPx(ctx)
+        val w = m.cardW
+        val h = m.cardH
 
         val card = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
