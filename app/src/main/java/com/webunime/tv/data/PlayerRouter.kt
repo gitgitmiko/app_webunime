@@ -24,9 +24,15 @@ object PlayerRouter {
         return (ranked + rest + p2p).distinctBy { it.url }
     }
 
-    /** Sama seperti web: episode aktif → players judul → episode lain yang punya server. */
+    /**
+     * Episode dipilih eksplisit → hanya server episode itu (jangan pinjam ep lain:
+     * bug: ep6 kosong → memutar video ep11).
+     * Tanpa episode (film) → players judul, lalu episode yang punya server.
+     */
     private fun resolvePlayers(item: CatalogItem, episode: Episode?): List<PlayerServer> {
-        nonBlankPlayers(episode?.players)?.let { return it }
+        if (episode != null) {
+            return nonBlankPlayers(episode.players).orEmpty()
+        }
         nonBlankPlayers(item.players)?.let { return it }
         return item.episodes.orEmpty()
             .asReversed()

@@ -1,6 +1,6 @@
 {
-  "versionCode": 264,
-  "versionName": "1.11.44",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.44/WEBUNIME-TV-v1.11.44.apk",
-  "changelog": "Hotfix: Wibufile 1080 tidak force-close (hapus setWakeMode tanpa WAKE_LOCK); buffer tetap aman di TV."
+  "versionCode": 265,
+  "versionName": "1.11.45",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.45/WEBUNIME-TV-v1.11.45.apk",
+  "changelog": "Jangan pinjam server episode lain jika episode dipilih kosong (ep6 tidak lagi putar ep11)."
 }
