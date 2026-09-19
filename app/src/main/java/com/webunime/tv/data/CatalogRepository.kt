@@ -396,9 +396,11 @@ class CatalogRepository(
         }
         val online = isNetworkAvailable()
 
-        // Memory: hanya terima hydrated yang sudah memenuhi floor episode.
+        // Memory: hanya terima hydrated yang sudah memenuhi floor episode
+        // dan tidak punya episode “bolong” (tanpa server).
         if (item.isHydrated() &&
             !needsEpisodeRefresh(item, item, minEpisodesHint) &&
+            !hasSparseEpisodePlayers(item) &&
             (!online || isHeavyFreshToday(file))
         ) {
             return item
@@ -423,6 +425,19 @@ class CatalogRepository(
                 hydrateFromAssets(file, slug),
                 item.takeIf { it.isHydrated() },
             )
+
+            // Episode sebagian tanpa server (mis. ep6 kosong) → paksa unduh ulang
+            // meskipun marker "fresh hari ini" masih ada.
+            if (online && hydrated != null && hasSparseEpisodePlayers(hydrated)) {
+                runCatching { heavyDayMarker(file).delete() }
+                ensureHeavyFile(file, force = true)
+                hydrated = pickBestHydrated(
+                    hydrateFromDisk(file, slug),
+                    hydrateFromAssets(file, slug),
+                    hydrated,
+                    item.takeIf { it.isHydrated() },
+                )
+            }
 
             // Masih pendek vs feed → paksa unduh ulang sekali, lalu pilih terbaik lagi.
             if (online &&
@@ -461,6 +476,15 @@ class CatalogRepository(
 
     private fun pickBestHydrated(vararg candidates: CatalogItem?): CatalogItem? =
         candidates.filterNotNull().maxByOrNull { hydrateScore(it) }
+
+    /** Ada episode ber-players tapi sebagian episode kosong → data stale / scrape setengah. */
+    private fun hasSparseEpisodePlayers(item: CatalogItem): Boolean {
+        val eps = item.episodes.orEmpty()
+        if (eps.size < 2) return false
+        val withPlayers = eps.count { !it.players.isNullOrEmpty() }
+        val without = eps.size - withPlayers
+        return withPlayers > 0 && without > 0
+    }
 
     /** Salin anime.json/series.json dari assets ke disk jika belum ada / lebih kecil. */
     private fun seedHeavyFromAssetsIfNeeded(fileName: String) {
@@ -665,7 +689,16 @@ class CatalogRepository(
 
     suspend fun forceRefreshFromGithub(): Int = refreshMutex.withLock {
         val ok = withContext(Dispatchers.IO) {
-            downloadCatalogFiles(cacheBust = true)
+            // File ringan (movies, anime-latest, …) + file berat (anime.json / series.json).
+            // Tanpa HEAVY_FILES, tombol Settings tidak pernah update episode/server anime.
+            val light = downloadCatalogFiles(cacheBust = true)
+            var heavy = 0
+            for (name in HEAVY_FILES) {
+                if (ensureHeavyFile(name, force = true)) {
+                    heavy++
+                }
+            }
+            light + heavy
         }
         snapshot = CatalogSnapshot()
         loadedSections.clear()
