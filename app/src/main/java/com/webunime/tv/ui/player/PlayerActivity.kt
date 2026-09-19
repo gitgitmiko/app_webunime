@@ -86,6 +86,7 @@ class PlayerActivity : AppCompatActivity() {
     private var lastWebProgressSaveAt = 0L
     private var playbackOpenedAt = 0L
 
+    /** True setelah video benar-benar play — cegah failover saat sudah nonton. */
     @Volatile
     private var webVideoActive = false
 
@@ -115,6 +116,38 @@ class PlayerActivity : AppCompatActivity() {
     private val webFailTimeoutRunnable = Runnable {
         if (!webVideoActive && !isAbyssWrapper && !isTurboWrapper) {
             tryFailover("timeout")
+        }
+    }
+    /** Deteksi play tersembunyi (Blogspot/iframe) bila onPlay dari JS tidak sampai. */
+    private val webPlayProbeRunnable = object : Runnable {
+        override fun run() {
+            if (!this@PlayerActivity::webView.isInitialized || webView.visibility != View.VISIBLE) return
+            if (webVideoActive) return
+            webView.evaluateJavascript(
+                """
+                (function(){
+                  try{
+                    var v=document.querySelector('video');
+                    if(v && v.currentTime>0.35 && (!v.paused || v.readyState>=2)){
+                      return JSON.stringify({p:v.currentTime||0,d:v.duration||0,play:v.paused?0:1});
+                    }
+                  }catch(e){}
+                  return '{}';
+                })();
+                """.trimIndent(),
+            ) { raw ->
+                val text = raw?.trim()?.trim('"')?.replace("\\\"", "\"") ?: return@evaluateJavascript
+                if (text.isEmpty() || text == "{}" || text == "null") return@evaluateJavascript
+                runCatching {
+                    val o = org.json.JSONObject(text)
+                    val p = o.optDouble("p", 0.0)
+                    val d = o.optDouble("d", 0.0)
+                    if (p > 0.35) markWebPlaybackActive(p, d)
+                }
+            }
+            if (!webVideoActive) {
+                hideHandler.postDelayed(this, WEB_PLAY_PROBE_MS)
+            }
         }
     }
     private val progressTicker = object : Runnable {
@@ -523,6 +556,7 @@ class PlayerActivity : AppCompatActivity() {
         exoFallbackUsed = false
         webVideoActive = false
         hideHandler.removeCallbacks(webFailTimeoutRunnable)
+        hideHandler.removeCallbacks(webPlayProbeRunnable)
 
         sourceUrl = serverUrls[serverIndex]
         serverLabel = serverLabels.getOrElse(serverIndex) { "Server" }
@@ -557,6 +591,8 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun tryFailover(reason: String) {
+        // Sudah play → jangan lompat server (Bug: Blogspot play tapi tetap failover).
+        if (webVideoActive) return
         if (failoverInProgress) return
         if (serverIndex >= serverUrls.lastIndex) {
             Toast.makeText(this, R.string.error_play, Toast.LENGTH_LONG).show()
@@ -564,6 +600,7 @@ class PlayerActivity : AppCompatActivity() {
         }
         failoverInProgress = true
         hideHandler.removeCallbacks(webFailTimeoutRunnable)
+        hideHandler.removeCallbacks(webPlayProbeRunnable)
         hideHandler.removeCallbacks(progressTicker)
         playJobGeneration++
         exoPlayer?.release()
@@ -579,6 +616,19 @@ class PlayerActivity : AppCompatActivity() {
             Toast.LENGTH_SHORT
         ).show()
         playCurrentServer()
+    }
+
+    /** Tandai WebView sudah play — batalkan timeout/failover. */
+    private fun markWebPlaybackActive(posSec: Double = lastKnownPosSec, durSec: Double = lastKnownDurSec) {
+        if (posSec.isFinite() && posSec >= 0) lastKnownPosSec = posSec
+        if (durSec.isFinite() && durSec > 0) lastKnownDurSec = durSec
+        if (webVideoActive) return
+        webVideoActive = true
+        hideHandler.removeCallbacks(webFailTimeoutRunnable)
+        hideHandler.removeCallbacks(webPlayProbeRunnable)
+        hideHandler.removeCallbacks(showPauseHudRunnable)
+        hideHandler.removeCallbacks(autoplayKickRunnable)
+        setTitleBarVisible(false)
     }
 
     private fun startExo(url: String, server: String) {
@@ -687,11 +737,7 @@ class PlayerActivity : AppCompatActivity() {
     private inner class PlaybackBridge {
         @android.webkit.JavascriptInterface
         fun onPlay() {
-            webVideoActive = true
-            hideHandler.removeCallbacks(webFailTimeoutRunnable)
-            hideHandler.removeCallbacks(showPauseHudRunnable)
-            hideHandler.removeCallbacks(autoplayKickRunnable)
-            setTitleBarVisible(false)
+            runOnUiThread { markWebPlaybackActive() }
         }
 
         @android.webkit.JavascriptInterface
@@ -712,7 +758,6 @@ class PlayerActivity : AppCompatActivity() {
         /** Dipanggil dari JS saat embed (Mega dll) menampilkan error file tidak tersedia. */
         @android.webkit.JavascriptInterface
         fun onSourceFailed(reason: String) {
-            if (webVideoActive) return
             runOnUiThread {
                 if (webVideoActive || failoverInProgress) return@runOnUiThread
                 tryFailover(reason.ifBlank { "source-failed" })
@@ -726,7 +771,7 @@ class PlayerActivity : AppCompatActivity() {
         @android.webkit.JavascriptInterface
         fun onResolvedEmbed(embedUrl: String) {
             runOnUiThread {
-                if (isFinishing || failoverInProgress) return@runOnUiThread
+                if (isFinishing || failoverInProgress || webVideoActive) return@runOnUiThread
                 val play = embedUrl.trim()
                 if (play.isBlank() || !play.startsWith("http")) {
                     tryFailover("iframe3-resolve")
@@ -744,7 +789,11 @@ class PlayerActivity : AppCompatActivity() {
 
         @android.webkit.JavascriptInterface
         fun onProgress(positionSec: Double, durationSec: Double) {
-            runOnUiThread { onPlaybackClock(positionSec, durationSec) }
+            runOnUiThread {
+                // Progress maju = sudah play (meski event onPlay hilang di Blogspot).
+                if (positionSec > 0.35) markWebPlaybackActive(positionSec, durationSec)
+                else onPlaybackClock(positionSec, durationSec)
+            }
             if (contentSlug.isBlank()) return
             val pos = (positionSec * 1000.0).toLong()
             val dur = (durationSec * 1000.0).toLong()
@@ -772,6 +821,7 @@ class PlayerActivity : AppCompatActivity() {
         hideHandler.removeCallbacks(applySeekRunnable)
         hideHandler.removeCallbacks(clearSeekHintRunnable)
         hideHandler.removeCallbacks(autoplayKickRunnable)
+        hideHandler.removeCallbacks(webPlayProbeRunnable)
         autoplayKickAttempts = 0
         clearWebHistoryOnFinish = true
 
@@ -837,14 +887,14 @@ class PlayerActivity : AppCompatActivity() {
                 request: WebResourceRequest?,
                 error: android.webkit.WebResourceError?
             ) {
-                if (request?.isForMainFrame == true) {
+                if (request?.isForMainFrame == true && !webVideoActive) {
                     tryFailover("webview")
                 }
             }
 
             override fun onPageStarted(view: WebView?, pageUrl: String?, favicon: Bitmap?) {
                 val u = pageUrl.orEmpty()
-                if (EmbedResolver.isBlockedNavigation(u)) {
+                if (EmbedResolver.isBlockedNavigation(u) && !webVideoActive) {
                     view?.stopLoading()
                     tryFailover("blocked")
                 }
@@ -872,7 +922,7 @@ class PlayerActivity : AppCompatActivity() {
                     """.trimIndent(),
                 ) { result ->
                     val flag = result?.trim('"', ' ')?.lowercase().orEmpty()
-                    if (flag == "maint" || flag == "missing") {
+                    if (!webVideoActive && (flag == "maint" || flag == "missing")) {
                         tryFailover(flag)
                     }
                 }
@@ -1015,6 +1065,7 @@ class PlayerActivity : AppCompatActivity() {
                 webView.loadUrl(url, headers)
             }
             hideHandler.removeCallbacks(webFailTimeoutRunnable)
+            hideHandler.removeCallbacks(webPlayProbeRunnable)
             hideHandler.postDelayed(
                 webFailTimeoutRunnable,
                 when {
@@ -1022,9 +1073,12 @@ class PlayerActivity : AppCompatActivity() {
                         url.contains("mega.co.nz", ignoreCase = true) -> MEGA_FAIL_TIMEOUT_MS
                     PlayerRouter.isP2pUrl(url) ||
                         server.contains("p2p", ignoreCase = true) -> P2PPLAY_FAIL_TIMEOUT_MS
+                    isBlogger -> BLOGGER_FAIL_TIMEOUT_MS
                     else -> WEB_FAIL_TIMEOUT_MS
                 }
             )
+            // Probe play untuk Blogspot/embed yang sering tidak kirim onPlay ke bridge.
+            hideHandler.postDelayed(webPlayProbeRunnable, WEB_PLAY_PROBE_MS)
         }
         pendingSeekSec = 0
         seekHintServerLabel = "$server · WebView"
@@ -1184,6 +1238,7 @@ class PlayerActivity : AppCompatActivity() {
         persistProgress()
         playJobGeneration++
         hideHandler.removeCallbacks(webFailTimeoutRunnable)
+        hideHandler.removeCallbacks(webPlayProbeRunnable)
         hideHandler.removeCallbacks(progressTicker)
         exoPlayer?.release()
         exoPlayer = null
@@ -1426,23 +1481,22 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun seekWebBy(deltaSec: Int) {
-        // Absolute target lebih andal untuk Blogger/YouTube iframe (postMessage seekTo).
-        val target = (lastKnownPosSec + deltaSec).coerceAtLeast(0.0)
+        // Relative seek dulu — absolute dari lastKnownPosSec sering stale di Blogspot
+        // (onProgress jarang), sehingga geser +10 loncat ke detik 10 dari awal.
         val js = """
             (function(){
               var delta=$deltaSec;
-              var target=$target;
               try{
-                if(typeof window.__wuSeekTo==="function"){ window.__wuSeekTo(target); }
-                else if(typeof window.__wuSeekBy==="function"){ window.__wuSeekBy(delta); }
+                if(typeof window.__wuSeekBy==="function"){ window.__wuSeekBy(delta); return; }
                 var vids=document.querySelectorAll("video");
                 for(var i=0;i<vids.length;i++){
                   var v=vids[i];
-                  if(!v||v.readyState<1) continue;
-                  var n=target;
+                  if(!v) continue;
+                  var n=(v.currentTime||0)+delta;
                   var d=v.duration||0;
-                  if(d>0&&isFinite(d)) n=Math.max(0,Math.min(d-0.25,target));
-                  v.currentTime=n;
+                  if(d>0&&isFinite(d)) n=Math.max(0,Math.min(d-0.25,n));
+                  else n=Math.max(0,n);
+                  try{ v.currentTime=n; }catch(e){}
                   try{ if(v.paused) v.play(); }catch(e){}
                   return;
                 }
@@ -1450,13 +1504,13 @@ class PlayerActivity : AppCompatActivity() {
                 for(var fi=0;fi<frames.length;fi++){
                   var f=frames[fi];
                   var src=(f.getAttribute("src")||"").toLowerCase();
-                  if(f.contentWindow){
-                    try{ f.contentWindow.postMessage({type:"__wuSeekBy",delta:delta},"*"); }catch(e){}
-                    try{ f.contentWindow.postMessage({type:"__wuSeekTo",time:target},"*"); }catch(e){}
-                  }
-                  if(src.indexOf("youtube")>=0||src.indexOf("youtu.be")>=0||src.indexOf("googleusercontent")>=0){
+                  if(!f.contentWindow) continue;
+                  try{ f.contentWindow.postMessage({type:"__wuSeekBy",delta:delta},"*"); }catch(e){}
+                  if(src.indexOf("youtube")>=0||src.indexOf("youtu.be")>=0||
+                     src.indexOf("googleusercontent")>=0||src.indexOf("blogger")>=0||!src){
+                    var t=Math.max(0, ${(lastKnownPosSec + deltaSec).coerceAtLeast(0.0)});
                     try{
-                      f.contentWindow.postMessage(JSON.stringify({event:"command",func:"seekTo",args:[target,true]}),"*");
+                      f.contentWindow.postMessage(JSON.stringify({event:"command",func:"seekTo",args:[t,true]}),"*");
                       f.contentWindow.postMessage(JSON.stringify({event:"command",func:"playVideo",args:[]}),"*");
                     }catch(e){}
                   }
@@ -1753,6 +1807,7 @@ class PlayerActivity : AppCompatActivity() {
         hideHandler.removeCallbacks(hideTitleRunnable)
         hideHandler.removeCallbacks(qualityTimeoutRunnable)
         hideHandler.removeCallbacks(webFailTimeoutRunnable)
+        hideHandler.removeCallbacks(webPlayProbeRunnable)
         hideHandler.removeCallbacks(progressTicker)
         hideHandler.removeCallbacks(applySeekRunnable)
         hideHandler.removeCallbacks(clearSeekHintRunnable)
@@ -1789,6 +1844,9 @@ class PlayerActivity : AppCompatActivity() {
         private const val WEB_FAIL_TIMEOUT_MS = 32_000L
         /** Mega error page biasanya cepat; jangan tunggu 32 dtk. */
         private const val MEGA_FAIL_TIMEOUT_MS = 14_000L
+        /** Blogspot sering play tanpa event onPlay ke bridge — beri waktu + probe. */
+        private const val BLOGGER_FAIL_TIMEOUT_MS = 48_000L
+        private const val WEB_PLAY_PROBE_MS = 1_500L
         /** bun.p2pplay SPA + JWPlayer butuh decrypt + ads setup lebih lama. */
         private const val P2PPLAY_FAIL_TIMEOUT_MS = 55_000L
         private const val PROGRESS_TICK_MS = 10_000L
@@ -2285,11 +2343,18 @@ class PlayerActivity : AppCompatActivity() {
                   try{
                     var v=__wuVid();
                     if(v){
-                      var n=v.currentTime+delta;
+                      var n=(v.currentTime||0)+delta;
                       var d=v.duration||0;
                       if(d>0&&isFinite(d)) n=Math.max(0,Math.min(d-0.25,n));
                       else n=Math.max(0,n);
-                      v.currentTime=n;
+                      try{ v.currentTime=n; }catch(e){}
+                      // Blogspot kadang ignore seek pertama — ulang sekali.
+                      setTimeout(function(){
+                        try{
+                          if(Math.abs((v.currentTime||0)-n)>1.25) v.currentTime=n;
+                          if(v.paused) v.play();
+                        }catch(e){}
+                      }, 180);
                       try{ if(v.paused) v.play(); }catch(e){}
                       return;
                     }

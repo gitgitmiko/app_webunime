@@ -1,6 +1,6 @@
 {
-  "versionCode": 259,
-  "versionName": "1.11.39",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.39/WEBUNIME-TV-v1.11.39.apk",
-  "changelog": "Fix episode anime kosong: hydrate skip judul besar (One Piece) tanpa parse penuh; parse hanya judul yang dibuka."
+  "versionCode": 260,
+  "versionName": "1.11.40",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.40/WEBUNIME-TV-v1.11.40.apk",
+  "changelog": "Fix Blogspot: seek relatif + jangan failover jika video sudah play; deteksi play via progress/probe."
 }
