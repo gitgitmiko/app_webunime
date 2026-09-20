@@ -1,6 +1,6 @@
 {
-  "versionCode": 284,
-  "versionName": "1.11.64",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.64/WEBUNIME-TV-v1.11.64.apk",
-  "changelog": "Anime/Series Episode Terbaru: kembali utamakan poster per-episode; parent sebagai cadangan."
+  "versionCode": 285,
+  "versionName": "1.11.65",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.65/WEBUNIME-TV-v1.11.65.apk",
+  "changelog": "Meta tahun/kualitas/rating/durasi di bawah dalam poster; di bawah poster hanya judul."
 }

@@ -25,6 +25,33 @@
             android:contentDescription="@null"
             android:scaleType="centerCrop" />
 
+        <!-- Scrim agar meta di bawah poster terbaca -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_gravity="bottom"
+            android:background="@drawable/bg_card_meta_scrim" />
+
+        <!-- Tahun · kualitas · rating · durasi di dalam poster (bawah) -->
+        <TextView
+            android:id="@+id/catalog_meta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:paddingStart="8dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="8dp"
+            android:shadowColor="#80000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="2"
+            android:textColor="@android:color/white"
+            android:textSize="11sp"
+            android:visibility="gone" />
+
         <!-- Badge HD/CAM di pojok kanan atas dalam poster -->
         <TextView
             android:id="@+id/catalog_badge"
@@ -67,15 +94,5 @@
             android:textColor="@color/wu_text"
             android:textSize="14sp"
             android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/catalog_meta"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:textColor="@color/wu_text_dim"
-            android:textSize="12sp" />
     </LinearLayout>
 </LinearLayout>

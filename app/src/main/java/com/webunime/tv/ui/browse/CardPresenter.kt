@@ -64,7 +64,7 @@ class CardPresenter(
 
         card.titleView()?.text = movie.displayTitle()
         val ep = movie.episode
-        card.metaView()?.text = when {
+        val metaText = when {
             movie.type == "continue" -> {
                 val parts = mutableListOf<String>()
                 if (ep != null && ep > 0) parts += "Episode $ep"
@@ -88,6 +88,14 @@ class CardPresenter(
                 }
             }
         }
+        val metaView = card.metaView()
+        if (metaText.isBlank()) {
+            metaView?.text = ""
+            metaView?.visibility = View.GONE
+        } else {
+            metaView?.text = metaText
+            metaView?.visibility = View.VISIBLE
+        }
 
         applyCardSize(card)
         bindBadge(card, movie.posterBadgeLabel())
@@ -104,6 +112,7 @@ class CardPresenter(
         card.scaleX = 1f
         card.scaleY = 1f
         card.badgeView()?.visibility = View.GONE
+        card.metaView()?.visibility = View.GONE
         clearPosterRequest(card)
     }
 
@@ -153,7 +162,7 @@ class CardPresenter(
             // Lebar kartu = lebar poster (judul di bawah, full width).
             val posterW = (usable / VISIBLE_PER_ROW).coerceAtLeast((120f * dm.density).toInt())
             val posterH = posterW * 3 / 2
-            val infoH = (56f * dm.density).toInt().coerceAtLeast(48)
+            val infoH = (44f * dm.density).toInt().coerceAtLeast(40)
             val cardW = posterW
             val cardH = posterH + infoH
             return Metrics(posterW, posterH, cardW, cardH, infoH)
@@ -377,7 +386,6 @@ class CardPresenter(
         private fun View.setupFocusBehavior() {
             val accent = ContextCompat.getColor(context, R.color.wu_accent_soft)
             val titleNormal = ContextCompat.getColor(context, R.color.wu_text)
-            val dim = ContextCompat.getColor(context, R.color.wu_text_dim)
             setOnFocusChangeListener { v, hasFocus ->
                 applyCardSize(this)
                 v.pivotX = v.width / 2f
@@ -388,7 +396,7 @@ class CardPresenter(
                     .setDuration(FOCUS_ANIM_MS)
                     .start()
                 titleView()?.setTextColor(if (hasFocus) accent else titleNormal)
-                metaView()?.setTextColor(if (hasFocus) titleNormal else dim)
+                // Meta di dalam poster: tetap putih agar kontras di atas gambar.
                 infoView()?.setBackgroundColor(
                     if (hasFocus) {
                         ContextCompat.getColor(context, R.color.wu_card_info_focus)
