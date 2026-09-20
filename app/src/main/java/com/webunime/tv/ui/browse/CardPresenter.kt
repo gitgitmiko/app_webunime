@@ -13,6 +13,7 @@ import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -32,8 +33,8 @@ import com.webunime.tv.data.CatalogItem
 import com.webunime.tv.ui.PosterGlide
 
 /**
- * Kartu browse/search: poster 2:3 penuh di kiri, judul + meta di kanan.
- * Badge HD/CAM di pojok kanan atas kartu (area info), bukan di atas poster.
+ * Kartu browse/search: poster 2:3 di atas, judul + meta di bawah.
+ * Badge HD/CAM overlay pojok kanan atas di dalam poster.
  */
 class CardPresenter(
     private val onLibraryLongPress: ((CatalogItem) -> Boolean)? = null,
@@ -125,19 +126,19 @@ class CardPresenter(
     }
 
     companion object {
-        /** Kartu lebih lebar (poster + teks) → ~3 per baris agar judul terbaca. */
-        const val VISIBLE_PER_ROW = 3
+        /** Poster penuh + judul di bawah → ~4 per baris (ukuran poster mirip sebelumnya). */
+        const val VISIBLE_PER_ROW = 4
 
         data class Metrics(
             val posterW: Int,
             val posterH: Int,
             val cardW: Int,
             val cardH: Int,
-            val infoW: Int,
+            val infoH: Int,
         )
 
         fun gapPx(context: Context): Int =
-            (16f * context.resources.displayMetrics.density).toInt().coerceAtLeast(12)
+            (14f * context.resources.displayMetrics.density).toInt().coerceAtLeast(10)
 
         fun edgePadPx(context: Context): Int =
             (40f * context.resources.displayMetrics.density).toInt().coerceAtLeast(28)
@@ -146,15 +147,15 @@ class CardPresenter(
             val dm = context.resources.displayMetrics
             val gap = gapPx(context)
             val pad = edgePadPx(context)
-            val inner = (10f * dm.density).toInt().coerceAtLeast(8)
             val usable = (dm.widthPixels - pad * 2 - gap * (VISIBLE_PER_ROW - 1))
-                .coerceAtLeast((220f * dm.density).toInt() * VISIBLE_PER_ROW)
-            val cardW = usable / VISIBLE_PER_ROW
-            // Poster ~70%; sisa lebar kartu untuk judul (kartu lebih lebar → teks muat).
-            val posterW = (cardW * 0.70f).toInt().coerceAtLeast((120f * dm.density).toInt())
+                .coerceAtLeast((160f * dm.density).toInt() * VISIBLE_PER_ROW)
+            // Lebar kartu = lebar poster (judul di bawah, full width).
+            val posterW = (usable / VISIBLE_PER_ROW).coerceAtLeast((120f * dm.density).toInt())
             val posterH = posterW * 3 / 2
-            val infoW = (cardW - posterW - inner).coerceAtLeast((100f * dm.density).toInt())
-            return Metrics(posterW, posterH, cardW, posterH, infoW)
+            val infoH = (56f * dm.density).toInt().coerceAtLeast(48)
+            val cardW = posterW
+            val cardH = posterH + infoH
+            return Metrics(posterW, posterH, cardW, cardH, infoH)
         }
 
         /** Ukuran poster (Glide / placeholder loading). */
@@ -176,10 +177,14 @@ class CardPresenter(
             if (card.getTag(R.id.tag_card_size) == sizeKey) return
             card.setTag(R.id.tag_card_size, sizeKey)
             card.layoutParams = ViewGroup.LayoutParams(m.cardW, m.cardH)
-            card.posterView()?.layoutParams = LinearLayout.LayoutParams(m.posterW, m.posterH)
-            card.infoView()?.layoutParams = LinearLayout.LayoutParams(m.infoW, m.cardH)
+            card.posterWrap()?.layoutParams = LinearLayout.LayoutParams(m.posterW, m.posterH)
+            card.infoView()?.layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                m.infoH,
+            )
         }
 
+        private fun View.posterWrap(): FrameLayout? = findViewById(R.id.catalog_poster_wrap)
         private fun View.posterView(): ImageView? = findViewById(R.id.catalog_poster)
         private fun View.badgeView(): TextView? = findViewById(R.id.catalog_badge)
         private fun View.titleView(): TextView? = findViewById(R.id.catalog_title)
