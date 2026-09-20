@@ -146,13 +146,14 @@ class CardPresenter(
             val dm = context.resources.displayMetrics
             val gap = gapPx(context)
             val pad = edgePadPx(context)
-            val inner = (10f * dm.density).toInt().coerceAtLeast(8)
+            val inner = (8f * dm.density).toInt().coerceAtLeast(6)
             val usable = (dm.widthPixels - pad * 2 - gap * (VISIBLE_PER_ROW - 1))
                 .coerceAtLeast((200f * dm.density).toInt() * VISIBLE_PER_ROW)
             val cardW = usable / VISIBLE_PER_ROW
-            val posterW = (cardW * 0.42f).toInt().coerceAtLeast((96f * dm.density).toInt())
+            // Poster lebih dominan (~54% lebar kartu) agar cover lebih jelas di TV.
+            val posterW = (cardW * 0.54f).toInt().coerceAtLeast((112f * dm.density).toInt())
             val posterH = posterW * 3 / 2
-            val infoW = (cardW - posterW - inner).coerceAtLeast((88f * dm.density).toInt())
+            val infoW = (cardW - posterW - inner).coerceAtLeast((72f * dm.density).toInt())
             return Metrics(posterW, posterH, cardW, posterH, infoW)
         }
 

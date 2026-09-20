@@ -1,6 +1,6 @@
 {
-  "versionCode": 278,
-  "versionName": "1.11.58",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.58/WEBUNIME-TV-v1.11.58.apk",
-  "changelog": "Fix pause server Mega anime: tombol OK sekarang toggle play/pause."
+  "versionCode": 279,
+  "versionName": "1.11.59",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.59/WEBUNIME-TV-v1.11.59.apk",
+  "changelog": "Poster kartu katalog lebih besar (~54% lebar kartu)."
 }
