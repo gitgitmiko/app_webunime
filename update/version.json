@@ -1,6 +1,6 @@
 {
-  "versionCode": 275,
-  "versionName": "1.11.55",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.55/WEBUNIME-TV-v1.11.55.apk",
-  "changelog": "Badge HD/CAM di pojok kanan atas overlay — poster kartu lebih bersih."
+  "versionCode": 276,
+  "versionName": "1.11.56",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.56/WEBUNIME-TV-v1.11.56.apk",
+  "changelog": "Badge HD/CAM dipindah ke pojok kanan atas kartu (area judul), poster penuh tanpa overlay."
 }

@@ -13,7 +13,6 @@ import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -34,7 +33,7 @@ import com.webunime.tv.ui.PosterGlide
 
 /**
  * Kartu browse/search: poster 2:3 penuh di kiri, judul + meta di kanan.
- * Badge HD/CAM di pojok kanan atas poster (overlay UI, bukan digambar ke bitmap).
+ * Badge HD/CAM di pojok kanan atas kartu (area info), bukan di atas poster.
  */
 class CardPresenter(
     private val onLibraryLongPress: ((CatalogItem) -> Boolean)? = null,
@@ -176,11 +175,10 @@ class CardPresenter(
             if (card.getTag(R.id.tag_card_size) == sizeKey) return
             card.setTag(R.id.tag_card_size, sizeKey)
             card.layoutParams = ViewGroup.LayoutParams(m.cardW, m.cardH)
-            card.posterWrap()?.layoutParams = LinearLayout.LayoutParams(m.posterW, m.posterH)
+            card.posterView()?.layoutParams = LinearLayout.LayoutParams(m.posterW, m.posterH)
             card.infoView()?.layoutParams = LinearLayout.LayoutParams(m.infoW, m.cardH)
         }
 
-        private fun View.posterWrap(): FrameLayout? = findViewById(R.id.catalog_poster_wrap)
         private fun View.posterView(): ImageView? = findViewById(R.id.catalog_poster)
         private fun View.badgeView(): TextView? = findViewById(R.id.catalog_badge)
         private fun View.titleView(): TextView? = findViewById(R.id.catalog_title)

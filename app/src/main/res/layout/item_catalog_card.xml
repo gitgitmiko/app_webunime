@@ -1,80 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:background="@color/wu_bg"
+    android:clipChildren="false"
     android:clipToPadding="false"
     android:descendantFocusability="blocksDescendants"
     android:focusable="true"
-    android:focusableInTouchMode="true"
-    android:gravity="center_vertical"
-    android:orientation="horizontal">
+    android:focusableInTouchMode="true">
 
-    <FrameLayout
-        android:id="@+id/catalog_poster_wrap"
-        android:layout_width="120dp"
-        android:layout_height="180dp"
-        android:clipChildren="false"
-        android:clipToPadding="false">
+    <LinearLayout
+        android:id="@+id/catalog_row"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
         <ImageView
             android:id="@+id/catalog_poster"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_width="120dp"
+            android:layout_height="180dp"
             android:contentDescription="@null"
             android:scaleType="centerCrop" />
 
-        <TextView
-            android:id="@+id/catalog_badge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top|end"
-            android:layout_marginTop="6dp"
-            android:layout_marginEnd="6dp"
-            android:elevation="4dp"
-            android:fontFamily="sans-serif-medium"
-            android:includeFontPadding="false"
-            android:paddingStart="8dp"
-            android:paddingTop="3dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="3dp"
-            android:textColor="@android:color/white"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:visibility="gone" />
-    </FrameLayout>
+        <LinearLayout
+            android:id="@+id/catalog_info"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:paddingStart="12dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="10dp"
+            android:paddingBottom="8dp">
 
-    <LinearLayout
-        android:id="@+id/catalog_info"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:gravity="center_vertical"
-        android:orientation="vertical"
-        android:paddingStart="12dp"
-        android:paddingTop="8dp"
-        android:paddingEnd="10dp"
-        android:paddingBottom="8dp">
+            <TextView
+                android:id="@+id/catalog_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:lineSpacingMultiplier="1.15"
+                android:maxLines="3"
+                android:textColor="@color/wu_text"
+                android:textSize="14sp"
+                android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/catalog_title"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:lineSpacingMultiplier="1.15"
-            android:maxLines="3"
-            android:textColor="@color/wu_text"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/catalog_meta"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:ellipsize="end"
-            android:maxLines="2"
-            android:textColor="@color/wu_text_dim"
-            android:textSize="12sp" />
+            <TextView
+                android:id="@+id/catalog_meta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textColor="@color/wu_text_dim"
+                android:textSize="12sp" />
+        </LinearLayout>
     </LinearLayout>
-</LinearLayout>
+
+    <!-- Di luar poster: pojok kanan atas kartu (area judul) -->
+    <TextView
+        android:id="@+id/catalog_badge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="6dp"
+        android:layout_marginEnd="6dp"
+        android:elevation="4dp"
+        android:fontFamily="sans-serif-medium"
+        android:includeFontPadding="false"
+        android:paddingStart="8dp"
+        android:paddingTop="3dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="3dp"
+        android:textColor="@android:color/white"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+</FrameLayout>
