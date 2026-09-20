@@ -125,8 +125,8 @@ class CardPresenter(
     }
 
     companion object {
-        /** Kartu lebih lebar (poster + teks) → ~4 per baris. */
-        const val VISIBLE_PER_ROW = 4
+        /** Kartu lebih lebar (poster + teks) → ~3 per baris agar judul terbaca. */
+        const val VISIBLE_PER_ROW = 3
 
         data class Metrics(
             val posterW: Int,
@@ -137,23 +137,23 @@ class CardPresenter(
         )
 
         fun gapPx(context: Context): Int =
-            (14f * context.resources.displayMetrics.density).toInt().coerceAtLeast(10)
+            (16f * context.resources.displayMetrics.density).toInt().coerceAtLeast(12)
 
         fun edgePadPx(context: Context): Int =
-            (48f * context.resources.displayMetrics.density).toInt().coerceAtLeast(32)
+            (40f * context.resources.displayMetrics.density).toInt().coerceAtLeast(28)
 
         fun metricsPx(context: Context): Metrics {
             val dm = context.resources.displayMetrics
             val gap = gapPx(context)
             val pad = edgePadPx(context)
-            val inner = (8f * dm.density).toInt().coerceAtLeast(6)
+            val inner = (10f * dm.density).toInt().coerceAtLeast(8)
             val usable = (dm.widthPixels - pad * 2 - gap * (VISIBLE_PER_ROW - 1))
-                .coerceAtLeast((200f * dm.density).toInt() * VISIBLE_PER_ROW)
+                .coerceAtLeast((220f * dm.density).toInt() * VISIBLE_PER_ROW)
             val cardW = usable / VISIBLE_PER_ROW
-            // Poster lebih dominan (~70% lebar kartu) agar cover lebih jelas di TV.
-            val posterW = (cardW * 0.70f).toInt().coerceAtLeast((112f * dm.density).toInt())
+            // Poster ~70%; sisa lebar kartu untuk judul (kartu lebih lebar → teks muat).
+            val posterW = (cardW * 0.70f).toInt().coerceAtLeast((120f * dm.density).toInt())
             val posterH = posterW * 3 / 2
-            val infoW = (cardW - posterW - inner).coerceAtLeast((56f * dm.density).toInt())
+            val infoW = (cardW - posterW - inner).coerceAtLeast((100f * dm.density).toInt())
             return Metrics(posterW, posterH, cardW, posterH, infoW)
         }
 

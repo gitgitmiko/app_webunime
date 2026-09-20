@@ -1,6 +1,6 @@
 {
-  "versionCode": 280,
-  "versionName": "1.11.60",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.60/WEBUNIME-TV-v1.11.60.apk",
-  "changelog": "Poster kartu katalog 70% lebar kartu."
+  "versionCode": 281,
+  "versionName": "1.11.61",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.61/WEBUNIME-TV-v1.11.61.apk",
+  "changelog": "Kartu katalog lebih lebar (~3 per baris) agar judul terbaca; poster tetap 70%."
 }
