@@ -18,3 +18,8 @@ proxy/**/.vercel/
 emu-*.png
 *-test.png
 ui.xml
+
+# Artefak debug lokal di dist/
+dist/_*
+dist/emulator-*.png
+

@@ -21,29 +21,33 @@
         "no": 1,
         "server": "p2p",
         "label": "GANTI PLAYER P2P",
-        "url": "https://videonode.de/iframe/p2p/yvMS",
-        "default": true
+        "url": "https://playcdn.de/Y2NlYTIxZDY3NTkwNWNhMwLzoeFCd08?cb=3",
+        "default": true,
+        "resolved_from": "iframe3"
       },
       {
         "no": 2,
         "server": "turbovip",
         "label": "GANTI PLAYER TURBOVIP",
-        "url": "https://videonode.de/iframe/turbovip/6a86937547365",
-        "default": false
+        "url": "https://emturbovid.com/t/6a86937547365",
+        "default": false,
+        "resolved_from": "iframe3"
       },
       {
         "no": 3,
         "server": "cast",
         "label": "GANTI PLAYER CAST",
-        "url": "https://videonode.de/iframe/cast/cxnxun8klajh",
-        "default": false
+        "url": "https://mfw09.org/e/cxnxun8klajh",
+        "default": false,
+        "resolved_from": "iframe3"
       },
       {
         "no": 4,
         "server": "hydrax",
         "label": "GANTI PLAYER HYDRAX",
-        "url": "https://videonode.de/iframe/hydrax/nYpu3yU-o",
-        "default": false
+        "url": "https://abyssplayer.com/nYpu3yU-o",
+        "default": false,
+        "resolved_from": "iframe3"
       }
     ],
     "catalog": "marvel"
@@ -347,16 +351,19 @@
     "nama": "Spider-Man: Across the Spider-Verse",
     "judul": "Spider-Man: Across the Spider-Verse (2023)",
     "tahun": "2023",
-    "thumbnail": "https://poster.assetsy.de/wp-content/uploads/2023/06/film-spider-man-across-the-spider-verse-2023-lk21-d21.jpg",
+    "thumbnail": "https://poster.assetsy.de/wp-content/uploads/2026/09/film-spider-man-across-the-spider-verse-2023-lk21.jpg",
     "rating": "9",
     "quality": "HD",
     "durasi": "2j 20m",
     "genre": [
       "Animation",
       "Action",
-      "Adventure"
+      "Adventure",
+      "Family",
+      "Fantasy",
+      "Sci-fi"
     ],
-    "sinopsis": "Miles Morales terlempar ke dalam petualangan epik melintasi Multiverse, bertemu dengan tim Spider-People yang beragam. Namun, ketika ancaman baru muncul dan para pahlawan berselisih, Miles harus memilih: ikut aturan atau menciptakan jalannya sendiri. Dengan animasi memukau dan soundtrack menggugah, film ini adalah perayaan tentang menjadi pahlawan dengan caramu sendiri.\n\nSubtitle: ndaseruag\n\nSutradara: Joaquim Dos Santos, Kemp Powers, Justin K. Thompson\n\nBintang Film: Hailee Steinfeld, Shameik Moore, Brian Tyree Henry\n\nNegara: United States\n\nVotes: 94.723\n\nRelease: 06 Jan 2023\n\nUpdated: 31 Aug 2023 08:01:02",
+    "sinopsis": "Miles Morales terlempar ke dalam petualangan epik melintasi Multiverse, bertemu dengan tim Spider-People yang beragam. Namun, ketika ancaman baru muncul dan para pahlawan berselisih, Miles harus memilih: ikut aturan atau menciptakan jalannya sendiri. Dengan animasi memukau dan soundtrack menggugah, film ini adalah perayaan tentang menjadi pahlawan dengan caramu sendiri.\nAwards: 107 wins & 164 nominations | Oscar: 0 menang, 1 nominasi\nBudget: USD 150,000,000\nWorldwide Gross: USD 690,824,738\nSoundtrack: Self Love\n\nSubtitle: workkeerr\n\nSutradara: Joaquim Dos Santos, Kemp Powers, Justin K. Thompson\n\nBintang Film: Shameik Moore, Hailee Steinfeld, Brian Tyree Henry, Luna Lauren Velez, Jake Johnson\n\nNegara: United States\n\nVotes: 95.184\n\nRelease: 31 May 2023\n\nUpdated: 12 Sep 2026 20:36:53",
     "slug": "spider-man-across-the-spider-verse-2023",
     "source": "https://tv12.lk21official.cc/spider-man-across-the-spider-verse-2023",
     "players": [
@@ -364,28 +371,28 @@
         "no": 1,
         "server": "p2p",
         "label": "GANTI PLAYER P2P",
-        "url": "https://videonode.de/iframe/p2p/4fbbb60f4c086ae01628d203b91ed6d4",
+        "url": "https://videonode.de/iframe3/p2p/oDy9booSxJerKh_teByvZg",
         "default": true
       },
       {
         "no": 2,
         "server": "turbovip",
         "label": "GANTI PLAYER TURBOVIP",
-        "url": "https://videonode.de/iframe/turbovip/q6bxXPJESODBgJdaKjoV",
+        "url": "https://videonode.de/iframe3/turbovip/ZQZOaNpJSv1zFveEn0gVrQ",
         "default": false
       },
       {
         "no": 3,
         "server": "cast",
         "label": "GANTI PLAYER CAST",
-        "url": "https://videonode.de/iframe/cast/h1gyvm8ve1vw",
+        "url": "https://videonode.de/iframe3/cast/iQC2ygO2BKOAnQzTulfi2g",
         "default": false
       },
       {
         "no": 4,
         "server": "hydrax",
         "label": "GANTI PLAYER HYDRAX",
-        "url": "https://videonode.de/iframe/hydrax/znYlz69f8",
+        "url": "https://videonode.de/iframe3/hydrax/1f_bNCGqFbYxn1mWlyaYqQ",
         "default": false
       }
     ],
