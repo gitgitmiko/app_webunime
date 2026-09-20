@@ -15,7 +15,12 @@ fun bindBgmNowPlaying(owner: LifecycleOwner, app: WebunimeApp, view: TextView) {
             if (title.isNullOrBlank()) {
                 view.visibility = View.GONE
             } else {
-                view.text = view.context.getString(R.string.bgm_now_playing, title)
+                val label = if (app.bgm.isMuted()) {
+                    view.context.getString(R.string.bgm_now_playing_muted, title)
+                } else {
+                    view.context.getString(R.string.bgm_now_playing, title)
+                }
+                view.text = label
                 view.visibility = View.VISIBLE
             }
         }

@@ -3,6 +3,7 @@ package com.webunime.tv.ui.settings
 import android.content.Context
 import android.os.Bundle
 import android.view.KeyEvent
+import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -30,6 +31,7 @@ class SettingsActivity : AppCompatActivity() {
     private val updateChecker by lazy { AppUpdateChecker(this) }
     private val scrapeClient by lazy { ScrapeTriggerClient() }
     private val catalogRepo by lazy { (application as WebunimeApp).catalogRepository }
+    private val bgm by lazy { (application as WebunimeApp).bgm }
     private val scrapePrefs by lazy {
         getSharedPreferences(PREFS_SCRAPE, Context.MODE_PRIVATE)
     }
@@ -41,6 +43,9 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var catalogStatusView: TextView
     private lateinit var startScrapeBtn: MaterialButton
     private lateinit var refreshCatalogBtn: MaterialButton
+    private lateinit var bgmMuteBtn: MaterialButton
+    private lateinit var bgmVolumeLabel: TextView
+    private lateinit var bgmVolumeSeek: SeekBar
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +59,9 @@ class SettingsActivity : AppCompatActivity() {
         catalogStatusView = findViewById(R.id.settingsCatalogStatus)
         startScrapeBtn = findViewById(R.id.settingsStartScrape)
         refreshCatalogBtn = findViewById(R.id.settingsRefreshCatalog)
+        bgmMuteBtn = findViewById(R.id.settingsToggleBgmMute)
+        bgmVolumeLabel = findViewById(R.id.settingsBgmVolumeLabel)
+        bgmVolumeSeek = findViewById(R.id.settingsBgmVolume)
 
         val filmServersBtn = findViewById<MaterialButton>(R.id.settingsToggleFilmServers)
         bindFilmServersToggle(filmServersBtn)
@@ -61,6 +69,25 @@ class SettingsActivity : AppCompatActivity() {
             PlaybackPrefs.toggleShowFilmServerPicker(this)
             bindFilmServersToggle(filmServersBtn)
         }
+
+        bindBgmControls()
+        bgmMuteBtn.setOnClickListener {
+            bgm.toggleMuted()
+            bindBgmMuteToggle()
+            bindBgmVolumeLabel()
+        }
+        bgmVolumeSeek.setOnSeekBarChangeListener(
+            object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                    if (!fromUser) return
+                    bgm.setUserVolume(progress / 100f)
+                    bindBgmVolumeLabel()
+                }
+
+                override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+                override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+            },
+        )
 
         val checkBtn = findViewById<MaterialButton>(R.id.settingsCheckUpdate)
         checkBtn.setOnClickListener { checkForUpdate() }
@@ -71,6 +98,27 @@ class SettingsActivity : AppCompatActivity() {
 
         applyScrapeButtonLocked(isScrapeLocked())
         refreshCatalogStatusLabel()
+    }
+
+    private fun bindBgmControls() {
+        bindBgmMuteToggle()
+        val percent = (bgm.userVolume() * 100f).toInt().coerceIn(0, 100)
+        bgmVolumeSeek.progress = percent
+        bindBgmVolumeLabel()
+    }
+
+    private fun bindBgmMuteToggle() {
+        bgmMuteBtn.setText(
+            if (bgm.isMuted()) R.string.settings_bgm_mute_on
+            else R.string.settings_bgm_mute_off,
+        )
+        bgmVolumeSeek.isEnabled = !bgm.isMuted()
+        bgmVolumeSeek.alpha = if (bgm.isMuted()) 0.45f else 1f
+    }
+
+    private fun bindBgmVolumeLabel() {
+        val percent = (bgm.userVolume() * 100f).toInt().coerceIn(0, 100)
+        bgmVolumeLabel.text = getString(R.string.settings_bgm_volume, percent)
     }
 
     override fun onResume() {

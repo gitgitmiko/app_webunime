@@ -103,6 +103,60 @@
             android:layout_marginTop="40dp"
             android:fontFamily="sans-serif-medium"
             android:letterSpacing="0.02"
+            android:text="@string/settings_section_bgm"
+            android:textColor="@color/wu_row_header"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/settingsToggleBgmMute"
+            style="@style/Wu.Button.Outlined"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:focusable="true"
+            android:minWidth="300dp"
+            android:text="@string/settings_bgm_mute_off"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            app:cornerRadius="@dimen/button_corner_radius" />
+
+        <TextView
+            android:id="@+id/settingsBgmVolumeLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/settings_bgm_volume"
+            android:textColor="@color/wu_text"
+            android:textSize="16sp" />
+
+        <SeekBar
+            android:id="@+id/settingsBgmVolume"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:focusable="true"
+            android:max="100"
+            android:maxWidth="640dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:progressTint="@color/wu_accent"
+            android:thumbTint="@color/wu_accent_soft" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/settings_bgm_hint"
+            android:textColor="@color/wu_text_muted"
+            android:textSize="13sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.02"
             android:text="@string/settings_section_catalog"
             android:textColor="@color/wu_row_header"
             android:textSize="20sp"

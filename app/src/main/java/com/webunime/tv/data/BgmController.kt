@@ -47,7 +47,6 @@ class BgmController(private val app: Application) : Application.ActivityLifecycl
 
     private var player: ExoPlayer? = null
     private var tracks: List<Track> = emptyList()
-    private var volume = DEFAULT_VOLUME
     private var prepared = AtomicBoolean(false)
     private var preparing = AtomicBoolean(false)
 
@@ -60,6 +59,32 @@ class BgmController(private val app: Application) : Application.ActivityLifecycl
     private var currentTitle: String? = null
 
     fun currentTitle(): String? = displayTitle()
+
+    fun isMuted(): Boolean = BgmPrefs.isMuted(app)
+
+    fun userVolume(): Float = BgmPrefs.volume(app)
+
+    fun setMuted(muted: Boolean) {
+        BgmPrefs.setMuted(app, muted)
+        applyAudioLevel()
+        notifyListeners()
+    }
+
+    fun toggleMuted(): Boolean {
+        val next = BgmPrefs.toggleMuted(app)
+        applyAudioLevel()
+        notifyListeners()
+        return next
+    }
+
+    fun setUserVolume(volume: Float) {
+        BgmPrefs.setVolume(app, volume)
+        applyAudioLevel()
+    }
+
+    private fun applyAudioLevel() {
+        player?.volume = BgmPrefs.effectiveVolume(app)
+    }
 
     fun setBrowseReady(ready: Boolean) {
         if (browseReady == ready) {
@@ -106,7 +131,9 @@ class BgmController(private val app: Application) : Application.ActivityLifecycl
         scope.launch {
             val loaded = withContext(Dispatchers.IO) { loadPlaylist() }
             tracks = loaded.tracks
-            volume = loaded.volume
+            if (!BgmPrefs.hasUserVolume(app)) {
+                BgmPrefs.setVolume(app, loaded.volume)
+            }
             if (tracks.isEmpty()) {
                 preparing.set(false)
                 Log.w(TAG, "BGM playlist kosong")
@@ -129,7 +156,7 @@ class BgmController(private val app: Application) : Application.ActivityLifecycl
                     .build(),
                 /* handleAudioFocus= */ false,
             )
-            p.volume = volume
+            p.volume = BgmPrefs.effectiveVolume(app)
             p.repeatMode = Player.REPEAT_MODE_ALL
             p.shuffleModeEnabled = false
             p.setMediaItems(items.map { MediaItem.fromUri(it.url) })
@@ -207,13 +234,13 @@ class BgmController(private val app: Application) : Application.ActivityLifecycl
             val parsed = parsePlaylist(body, base)
             if (parsed.tracks.isNotEmpty()) return parsed
         }
-        return PlaylistLoad(DEFAULT_VOLUME, fallbackTracks())
+        return PlaylistLoad(BgmPrefs.DEFAULT_VOLUME, fallbackTracks())
     }
 
     private fun parsePlaylist(body: String, base: String): PlaylistLoad {
         return runCatching {
             val o = JSONObject(body.trim().removePrefix("\uFEFF"))
-            val vol = o.optDouble("volume", DEFAULT_VOLUME.toDouble()).toFloat()
+            val vol = o.optDouble("volume", BgmPrefs.DEFAULT_VOLUME.toDouble()).toFloat()
                 .coerceIn(0.05f, 1f)
             val arr = o.optJSONArray("tracks") ?: return PlaylistLoad(vol, emptyList())
             val list = ArrayList<Track>(arr.length())
@@ -231,7 +258,7 @@ class BgmController(private val app: Application) : Application.ActivityLifecycl
                 list += Track(title = title, url = url)
             }
             PlaylistLoad(vol, list)
-        }.getOrElse { PlaylistLoad(DEFAULT_VOLUME, emptyList()) }
+        }.getOrElse { PlaylistLoad(BgmPrefs.DEFAULT_VOLUME, emptyList()) }
     }
 
     private fun fallbackTracks(): List<Track> {
@@ -253,7 +280,6 @@ class BgmController(private val app: Application) : Application.ActivityLifecycl
 
     companion object {
         private const val TAG = "BgmController"
-        private const val DEFAULT_VOLUME = 0.32f
 
         val PLAYLIST_BASES = listOf(
             "https://cdn.jsdelivr.net/gh/gitgitmiko/WEBUNIME@main/public/music/",
