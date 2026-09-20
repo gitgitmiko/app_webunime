@@ -53,14 +53,33 @@ class BgmController(private val app: Application) : Application.ActivityLifecycl
 
     private var startedActivities = 0
     private var videoHold = 0
+    /** True setelah splash katalog hilang — BGM hanya boleh main saat beranda siap. */
+    @Volatile
+    private var browseReady = false
     @Volatile
     private var currentTitle: String? = null
 
-    fun currentTitle(): String? = currentTitle
+    fun currentTitle(): String? = displayTitle()
+
+    fun setBrowseReady(ready: Boolean) {
+        if (browseReady == ready) {
+            if (ready) {
+                ensurePrepared()
+                syncPlayback()
+            }
+            return
+        }
+        browseReady = ready
+        if (ready) {
+            ensurePrepared()
+        }
+        syncPlayback()
+        notifyListeners()
+    }
 
     fun addListener(listener: Listener) {
         listeners.add(listener)
-        listener.onTrackChanged(currentTitle)
+        listener.onTrackChanged(displayTitle())
     }
 
     fun removeListener(listener: Listener) {
@@ -69,7 +88,7 @@ class BgmController(private val app: Application) : Application.ActivityLifecycl
 
     fun start() {
         app.registerActivityLifecycleCallbacks(this)
-        ensurePrepared()
+        // Playlist diunduh setelah beranda siap (setBrowseReady), bukan saat splash load.
     }
 
     fun release() {
@@ -78,6 +97,7 @@ class BgmController(private val app: Application) : Application.ActivityLifecycl
             player?.release()
             player = null
             prepared.set(false)
+            browseReady = false
         }
     }
 
@@ -135,25 +155,35 @@ class BgmController(private val app: Application) : Application.ActivityLifecycl
     private fun titleForIndex(index: Int): String? =
         tracks.getOrNull(index)?.title?.takeIf { it.isNotBlank() }
 
+    private fun displayTitle(): String? =
+        if (browseReady && videoHold <= 0) currentTitle else null
+
     private fun publishTitle(title: String?) {
         currentTitle = title
-        listeners.forEach { runCatching { it.onTrackChanged(title) } }
+        notifyListeners()
+    }
+
+    private fun notifyListeners() {
+        val shown = displayTitle()
+        listeners.forEach { runCatching { it.onTrackChanged(shown) } }
     }
 
     private fun syncPlayback() {
-        val wantPlay = startedActivities > 0 && videoHold <= 0 && tracks.isNotEmpty()
+        val wantPlay =
+            browseReady && startedActivities > 0 && videoHold <= 0 && tracks.isNotEmpty()
         val p = player ?: return
         if (wantPlay) {
             if (!p.playWhenReady) p.playWhenReady = true
         } else {
             if (p.playWhenReady) p.playWhenReady = false
         }
+        notifyListeners()
     }
 
     override fun onActivityStarted(activity: Activity) {
         startedActivities++
         if (activity is PlayerActivity) videoHold++
-        ensurePrepared()
+        if (browseReady) ensurePrepared()
         syncPlayback()
     }
 

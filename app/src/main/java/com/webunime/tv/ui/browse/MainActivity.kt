@@ -39,6 +39,8 @@ class MainActivity : FragmentActivity() {
 
         val app = application as WebunimeApp
         bindBgmNowPlaying(this, app, findViewById(R.id.bgmNowPlaying))
+        // Jangan mainkan BGM selama splash "Memuat katalog…"
+        app.bgm.setBrowseReady(false)
 
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
@@ -46,8 +48,8 @@ class MainActivity : FragmentActivity() {
                 .commitNow()
         }
 
-        val repo = (application as WebunimeApp).catalogRepository
-        val library = (application as WebunimeApp).libraryRepository
+        val repo = app.catalogRepository
+        val library = app.libraryRepository
         val loading = findViewById<View>(R.id.catalogLoading)
         val loadingText = findViewById<TextView>(R.id.catalogLoadingText)
 
@@ -58,6 +60,7 @@ class MainActivity : FragmentActivity() {
             }
 
             loading.visibility = View.VISIBLE
+            app.bgm.setBrowseReady(false)
             val needRemote = repo.needsGithubRefreshToday()
             if (needRemote) {
                 loadingText.setText(R.string.updating)
@@ -78,6 +81,8 @@ class MainActivity : FragmentActivity() {
             loading.visibility = View.GONE
             if (!isFinishing) {
                 browseFragment()?.reloadRows()
+                // Beranda sudah tampil — baru mulai BGM.
+                app.bgm.setBrowseReady(true)
             }
 
             // Prefetch anime.json/series.json di latar — tidak blokir home.
