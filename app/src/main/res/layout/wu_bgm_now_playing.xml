@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/bgmNowPlaying"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom|end"
+    android:layout_marginEnd="28dp"
+    android:layout_marginBottom="20dp"
+    android:gravity="center_vertical|end"
+    android:orientation="horizontal"
+    android:visibility="gone">
+
+    <com.webunime.tv.ui.BgmEqualizerView
+        android:id="@+id/bgmEqualizer"
+        android:layout_width="16dp"
+        android:layout_height="14dp"
+        android:layout_marginEnd="8dp"
+        android:contentDescription="@null"
+        android:importantForAccessibility="no" />
+
+    <TextView
+        android:id="@+id/bgmNowPlayingTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:maxWidth="400dp"
+        android:shadowColor="#CC000000"
+        android:shadowDx="0"
+        android:shadowDy="1"
+        android:shadowRadius="4"
+        android:textColor="@color/wu_text_dim"
+        android:textSize="13sp" />
+</LinearLayout>
