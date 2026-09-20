@@ -2,13 +2,10 @@ package com.webunime.tv.ui.browse
 
 import android.app.Activity
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Typeface
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -16,6 +13,7 @@ import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -25,8 +23,6 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
-import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool
-import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestListener
@@ -35,10 +31,10 @@ import com.bumptech.glide.request.target.Target
 import com.webunime.tv.R
 import com.webunime.tv.data.CatalogItem
 import com.webunime.tv.ui.PosterGlide
-import java.security.MessageDigest
 
 /**
  * Kartu browse/search: poster 2:3 penuh di kiri, judul + meta di kanan.
+ * Badge HD/CAM di pojok kanan atas poster (overlay UI, bukan digambar ke bitmap).
  */
 class CardPresenter(
     private val onLibraryLongPress: ((CatalogItem) -> Boolean)? = null,
@@ -93,6 +89,7 @@ class CardPresenter(
         }
 
         applyCardSize(card)
+        bindBadge(card, movie.posterBadgeLabel())
         bindPoster(card, movie, force = false)
         bindLibraryLongPress(card, movie)
     }
@@ -105,6 +102,7 @@ class CardPresenter(
         card.animate().cancel()
         card.scaleX = 1f
         card.scaleY = 1f
+        card.badgeView()?.visibility = View.GONE
         clearPosterRequest(card)
     }
 
@@ -178,54 +176,37 @@ class CardPresenter(
             if (card.getTag(R.id.tag_card_size) == sizeKey) return
             card.setTag(R.id.tag_card_size, sizeKey)
             card.layoutParams = ViewGroup.LayoutParams(m.cardW, m.cardH)
-            card.posterView()?.layoutParams = LinearLayout.LayoutParams(m.posterW, m.posterH)
+            card.posterWrap()?.layoutParams = LinearLayout.LayoutParams(m.posterW, m.posterH)
             card.infoView()?.layoutParams = LinearLayout.LayoutParams(m.infoW, m.cardH)
         }
 
+        private fun View.posterWrap(): FrameLayout? = findViewById(R.id.catalog_poster_wrap)
         private fun View.posterView(): ImageView? = findViewById(R.id.catalog_poster)
+        private fun View.badgeView(): TextView? = findViewById(R.id.catalog_badge)
         private fun View.titleView(): TextView? = findViewById(R.id.catalog_title)
         private fun View.metaView(): TextView? = findViewById(R.id.catalog_meta)
         private fun View.infoView(): View? = findViewById(R.id.catalog_info)
 
-        /** Gambar badge (kualitas / total EPS) di pojok kanan atas bitmap poster. */
-        private fun withPosterBadge(
-            src: Bitmap,
-            density: Float,
-            badge: String?,
-        ): Bitmap {
-            val label = badge?.trim()?.takeIf { it.isNotBlank() } ?: return src
-            val out = src.copy(Bitmap.Config.ARGB_8888, true) ?: return src
-            val canvas = Canvas(out)
-            val textSizePx = 13f * density
-            val padH = 10f * density
-            val padV = 5f * density
-            val margin = 8f * density
-            val radius = 5f * density
-
-            val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.WHITE
-                textSize = textSizePx
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                isFakeBoldText = true
+        private fun bindBadge(card: View, raw: String?) {
+            val badge = card.badgeView() ?: return
+            val label = raw?.trim()?.takeIf { it.isNotBlank() }
+            if (label == null) {
+                badge.visibility = View.GONE
+                badge.text = ""
+                return
             }
-            val textW = textPaint.measureText(label)
-            val fm = textPaint.fontMetrics
-            val textH = fm.descent - fm.ascent
-            val badgeW = textW + padH * 2
-            val badgeH = textH + padV * 2
-            val left = (out.width - margin - badgeW).coerceAtLeast(0f)
-            val top = margin
-            val right = left + badgeW
-            val bottom = top + badgeH
+            badge.text = label
+            badge.background = badgeBackground(card.context, label)
+            badge.visibility = View.VISIBLE
+        }
 
-            val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = posterBadgeColor(label)
+        private fun badgeBackground(context: Context, label: String): Drawable {
+            val density = context.resources.displayMetrics.density
+            return GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 5f * density
+                setColor(posterBadgeColor(label))
             }
-            canvas.drawRoundRect(left, top, right, bottom, radius, radius, bgPaint)
-            val textX = left + padH
-            val textY = top + padV - fm.ascent
-            canvas.drawText(label, textX, textY, textPaint)
-            return out
         }
 
         private fun posterBadgeColor(label: String): Int = when {
@@ -253,14 +234,13 @@ class CardPresenter(
             val width = m.posterW
             val height = m.posterH
             val sizeKey = "${m.cardW}x${m.cardH}"
-            val badge = movie.posterBadgeLabel().orEmpty()
             val portrait = movie.thumbnail?.takeIf { it.isNotBlank() }
             val landscape = movie.thumbnail_landscape?.takeIf { it.isNotBlank() }
             val alt = movie.thumbnailAlt?.takeIf { it.isNotBlank() && it != portrait }
             val sourceUrls = listOfNotNull(portrait, alt, landscape).distinct()
             val urls = sourceUrls.flatMap { PosterGlide.fallbackModels(it) }.distinct()
             val nextUrl = sourceUrls.firstOrNull()
-            val bindKey = listOf(movie.slug.orEmpty(), nextUrl.orEmpty(), sizeKey, badge)
+            val bindKey = listOf(movie.slug.orEmpty(), nextUrl.orEmpty(), sizeKey)
                 .joinToString("|")
 
             if (!force && card.getTag(R.id.tag_bind_key) == bindKey) {
@@ -274,7 +254,6 @@ class CardPresenter(
             card.setTag(R.id.tag_poster_loading, bindKey)
             card.setTag(R.id.tag_thumb_url, nextUrl)
             card.setTag(R.id.tag_card_size, sizeKey)
-            card.setTag(R.id.tag_quality, badge)
             card.posterView()?.setTag(R.id.tag_thumb_url, nextUrl)
 
             val placeholder = ColorDrawable(ContextCompat.getColor(card.context, R.color.wu_surface))
@@ -291,7 +270,7 @@ class CardPresenter(
                 .skipMemoryCache(false)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .override(width, height)
-            loadIntoCard(card, bindKey, urls, 0, options, placeholder, corner, badge)
+            loadIntoCard(card, bindKey, urls, 0, options, placeholder, corner)
         }
 
         private fun cancelPosterRequest(card: View) {
@@ -333,7 +312,6 @@ class CardPresenter(
             options: RequestOptions,
             placeholder: Drawable,
             corner: Int,
-            badge: String,
         ) {
             val iv = card.posterView() ?: return
             if (!canUseGlide(card.context)) return
@@ -346,17 +324,10 @@ class CardPresenter(
                 return
             }
             val url = urls[index]
-            val transforms = buildList {
-                add(CenterCrop())
-                add(RoundedCorners(corner))
-                if (badge.isNotBlank()) {
-                    add(PosterBadgeTransform(badge, card.resources.displayMetrics.density))
-                }
-            }
             Glide.with(iv)
                 .load(url)
                 .apply(options)
-                .transform(*transforms.toTypedArray())
+                .transform(CenterCrop(), RoundedCorners(corner))
                 .placeholder(placeholder)
                 .listener(object : RequestListener<Drawable> {
                     override fun onLoadFailed(
@@ -372,7 +343,7 @@ class CardPresenter(
                             if (card.getTag(R.id.tag_bind_key) != bindKey) return@post
                             loadIntoCard(
                                 card, bindKey, urls, index + 1,
-                                options, placeholder, corner, badge,
+                                options, placeholder, corner,
                             )
                         }
                         return true
@@ -395,31 +366,6 @@ class CardPresenter(
         }
 
         private val mainHandler = Handler(Looper.getMainLooper())
-
-        private class PosterBadgeTransform(
-            private val badge: String,
-            private val density: Float,
-        ) : BitmapTransformation() {
-            override fun transform(
-                pool: BitmapPool,
-                toTransform: Bitmap,
-                outWidth: Int,
-                outHeight: Int,
-            ): Bitmap = withPosterBadge(toTransform, density, badge)
-
-            override fun equals(other: Any?): Boolean =
-                other is PosterBadgeTransform && other.badge == badge
-
-            override fun hashCode(): Int = ID.hashCode() * 31 + badge.hashCode()
-
-            override fun updateDiskCacheKey(messageDigest: MessageDigest) {
-                messageDigest.update((ID + badge).toByteArray(Charsets.UTF_8))
-            }
-
-            companion object {
-                private const val ID = "com.webunime.tv.poster-badge"
-            }
-        }
 
         private fun View.setupFocusBehavior() {
             val accent = ContextCompat.getColor(context, R.color.wu_accent_soft)
