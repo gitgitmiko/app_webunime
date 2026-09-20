@@ -1485,7 +1485,9 @@ class PlayerActivity : AppCompatActivity() {
                     isP2pPlayUrl() ->
                         if (webVideoActive) togglePlayback() else tryP2pPlayClick()
                     isBloggerPlayerUrl() -> tryBloggerPlayClick()
-                    else -> tryMegaPlayClick()
+                    // Mega: selalu toggle (play↔pause); boot play hanya jika belum jalan.
+                    else ->
+                        if (webVideoActive) togglePlayback() else tryMegaPlayClick()
                 }
                 return true
             }
@@ -1679,6 +1681,15 @@ class PlayerActivity : AppCompatActivity() {
             """
             (function(){
               try{
+                // Toggle dulu: OK saat video jalan harus bisa pause (bukan noop).
+                if(typeof window.__wuMegaToggle==="function"){ window.__wuMegaToggle(); return; }
+                if(typeof window.__wuToggle==="function"){ window.__wuToggle(); return; }
+                var v=document.querySelector("video");
+                if(v && !v.paused && v.readyState>=2){
+                  try{ v.pause(); }catch(e){}
+                  try{ WebunimePlayback.onPause(); }catch(e){}
+                  return;
+                }
                 if(typeof window.__wuMegaPlay==="function"){ window.__wuMegaPlay(); return; }
                 var sels=[
                   "button.play-video-button",".play-video-button","button[class*='play']",
@@ -1689,7 +1700,6 @@ class PlayerActivity : AppCompatActivity() {
                   var el=document.querySelector(sels[i]);
                   if(el){ try{el.focus();}catch(e){} try{el.click(); return;}catch(e){} }
                 }
-                var v=document.querySelector("video");
                 if(v){ try{v.muted=false; v.play();}catch(e){} }
               }catch(e){}
             })();
@@ -1782,6 +1792,7 @@ class PlayerActivity : AppCompatActivity() {
         val js = """
             (function(){
               try{
+                if(typeof window.__wuMegaToggle==="function"){ window.__wuMegaToggle(); return; }
                 if(typeof window.__wuToggle==="function"){ window.__wuToggle(); return; }
                 var f=document.querySelector("iframe");
                 if(f&&f.contentWindow){ f.contentWindow.postMessage("__wuToggle","*"); }
@@ -2137,12 +2148,13 @@ class PlayerActivity : AppCompatActivity() {
 
     /**
      * Mega: otomatis klik tombol Play (halaman file/embed sering menunggu interaksi).
-     * Juga expose __wuMegaPlay untuk tombol OK remote.
+     * OK remote: __wuMegaToggle = play↔pause (bukan play-only).
      */
     private val megaAutoplayJs: String = """
             (function(){
               if(window.__wuMegaAuto) return;
               window.__wuMegaAuto=true;
+              window.__wuUserPaused=false;
               function playingVid(){
                 try{
                   var v=document.querySelector("video");
@@ -2151,6 +2163,7 @@ class PlayerActivity : AppCompatActivity() {
               }
               function clickPlay(){
                 try{
+                  if(window.__wuUserPaused) return false;
                   if(playingVid()) return true;
                   var sels=[
                     "button.play-video-button",".play-video-button",
@@ -2180,10 +2193,35 @@ class PlayerActivity : AppCompatActivity() {
                 }catch(e){}
                 return false;
               }
-              window.__wuMegaPlay=function(){ clickPlay(); };
+              function toggleMega(){
+                try{
+                  var v=document.querySelector("video");
+                  if(v && !v.paused && v.readyState>=1){
+                    window.__wuUserPaused=true;
+                    try{ v.pause(); }catch(e){}
+                    try{ WebunimePlayback.onPause(); }catch(e){}
+                    return "pause";
+                  }
+                  window.__wuUserPaused=false;
+                  clickPlay();
+                  return "play";
+                }catch(e){ return "err"; }
+              }
+              window.__wuMegaToggle=toggleMega;
+              window.__wuMegaPlay=function(){
+                if(playingVid()) return toggleMega();
+                window.__wuUserPaused=false;
+                clickPlay();
+              };
+              // Timpa toggle universal agar OK/togglePlayback ikut pause Mega.
+              window.__wuToggle=toggleMega;
               var n=0;
               var iv=setInterval(function(){
                 n++;
+                if(window.__wuUserPaused){
+                  clearInterval(iv);
+                  return;
+                }
                 if(playingVid()){
                   clearInterval(iv);
                   try{ WebunimePlayback.onPlay(); }catch(e){}
@@ -2538,6 +2576,11 @@ class PlayerActivity : AppCompatActivity() {
               if(typeof window.__wuToggle!=="function"){
                 window.__wuToggle=function(){
                   try{
+                    // Mega: helper khusus agar pause tidak jadi noop.
+                    if(typeof window.__wuMegaToggle==="function"){
+                      window.__wuMegaToggle();
+                      return;
+                    }
                     // Utamakan JWPlayer (p2pplay) — pause video mentah sering di-resume player.
                     var jp=__wuJw();
                     if(jp){
@@ -2546,7 +2589,15 @@ class PlayerActivity : AppCompatActivity() {
                       return;
                     }
                     var v=__wuVid();
-                    if(v){ if(v.paused) v.play(); else v.pause(); }
+                    if(v){
+                      if(v.paused){
+                        try{ window.__wuUserPaused=false; }catch(e){}
+                        v.play();
+                      } else {
+                        try{ window.__wuUserPaused=true; }catch(e){}
+                        v.pause();
+                      }
+                    }
                   }catch(e){}
                 };
               }

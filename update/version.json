@@ -1,6 +1,6 @@
 {
-  "versionCode": 277,
-  "versionName": "1.11.57",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.57/WEBUNIME-TV-v1.11.57.apk",
-  "changelog": "Perbaiki poster kosong di Anime Episode Terbaru: utamakan poster parent + fallback CDN samehadaku."
+  "versionCode": 278,
+  "versionName": "1.11.58",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.58/WEBUNIME-TV-v1.11.58.apk",
+  "changelog": "Fix pause server Mega anime: tombol OK sekarang toggle play/pause."
 }
