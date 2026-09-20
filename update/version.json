@@ -1,6 +1,6 @@
 {
-  "versionCode": 285,
-  "versionName": "1.11.65",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.65/WEBUNIME-TV-v1.11.65.apk",
-  "changelog": "Meta tahun/kualitas/rating/durasi di bawah dalam poster; di bawah poster hanya judul."
+  "versionCode": 286,
+  "versionName": "1.11.66",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.66/WEBUNIME-TV-v1.11.66.apk",
+  "changelog": "Area judul di bawah poster lebih tinggi (hingga 3 baris) agar judul panjang terbaca."
 }

@@ -162,7 +162,7 @@ class CardPresenter(
             // Lebar kartu = lebar poster (judul di bawah, full width).
             val posterW = (usable / VISIBLE_PER_ROW).coerceAtLeast((120f * dm.density).toInt())
             val posterH = posterW * 3 / 2
-            val infoH = (44f * dm.density).toInt().coerceAtLeast(40)
+            val infoH = (72f * dm.density).toInt().coerceAtLeast(64)
             val cardW = posterW
             val cardH = posterH + infoH
             return Metrics(posterW, posterH, cardW, cardH, infoH)
