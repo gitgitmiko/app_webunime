@@ -1,6 +1,6 @@
 {
-  "versionCode": 276,
-  "versionName": "1.11.56",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.56/WEBUNIME-TV-v1.11.56.apk",
-  "changelog": "Badge HD/CAM dipindah ke pojok kanan atas kartu (area judul), poster penuh tanpa overlay."
+  "versionCode": 277,
+  "versionName": "1.11.57",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.57/WEBUNIME-TV-v1.11.57.apk",
+  "changelog": "Perbaiki poster kosong di Anime Episode Terbaru: utamakan poster parent + fallback CDN samehadaku."
 }

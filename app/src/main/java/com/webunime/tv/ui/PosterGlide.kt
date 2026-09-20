@@ -89,7 +89,10 @@ object PosterGlide {
         return try {
             val uri = java.net.URI(url)
             val host = uri.host?.lowercase() ?: return null
-            if (host.contains("kconaz") || host.contains("cccscholarships")) {
+            val usePhoton = host.contains("kconaz") ||
+                host.contains("cccscholarships") ||
+                host.contains("samehadaku")
+            if (usePhoton) {
                 val path = uri.rawPath ?: return null
                 "https://i0.wp.com/$host$path"
             } else {

@@ -220,6 +220,12 @@ class CatalogRepository(
         sort: String = "",
     ): CatalogPage {
         val section = sectionFor(collection) ?: return CatalogPage(collection = collection)
+        // Feed episode butuh katalog induk agar poster parent tersedia sebelum bind kartu.
+        when (section) {
+            CatalogSection.ANIME_LATEST -> ensureSection(CatalogSection.ANIME)
+            CatalogSection.SERIES_LATEST -> ensureSection(CatalogSection.SERIES)
+            else -> Unit
+        }
         ensureSection(section)
 
         var items = itemsFor(section).map { remember(it, section.apiName) }
@@ -856,11 +862,15 @@ class CatalogRepository(
             val parentThumb = parent?.thumbnail?.takeIf { it.isNotBlank() }
             val parentLand = parent?.thumbnail_landscape?.takeIf { it.isNotBlank() }
             val feedThumb = feed.thumbnail?.takeIf { it.isNotBlank() }
+            // Utamakan poster parent (sering anoboy/blogspot); screenshot episode samehadaku
+            // sebagai cadangan — host feed sering timeout di TV.
+            val primary = parentThumb ?: feedThumb
             feed.copy(
-                thumbnail = feedThumb ?: parentThumb,
-                thumbnailAlt = parentThumb?.takeIf { it != feedThumb },
-                thumbnail_landscape = feed.thumbnail_landscape?.takeIf { it.isNotBlank() }
-                    ?: parentLand,
+                thumbnail = primary,
+                thumbnailAlt = feedThumb?.takeIf { it != primary }
+                    ?: parentThumb?.takeIf { it != primary },
+                thumbnail_landscape = parentLand
+                    ?: feed.thumbnail_landscape?.takeIf { it.isNotBlank() },
             )
         }
 
@@ -875,11 +885,13 @@ class CatalogRepository(
             val parentThumb = parent?.thumbnail?.takeIf { it.isNotBlank() }
             val parentLand = parent?.thumbnail_landscape?.takeIf { it.isNotBlank() }
             val feedThumb = feed.thumbnail?.takeIf { it.isNotBlank() }
+            val primary = parentThumb ?: feedThumb
             feed.copy(
-                thumbnail = feedThumb ?: parentThumb,
-                thumbnailAlt = parentThumb?.takeIf { it != feedThumb },
-                thumbnail_landscape = feed.thumbnail_landscape?.takeIf { it.isNotBlank() }
-                    ?: parentLand,
+                thumbnail = primary,
+                thumbnailAlt = feedThumb?.takeIf { it != primary }
+                    ?: parentThumb?.takeIf { it != primary },
+                thumbnail_landscape = parentLand
+                    ?: feed.thumbnail_landscape?.takeIf { it.isNotBlank() },
             )
         }
 
