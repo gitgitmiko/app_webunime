@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">WeebooNime</string>
+    <string name="bgm_now_playing">♪  %1$s</string>
     <string name="brand_name">WeebooNime</string>
     <string name="browse_title">WeebooNime</string>
     <string name="row_movies">Film Terbaru</string>

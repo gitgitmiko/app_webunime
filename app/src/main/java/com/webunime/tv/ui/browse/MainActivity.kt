@@ -17,6 +17,7 @@ import com.webunime.tv.data.AppUpdateChecker
 import com.webunime.tv.data.AppUpdateInfo
 import com.webunime.tv.data.CatalogItem
 import com.webunime.tv.data.PlayerRouter
+import com.webunime.tv.ui.bindBgmNowPlaying
 import com.webunime.tv.ui.detail.DetailActivity
 import com.webunime.tv.ui.player.PlayerActivity
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +36,9 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        val app = application as WebunimeApp
+        bindBgmNowPlaying(this, app, findViewById(R.id.bgmNowPlaying))
 
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()

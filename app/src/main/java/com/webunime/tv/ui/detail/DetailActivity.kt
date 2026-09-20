@@ -24,6 +24,7 @@ import com.webunime.tv.data.PlayerServer
 import com.webunime.tv.data.WatchSessionStore
 import com.webunime.tv.data.api.WatchedEpisode
 import com.webunime.tv.ui.PosterGlide
+import com.webunime.tv.ui.bindBgmNowPlaying
 import com.webunime.tv.ui.player.PlayerActivity
 import kotlinx.coroutines.launch
 
@@ -51,6 +52,9 @@ class DetailActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_detail)
+
+        val app = application as WebunimeApp
+        bindBgmNowPlaying(this, app, findViewById(R.id.bgmNowPlaying))
 
         val slug = intent.getStringExtra(EXTRA_SLUG).orEmpty()
         val collectionHint = intent.getStringExtra(EXTRA_COLLECTION)

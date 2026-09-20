@@ -1,6 +1,7 @@
 package com.webunime.tv
 
 import android.app.Application
+import com.webunime.tv.data.BgmController
 import com.webunime.tv.data.CatalogRepository
 import com.webunime.tv.data.LibraryRepository
 import com.webunime.tv.data.WatchSessionStore
@@ -13,6 +14,8 @@ class WebunimeApp : Application() {
         private set
     lateinit var watchSessions: WatchSessionStore
         private set
+    lateinit var bgm: BgmController
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -20,5 +23,6 @@ class WebunimeApp : Application() {
         libraryRepository = LibraryRepository(this)
         catalogRepository = CatalogRepository(this)
         watchSessions = WatchSessionStore(this)
+        bgm = BgmController(this).also { it.start() }
     }
 }

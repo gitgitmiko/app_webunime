@@ -1,6 +1,6 @@
 {
-  "versionCode": 269,
-  "versionName": "1.11.49",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.49/WEBUNIME-TV-v1.11.49.apk",
-  "changelog": "Kartu katalog: poster tampil utuh, judul dan meta di kanan."
+  "versionCode": 270,
+  "versionName": "1.11.50",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.50/WEBUNIME-TV-v1.11.50.apk",
+  "changelog": "BGM: musik latar dari GitHub di beranda/detail, otomatis berhenti saat putar film/anime."
 }
