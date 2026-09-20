@@ -31,6 +31,8 @@ import com.webunime.tv.ui.settings.SettingsActivity
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 /**
  * Browse: baris hero carousel (ikut scroll) + backdrop hero + baris katalog.
@@ -457,7 +459,7 @@ class BrowseFragment : BrowseSupportFragment() {
                 val spec = deferredRowSpecs[deferredRowIndex]
                 deferredRowIndex++
                 val loadingRowPos = rowsAdapter.size()
-                addLoadingRow(spec.title)
+                mutateRowsWhenIdle { addLoadingRow(spec.title) }
                 val page = runCatching {
                     repo.listCollectionPage(
                         collection = spec.collection,
@@ -467,10 +469,41 @@ class BrowseFragment : BrowseSupportFragment() {
                     )
                 }.getOrNull()
                 if (!isAdded) return@launch
-                removeLoadingRowAt(loadingRowPos)
-                if (page != null && page.items.isNotEmpty()) {
-                    addApiCardRow(spec, page)
+                mutateRowsWhenIdle {
+                    removeLoadingRowAt(loadingRowPos)
+                    if (page != null && page.items.isNotEmpty()) {
+                        addApiCardRow(spec, page)
+                    }
                 }
+            }
+        }
+    }
+
+    /**
+     * Mutasi [rowsAdapter] harus di luar layout pass RecyclerView
+     * (onItemSelected sering dipanggil saat computing layout).
+     */
+    private suspend fun mutateRowsWhenIdle(block: () -> Unit) {
+        suspendCancellableCoroutine { cont ->
+            fun attempt() {
+                if (!isAdded) {
+                    cont.resume(Unit)
+                    return
+                }
+                val grid = rowsGrid()
+                if (grid != null && grid.isComputingLayout) {
+                    grid.post { attempt() }
+                    return
+                }
+                runCatching(block)
+                cont.resume(Unit)
+            }
+            val host = view
+            if (host == null) {
+                runCatching(block)
+                cont.resume(Unit)
+            } else {
+                host.post { attempt() }
             }
         }
     }
