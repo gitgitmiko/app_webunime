@@ -1,6 +1,6 @@
 {
-  "versionCode": 282,
-  "versionName": "1.11.62",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.62/WEBUNIME-TV-v1.11.62.apk",
-  "changelog": "Kartu: judul di bawah poster; badge HD/CAM kembali di pojok kanan atas poster."
+  "versionCode": 283,
+  "versionName": "1.11.63",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.63/WEBUNIME-TV-v1.11.63.apk",
+  "changelog": "Kartu katalog ikut rounded (clip outline) selaras poster + focus ring."
 }

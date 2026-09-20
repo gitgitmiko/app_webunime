@@ -47,6 +47,7 @@ class CardPresenter(
                 isFocusable = true
                 isFocusableInTouchMode = true
                 isClickable = true
+                clipToOutline = true
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     foreground = ContextCompat.getDrawable(context, R.drawable.bg_card_focus_ring)
                 }
@@ -182,6 +183,8 @@ class CardPresenter(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 m.infoH,
             )
+            card.clipToOutline = true
+            card.invalidateOutline()
         }
 
         private fun View.posterWrap(): FrameLayout? = findViewById(R.id.catalog_poster_wrap)
