@@ -862,15 +862,14 @@ class CatalogRepository(
             val parentThumb = parent?.thumbnail?.takeIf { it.isNotBlank() }
             val parentLand = parent?.thumbnail_landscape?.takeIf { it.isNotBlank() }
             val feedThumb = feed.thumbnail?.takeIf { it.isNotBlank() }
-            // Utamakan poster parent (sering anoboy/blogspot); screenshot episode samehadaku
-            // sebagai cadangan — host feed sering timeout di TV.
-            val primary = parentThumb ?: feedThumb
+            // Utamakan poster per-episode dari feed; parent sebagai cadangan bila gagal load.
+            val primary = feedThumb ?: parentThumb
             feed.copy(
                 thumbnail = primary,
-                thumbnailAlt = feedThumb?.takeIf { it != primary }
-                    ?: parentThumb?.takeIf { it != primary },
-                thumbnail_landscape = parentLand
-                    ?: feed.thumbnail_landscape?.takeIf { it.isNotBlank() },
+                thumbnailAlt = parentThumb?.takeIf { it != primary }
+                    ?: feedThumb?.takeIf { it != primary },
+                thumbnail_landscape = feed.thumbnail_landscape?.takeIf { it.isNotBlank() }
+                    ?: parentLand,
             )
         }
 
@@ -885,13 +884,13 @@ class CatalogRepository(
             val parentThumb = parent?.thumbnail?.takeIf { it.isNotBlank() }
             val parentLand = parent?.thumbnail_landscape?.takeIf { it.isNotBlank() }
             val feedThumb = feed.thumbnail?.takeIf { it.isNotBlank() }
-            val primary = parentThumb ?: feedThumb
+            val primary = feedThumb ?: parentThumb
             feed.copy(
                 thumbnail = primary,
-                thumbnailAlt = feedThumb?.takeIf { it != primary }
-                    ?: parentThumb?.takeIf { it != primary },
-                thumbnail_landscape = parentLand
-                    ?: feed.thumbnail_landscape?.takeIf { it.isNotBlank() },
+                thumbnailAlt = parentThumb?.takeIf { it != primary }
+                    ?: feedThumb?.takeIf { it != primary },
+                thumbnail_landscape = feed.thumbnail_landscape?.takeIf { it.isNotBlank() }
+                    ?: parentLand,
             )
         }
 
