@@ -125,11 +125,12 @@ class BrowseFragment : BrowseSupportFragment() {
         }
     }
 
-    /** Kurangi realign otomatis Leanback yang terasa seperti beranda bergoyang. */
+    /** Baris kartu fokus di tengah layar secara vertikal. */
     private fun configureRowsGridStability() {
         val grid = rowsGrid() ?: return
         grid.windowAlignment = VerticalGridView.WINDOW_ALIGN_NO_EDGE
-        grid.itemAlignmentOffsetPercent = VerticalGridView.ITEM_ALIGN_OFFSET_PERCENT_DISABLED
+        grid.windowAlignmentOffsetPercent = 50f
+        grid.itemAlignmentOffsetPercent = 50f
         grid.isFocusDrawingOrderEnabled = true
     }
 

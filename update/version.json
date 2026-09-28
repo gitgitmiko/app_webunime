@@ -1,6 +1,6 @@
 {
-  "versionCode": 286,
-  "versionName": "1.11.66",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.66/WEBUNIME-TV-v1.11.66.apk",
-  "changelog": "Area judul di bawah poster lebih tinggi (hingga 3 baris) agar judul panjang terbaca."
+  "versionCode": 287,
+  "versionName": "1.11.67",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.67/WEBUNIME-TV-v1.11.67.apk",
+  "changelog": "Baris kartu fokus di tengah vertikal. BGM diacak."
 }

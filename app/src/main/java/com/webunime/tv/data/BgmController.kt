@@ -24,6 +24,7 @@ import org.json.JSONObject
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.random.Random
 
 /**
  * Background music untuk beranda/detail.
@@ -158,7 +159,7 @@ class BgmController(private val app: Application) : Application.ActivityLifecycl
             )
             p.volume = BgmPrefs.effectiveVolume(app)
             p.repeatMode = Player.REPEAT_MODE_ALL
-            p.shuffleModeEnabled = false
+            p.shuffleModeEnabled = items.size > 1
             p.setMediaItems(items.map { MediaItem.fromUri(it.url) })
             p.addListener(
                 object : Player.Listener {
@@ -173,10 +174,12 @@ class BgmController(private val app: Application) : Application.ActivityLifecycl
                     }
                 },
             )
+            val start = if (items.size > 1) Random.nextInt(items.size) else 0
+            p.seekTo(start, 0L)
             p.prepare()
         }
         player = exo
-        publishTitle(titleForIndex(0))
+        publishTitle(titleForIndex(exo.currentMediaItemIndex))
     }
 
     private fun titleForIndex(index: Int): String? =
