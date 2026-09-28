@@ -13,6 +13,7 @@ import androidx.leanback.widget.BrowseFrameLayout
 import androidx.leanback.widget.ClassPresenterSelector
 import androidx.leanback.widget.FocusHighlight
 import androidx.leanback.widget.HeaderItem
+import androidx.leanback.widget.HorizontalGridView
 import androidx.leanback.widget.ListRow
 import androidx.leanback.widget.ListRowPresenter
 import androidx.leanback.widget.OnItemViewClickedListener
@@ -139,11 +140,10 @@ class BrowseFragment : BrowseSupportFragment() {
             }
             return
         }
-        val rowH = grid.layoutManager
+        val rowView = grid.layoutManager
             ?.findViewByPosition(grid.selectedPosition)
-            ?.height
-            ?.takeIf { it > 0 }
-        if (rowH == null) {
+            ?.takeIf { it.height > 0 }
+        if (rowView == null) {
             if (alignRetries++ < 15) {
                 grid.post { if (isAdded) configureRowsGridStability() }
             }
@@ -151,24 +151,32 @@ class BrowseFragment : BrowseSupportFragment() {
         }
         alignRetries = 0
         val dm = grid.resources.displayMetrics
-        val bgmInset = (56f * dm.density).toInt()
+        val bgmInset = (40f * dm.density).toInt()
         val parentH = (grid.parent as? View)?.height?.takeIf { it > 0 } ?: return
-        val rowView = grid.layoutManager?.findViewByPosition(grid.selectedPosition)
-        val windowH = rowWindowHeight(rowView, rowH, dm.density)
-            .coerceAtMost((parentH - bgmInset).coerceAtLeast(1))
-        val top = ((parentH - windowH - bgmInset) / 2).coerceAtLeast(0)
+        val hero = rowView.findViewById<View>(R.id.heroCarouselRoot)
+        val content = rowView.findViewById<View>(androidx.leanback.R.id.row_content)
+        val headerH = headerHeight(rowView, content)
+        val windowH = if (hero != null) {
+            prepareHeroRow(hero, content, headerH, parentH, bgmInset)
+        } else {
+            prepareCatalogRow(rowView, content, headerH, parentH, bgmInset, dm.density)
+        }
+        // Tengah di layar. Cadangan bawah hanya dipakai kalau kartu sampai menutup label musik.
+        var top = ((parentH - windowH) / 2).coerceAtLeast(0)
+        if (parentH - top - windowH < bgmInset) {
+            top = (parentH - windowH - bgmInset).coerceAtLeast(0)
+        }
         val lp = grid.layoutParams
         if (lp is ViewGroup.MarginLayoutParams &&
-            (lp.height != windowH || lp.topMargin != top || lp.bottomMargin != bgmInset)
+            (lp.height != windowH || lp.topMargin != top || lp.bottomMargin != 0)
         ) {
             lp.height = windowH
             lp.topMargin = top
-            lp.bottomMargin = bgmInset
+            lp.bottomMargin = 0
             grid.layoutParams = lp
         }
         grid.clipToPadding = true
         grid.clipChildren = true
-        (grid.parent as? ViewGroup)?.clipChildren = true
         // Patokan ke seluruh baris (judul + kartu). Default Leanback menempel
         // ke row_content, jadi judul baris terdorong ke atas dan baris berikutnya nongol.
         grid.setItemAlignmentViewId(View.NO_ID)
@@ -177,25 +185,65 @@ class BrowseFragment : BrowseSupportFragment() {
         grid.isFocusDrawingOrderEnabled = true
     }
 
-    /**
-     * Tinggi jendela mengikuti kartu utuh (poster + judul), bukan tinggi yang
-     * sudah terpotong oleh jendela sebelumnya.
-     */
-    private fun rowWindowHeight(rowView: View?, measuredH: Int, density: Float): Int {
-        val metrics = CardPresenter.metricsPx(requireContext())
-        val content = rowView?.findViewById<View>(androidx.leanback.R.id.row_content)
-        val contentH = content?.height ?: 0
-        if (rowView == null || content == null || contentH <= 0) {
-            return measuredH + (16f * density).toInt()
-        }
+    /** Tinggi judul baris di atas kartu. */
+    private fun headerHeight(rowView: View, content: View?): Int {
+        if (content == null) return 0
         val rowLoc = IntArray(2)
         val contentLoc = IntArray(2)
         rowView.getLocationInWindow(rowLoc)
         content.getLocationInWindow(contentLoc)
-        val headerH = (contentLoc[1] - rowLoc[1]).coerceAtLeast(0)
-        val cardBlock = metrics.cardH.coerceAtLeast(contentH)
-        val slack = (8f * density).toInt()
-        return (headerH + cardBlock + slack).coerceAtLeast(measuredH)
+        return (contentLoc[1] - rowLoc[1]).coerceAtLeast(0)
+    }
+
+    /** Hero mengisi sisa layar di atas label musik; teksnya rata tengah di dalam baris. */
+    private fun prepareHeroRow(
+        hero: View,
+        content: View?,
+        headerH: Int,
+        parentH: Int,
+        bgmInset: Int,
+    ): Int {
+        val windowH = (parentH - bgmInset).coerceAtLeast(1)
+        val heroH = (windowH - headerH).coerceAtLeast(1)
+        if (hero.layoutParams.height != heroH) {
+            hero.layoutParams = hero.layoutParams.apply { height = heroH }
+        }
+        val nudge = (80f * hero.resources.displayMetrics.density).toInt()
+        if (hero.paddingTop < nudge) {
+            hero.setPadding(hero.paddingLeft, nudge, hero.paddingRight, hero.paddingBottom)
+        }
+        (content as? HorizontalGridView)?.setRowHeight(heroH)
+        return windowH
+    }
+
+    /**
+     * Jendela setinggi kartu utuh plus ruang fokus, supaya judul dan ring tidak terpotong.
+     */
+    private fun prepareCatalogRow(
+        rowView: View,
+        content: View?,
+        headerH: Int,
+        parentH: Int,
+        bgmInset: Int,
+        density: Float,
+    ): Int {
+        val metrics = CardPresenter.metricsPx(requireContext())
+        val focusPad = (metrics.cardH * 0.03f).toInt().coerceAtLeast((14f * density).toInt())
+        if (content is HorizontalGridView) {
+            content.clipChildren = false
+            content.clipToPadding = false
+            content.minimumHeight = metrics.cardH
+            content.setRowHeight(metrics.cardH)
+        }
+        (content?.parent as? ViewGroup)?.clipChildren = false
+        if (rowView is ViewGroup) {
+            rowView.clipChildren = false
+            rowView.clipToPadding = false
+        }
+        if (rowView.paddingBottom < focusPad) {
+            rowView.setPadding(rowView.paddingLeft, rowView.paddingTop, rowView.paddingRight, focusPad)
+        }
+        return (headerH + metrics.cardH + focusPad).coerceAtMost((parentH - bgmInset).coerceAtLeast(1))
     }
 
     /** Leanback menghitung offset sendiri; paksa 0 supaya baris tidak turun. */
