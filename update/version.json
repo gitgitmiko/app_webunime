@@ -1,6 +1,6 @@
 {
-  "versionCode": 290,
-  "versionName": "1.11.70",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.70/WEBUNIME-TV-v1.11.70.apk",
-  "changelog": "Baris kartu turun ke tengah. Judul dan fokus tidak terpotong. Konten hero di tengah."
+  "versionCode": 291,
+  "versionName": "1.11.71",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.71/WEBUNIME-TV-v1.11.71.apk",
+  "changelog": "Judul dan fokus kartu tidak terpotong di bawah. Detail Anime Movie menampilkan server."
 }

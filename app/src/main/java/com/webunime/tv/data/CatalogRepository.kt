@@ -328,7 +328,15 @@ class CatalogRepository(
         val hint = collectionHint?.takeIf { it.isNotBlank() }
         val floorHint = minEpisodesHint.coerceAtLeast(0)
         if (hint != null) {
-            sectionFor(hint)?.let { ensureSection(it) }
+            val hinted = sectionFor(hint)
+            if (hinted != null) {
+                ensureSection(hinted)
+                // Slug film anime juga ada di anime.json (shell tanpa server).
+                // Utamakan koleksi yang diminta supaya detail tidak kehilangan players.
+                itemInSection(hinted, key)?.let {
+                    return hydrateIfNeeded(remember(it, hint), hint, floorHint)
+                }
+            }
             snapshot.findBySlug(key)?.let {
                 return hydrateIfNeeded(remember(it, hint), hint, floorHint)
             }
@@ -395,6 +403,13 @@ class CatalogRepository(
             ?: item.series_slug?.takeIf { it.isNotBlank() }
             ?: return item
         val col = (collection ?: item.detailCollection()).lowercase()
+        if (col == "anime-movies" || col == "anime-movie") {
+            val full = snapshot.animeMovies.firstOrNull { movie ->
+                movie.slug.equals(slug, ignoreCase = true) && movie.isHydrated()
+            }
+            if (full != null) return full
+            if (!item.isHydrated()) return item
+        }
         val file = when {
             col.contains("anime") && !col.contains("movie") -> "anime.json"
             col.contains("series") -> "series.json"
@@ -1122,6 +1137,13 @@ class CatalogRepository(
         }
         return normalized
     }
+
+    private fun itemInSection(section: CatalogSection, slug: String): CatalogItem? =
+        itemsFor(section).firstOrNull { item ->
+            item.slug.equals(slug, ignoreCase = true) ||
+                item.anime_slug.equals(slug, ignoreCase = true) ||
+                item.series_slug.equals(slug, ignoreCase = true)
+        }
 
     private fun sectionFor(collection: String): CatalogSection? {
         val key = collection.trim().lowercase()

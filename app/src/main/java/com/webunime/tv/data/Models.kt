@@ -370,7 +370,11 @@ data class CatalogSnapshot(
         if (slug.isBlank()) return null
         val key = slug.trim()
         val all = movies + series + horror + marvel + indonesia + anime + animeMovies
-        all.firstOrNull { it.slug.equals(key, ignoreCase = true) }?.let { return it }
+        val matches = all.filter { it.slug.equals(key, ignoreCase = true) }
+        if (matches.isNotEmpty()) {
+            // Film anime slug-nya sama dengan entri di anime.json. Yang berisi server yang dipakai.
+            return matches.firstOrNull { it.isHydrated() } ?: matches.first()
+        }
         // Feed anime-terbaru: hanya anime_slug — ambil entri penuh dari katalog anime
         anime.firstOrNull {
             it.slug.equals(key, ignoreCase = true) || it.anime_slug.equals(key, ignoreCase = true)

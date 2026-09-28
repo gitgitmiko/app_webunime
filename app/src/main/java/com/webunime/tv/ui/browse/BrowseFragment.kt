@@ -159,7 +159,7 @@ class BrowseFragment : BrowseSupportFragment() {
         val windowH = if (hero != null) {
             prepareHeroRow(hero, content, headerH, parentH, bgmInset)
         } else {
-            prepareCatalogRow(rowView, content, headerH, parentH, bgmInset, dm.density)
+            prepareCatalogRow(rowView, content, headerH, dm.density)
         }
         // Tengah di layar. Cadangan bawah hanya dipakai kalau kartu sampai menutup label musik.
         var top = ((parentH - windowH) / 2).coerceAtLeast(0)
@@ -175,8 +175,10 @@ class BrowseFragment : BrowseSupportFragment() {
             lp.bottomMargin = 0
             grid.layoutParams = lp
         }
-        grid.clipToPadding = true
-        grid.clipChildren = true
+        // Jangan gunting tepi bawah kartu / cincin fokus.
+        grid.setPadding(grid.paddingLeft, 0, grid.paddingRight, 0)
+        grid.clipToPadding = false
+        grid.clipChildren = false
         // Patokan ke seluruh baris (judul + kartu). Default Leanback menempel
         // ke row_content, jadi judul baris terdorong ke atas dan baris berikutnya nongol.
         grid.setItemAlignmentViewId(View.NO_ID)
@@ -223,27 +225,32 @@ class BrowseFragment : BrowseSupportFragment() {
         rowView: View,
         content: View?,
         headerH: Int,
-        parentH: Int,
-        bgmInset: Int,
         density: Float,
     ): Int {
         val metrics = CardPresenter.metricsPx(requireContext())
-        val focusPad = (metrics.cardH * 0.03f).toInt().coerceAtLeast((14f * density).toInt())
+        // Ruang di bawah kartu untuk judul yang sedang terpotong dan cincin fokus (scale 1.05).
+        val focusPad = (72f * density).toInt()
+        val header = headerH.coerceAtLeast((40f * density).toInt())
         if (content is HorizontalGridView) {
             content.clipChildren = false
             content.clipToPadding = false
             content.minimumHeight = metrics.cardH
             content.setRowHeight(metrics.cardH)
+            if (content.paddingBottom < focusPad) {
+                content.setPadding(
+                    content.paddingLeft,
+                    content.paddingTop,
+                    content.paddingRight,
+                    focusPad,
+                )
+            }
         }
         (content?.parent as? ViewGroup)?.clipChildren = false
         if (rowView is ViewGroup) {
             rowView.clipChildren = false
             rowView.clipToPadding = false
         }
-        if (rowView.paddingBottom < focusPad) {
-            rowView.setPadding(rowView.paddingLeft, rowView.paddingTop, rowView.paddingRight, focusPad)
-        }
-        return (headerH + metrics.cardH + focusPad).coerceAtMost((parentH - bgmInset).coerceAtLeast(1))
+        return header + metrics.cardH + focusPad
     }
 
     /** Leanback menghitung offset sendiri; paksa 0 supaya baris tidak turun. */
