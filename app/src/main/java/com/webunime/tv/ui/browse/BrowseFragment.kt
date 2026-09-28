@@ -123,15 +123,63 @@ class BrowseFragment : BrowseSupportFragment() {
             installTitleOrbFocusFix()
             configureRowsGridStability()
         }
+        view.postDelayed({ if (isAdded) configureRowsGridStability() }, 600)
     }
 
-    /** Baris kartu fokus di tengah layar secara vertikal. */
+    private var alignRetries: Int = 0
+
+    /**
+     * Jendela daftar setinggi satu baris, di tengah sisa layar di atas label musik.
+     */
     private fun configureRowsGridStability() {
-        val grid = rowsGrid() ?: return
-        grid.windowAlignment = VerticalGridView.WINDOW_ALIGN_NO_EDGE
-        grid.windowAlignmentOffsetPercent = 50f
-        grid.itemAlignmentOffsetPercent = 50f
+        val grid = rowsGrid()
+        if (grid == null) {
+            if (alignRetries++ < 15) {
+                view?.postDelayed({ if (isAdded) configureRowsGridStability() }, 300)
+            }
+            return
+        }
+        val rowH = grid.layoutManager
+            ?.findViewByPosition(grid.selectedPosition)
+            ?.height
+            ?.takeIf { it > 0 }
+        if (rowH == null) {
+            if (alignRetries++ < 15) {
+                grid.post { if (isAdded) configureRowsGridStability() }
+            }
+            return
+        }
+        alignRetries = 0
+        val dm = grid.resources.displayMetrics
+        val bgmInset = (56f * dm.density).toInt()
+        val parentH = (grid.parent as? View)?.height?.takeIf { it > 0 } ?: return
+        val top = ((parentH - rowH - bgmInset) / 2).coerceAtLeast(0)
+        val lp = grid.layoutParams
+        if (lp is ViewGroup.MarginLayoutParams &&
+            (lp.height != rowH || lp.topMargin != top || lp.bottomMargin != bgmInset)
+        ) {
+            lp.height = rowH
+            lp.topMargin = top
+            lp.bottomMargin = bgmInset
+            grid.layoutParams = lp
+        }
+        forceBrowseAlignFromTop(0)
+        rowsSupportFragment?.setAlignment(0)
         grid.isFocusDrawingOrderEnabled = true
+    }
+
+    /** Leanback menghitung offset sendiri; paksa 0 supaya baris tidak turun. */
+    private fun forceBrowseAlignFromTop(px: Int) {
+        var cls: Class<*>? = javaClass.superclass
+        while (cls != null) {
+            val field = cls.declaredFields.firstOrNull { it.name == "mContainerListAlignTop" }
+            if (field != null) {
+                field.isAccessible = true
+                field.setInt(this, px)
+                return
+            }
+            cls = cls.superclass
+        }
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -383,8 +431,11 @@ class BrowseFragment : BrowseSupportFragment() {
             view?.let { clearOpaqueBackgrounds(it) }
             restoreRetries = 0
             view?.post(restoreSelectionRunnable)
-            // Prefetch 2 baris film pertama supaya home tidak kosong; sisanya saat scroll.
             view?.post { maybeAppendDeferredRows(forcePrefetch = true) }
+            view?.post { configureRowsGridStability() }
+            setOnItemViewSelectedListener { _, _, _, _ ->
+                view?.post { configureRowsGridStability() }
+            }
         }
     }
 

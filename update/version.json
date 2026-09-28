@@ -1,6 +1,6 @@
 {
-  "versionCode": 287,
-  "versionName": "1.11.67",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.67/WEBUNIME-TV-v1.11.67.apk",
-  "changelog": "Baris kartu fokus di tengah vertikal. BGM diacak."
+  "versionCode": 288,
+  "versionName": "1.11.68",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.68/WEBUNIME-TV-v1.11.68.apk",
+  "changelog": "Satu baris kartu di tengah vertikal; baris lain tidak nongol dan tidak menutup label musik."
 }
