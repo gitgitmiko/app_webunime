@@ -153,19 +153,49 @@ class BrowseFragment : BrowseSupportFragment() {
         val dm = grid.resources.displayMetrics
         val bgmInset = (56f * dm.density).toInt()
         val parentH = (grid.parent as? View)?.height?.takeIf { it > 0 } ?: return
-        val top = ((parentH - rowH - bgmInset) / 2).coerceAtLeast(0)
+        val rowView = grid.layoutManager?.findViewByPosition(grid.selectedPosition)
+        val windowH = rowWindowHeight(rowView, rowH, dm.density)
+            .coerceAtMost((parentH - bgmInset).coerceAtLeast(1))
+        val top = ((parentH - windowH - bgmInset) / 2).coerceAtLeast(0)
         val lp = grid.layoutParams
         if (lp is ViewGroup.MarginLayoutParams &&
-            (lp.height != rowH || lp.topMargin != top || lp.bottomMargin != bgmInset)
+            (lp.height != windowH || lp.topMargin != top || lp.bottomMargin != bgmInset)
         ) {
-            lp.height = rowH
+            lp.height = windowH
             lp.topMargin = top
             lp.bottomMargin = bgmInset
             grid.layoutParams = lp
         }
+        grid.clipToPadding = true
+        grid.clipChildren = true
+        (grid.parent as? ViewGroup)?.clipChildren = true
+        // Patokan ke seluruh baris (judul + kartu). Default Leanback menempel
+        // ke row_content, jadi judul baris terdorong ke atas dan baris berikutnya nongol.
+        grid.setItemAlignmentViewId(View.NO_ID)
         forceBrowseAlignFromTop(0)
         rowsSupportFragment?.setAlignment(0)
         grid.isFocusDrawingOrderEnabled = true
+    }
+
+    /**
+     * Tinggi jendela mengikuti kartu utuh (poster + judul), bukan tinggi yang
+     * sudah terpotong oleh jendela sebelumnya.
+     */
+    private fun rowWindowHeight(rowView: View?, measuredH: Int, density: Float): Int {
+        val metrics = CardPresenter.metricsPx(requireContext())
+        val content = rowView?.findViewById<View>(androidx.leanback.R.id.row_content)
+        val contentH = content?.height ?: 0
+        if (rowView == null || content == null || contentH <= 0) {
+            return measuredH + (16f * density).toInt()
+        }
+        val rowLoc = IntArray(2)
+        val contentLoc = IntArray(2)
+        rowView.getLocationInWindow(rowLoc)
+        content.getLocationInWindow(contentLoc)
+        val headerH = (contentLoc[1] - rowLoc[1]).coerceAtLeast(0)
+        val cardBlock = metrics.cardH.coerceAtLeast(contentH)
+        val slack = (8f * density).toInt()
+        return (headerH + cardBlock + slack).coerceAtLeast(measuredH)
     }
 
     /** Leanback menghitung offset sendiri; paksa 0 supaya baris tidak turun. */
@@ -232,6 +262,7 @@ class BrowseFragment : BrowseSupportFragment() {
         }
 
         onItemViewSelectedListener = OnItemViewSelectedListener { _, item, rowViewHolder, row ->
+            view?.post { configureRowsGridStability() }
             updateHeroForSelection(item)
             if (selectedPosition >= 0) lastRowIndex = selectedPosition
             val listRow = row as? ListRow ?: return@OnItemViewSelectedListener
@@ -433,9 +464,6 @@ class BrowseFragment : BrowseSupportFragment() {
             view?.post(restoreSelectionRunnable)
             view?.post { maybeAppendDeferredRows(forcePrefetch = true) }
             view?.post { configureRowsGridStability() }
-            setOnItemViewSelectedListener { _, _, _, _ ->
-                view?.post { configureRowsGridStability() }
-            }
         }
     }
 

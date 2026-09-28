@@ -1,6 +1,6 @@
 {
-  "versionCode": 288,
-  "versionName": "1.11.68",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.68/WEBUNIME-TV-v1.11.68.apk",
-  "changelog": "Satu baris kartu di tengah vertikal; baris lain tidak nongol dan tidak menutup label musik."
+  "versionCode": 289,
+  "versionName": "1.11.69",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.69/WEBUNIME-TV-v1.11.69.apk",
+  "changelog": "Baris katalog lain kembali ada. Judul kartu tidak terpotong."
 }
