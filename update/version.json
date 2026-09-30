@@ -1,6 +1,6 @@
 {
-  "versionCode": 291,
-  "versionName": "1.11.71",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.71/WEBUNIME-TV-v1.11.71.apk",
-  "changelog": "Judul dan fokus kartu tidak terpotong di bawah. Detail Anime Movie menampilkan server."
+  "versionCode": 292,
+  "versionName": "1.11.72",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.72/WEBUNIME-TV-v1.11.72.apk",
+  "changelog": "Hydrax 1080p dan 720p lebih lancar: buffer diperbesar dan play tidak memotong isi buffer."
 }

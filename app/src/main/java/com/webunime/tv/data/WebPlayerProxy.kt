@@ -348,7 +348,7 @@ ${wrapperIframeBridgeJs()}
         if (!isManaged(url)) return null
         // Segmen media (1080p ~beberapa MB) jangan lewat OkHttp:
         // shouldInterceptRequest serial + tanpa Content-Length → buffer underrun / ngadat.
-        if (isHeavyMedia(url)) return null
+        if (isHeavyMedia(url, request)) return null
         // POST tak punya body di WebResourceRequest → biarkan WebView menangani
         if (!request.method.equals("GET", ignoreCase = true)) return null
         // /iframe3/ + /api.php harus Chromium murni (OkHttp sering 403 Cloudflare).
@@ -411,7 +411,7 @@ ${wrapperIframeBridgeJs()}
      * True untuk payload video/audio besar. Playlist (.m3u8) dan HTML/JS tetap di-intercept
      * supaya Referer/sanitasi Hydrax jalan.
      */
-    private fun isHeavyMedia(url: String): Boolean {
+    private fun isHeavyMedia(url: String, request: WebResourceRequest): Boolean {
         val u = url.lowercase()
         if (heavyMediaPath.containsMatchIn(u)) return true
         val isPlaylistOrPage = u.contains(".m3u8") ||
@@ -422,11 +422,19 @@ ${wrapperIframeBridgeJs()}
             u.contains(".vtt") ||
             u.contains(".srt")
         if (isPlaylistOrPage) return false
-        return u.contains("storage.googleapis.com") ||
+        if (u.contains("storage.googleapis.com") ||
             u.contains("tiktokcdn") ||
             u.contains("morphify") ||
             u.contains("abysscdn") ||
             u.contains("sptvp")
+        ) return true
+        // Segmen Hydrax tanpa ekstensi (short.icu / iamcdn). Range request yang
+        // lewat OkHttp bikin 720p dan 1080p underrun. Halaman utama tetap di-intercept.
+        if (request.isForMainFrame) return false
+        val accept = request.requestHeaders["Accept"].orEmpty().lowercase()
+        val hasRange = request.requestHeaders.keys.any { it.equals("Range", ignoreCase = true) }
+        if (hasRange) return true
+        return accept.startsWith("video/") || accept.startsWith("audio/")
     }
 
     private fun splitContentType(ct: String): Pair<String, String?> {
@@ -632,7 +640,15 @@ ${wrapperIframeBridgeJs()}
     }catch(e){}
   }
   window.__wuPlay=function(){
+    if(window.__wuHoldPlay) return;
     window.__wuUserPaused=false;
+    // Sedang mengisi buffer: panggilan play() berulang (kick autoplay) mengosongkan
+    // buffer dan bikin 720p/1080p macet. Biarkan JW selesai buffering.
+    try{
+      var jp0=__wuJw();
+      var st0=jp0&&typeof jp0.getState==="function"?jp0.getState():"";
+      if(st0==="playing"||st0==="buffering") return;
+    }catch(e){}
     __wuClickPlayUi();
     try{var jp=__wuJw(); if(jp){ try{jp.play(true);}catch(e){ try{jp.play();}catch(e2){} } }}catch(e){}
     try{ var jp2=typeof __wuJwAny==="function"?__wuJwAny():null; if(jp2&&jp2!==__wuJw()){ try{jp2.play(true);}catch(e){ try{jp2.play();}catch(e2){} } } }catch(e){}
@@ -770,30 +786,41 @@ ${wrapperIframeBridgeJs()}
       if(!jp||typeof jp.setCurrentQuality!=="function") return;
       idx=Number(idx);
       if(!isFinite(idx)||idx<0) return;
+      window.__wuHoldPlay=true;
+      try{ if(typeof jp.pause==="function") jp.pause(); }catch(e){}
       try{ jp.setCurrentQuality(idx); }catch(e){}
-      // 1080p butuh buffer dulu; kalau langsung play, JW underrun → ngadat.
+      // 1080/720 underrun kalau langsung play. Tunggu buffer dulu, lalu lanjut.
+      var need=8;
+      try{
+        var levels=typeof jp.getQualityLevels==="function"?jp.getQualityLevels():[];
+        var l=levels[idx]||{};
+        var h=Number(l.height)||0;
+        var label=String(l.label||"");
+        if(h>=1000||/1080|fhd/.test(label)) need=16;
+        else if(h>=700||/720/.test(label)) need=12;
+      }catch(e){}
       var n=0;
       var iv=setInterval(function(){
         n++;
         try{
           var v=__wuVideo();
-          if(!v){ if(n>24) clearInterval(iv); return; }
+          if(!v){ if(n>48){ window.__wuHoldPlay=false; clearInterval(iv); } return; }
           v.preload="auto";
-          var ready=v.readyState>=3;
           var ahead=0;
           try{
             if(v.buffered&&v.buffered.length){
               ahead=v.buffered.end(v.buffered.length-1)-(v.currentTime||0);
             }
           }catch(e){}
-          if((ready&&ahead>=3.5)||n>24){
+          if(ahead>=need||n>48){
             clearInterval(iv);
+            window.__wuHoldPlay=false;
             if(!window.__wuUserPaused){
               try{ jp.play(); }catch(e){}
               try{ v.play(); }catch(e){}
             }
           }
-        }catch(e){ clearInterval(iv); }
+        }catch(e){ window.__wuHoldPlay=false; clearInterval(iv); }
       }, 250);
     }catch(e){}
   };
@@ -900,8 +927,8 @@ ${wrapperIframeBridgeJs()}
       Object.defineProperty(window,"fuckAdBlock",{configurable:true,get:function(){return {onDetected:function(){},onNotDetected:function(cb){try{cb&&cb();}catch(e){}}};},set:function(){}});
       Object.defineProperty(window,"FuckAdBlock",{configurable:true,get:function(){return function(){};},set:function(){}});
     } catch(e){}
-    (function guardJwRemove(){ var tries=0; var iv=setInterval(function(){ tries++; try { if(typeof window.jwplayer==="function" && !window.jwplayer.__wuGuard){ var orig=window.jwplayer; function wrap(){ var p=orig.apply(this, arguments); try{ if(p&&typeof p.remove==="function") p.remove=function(){return p;}; }catch(e){} try{ if(p&&typeof p.setup==="function"&&!p.__wuSetupTuned){ p.__wuSetupTuned=true; var oldSetup=p.setup.bind(p); p.setup=function(cfg){ cfg=cfg||{}; try{ cfg.hlshtml=false; cfg.androidhls=true; cfg.hlsjsConfig=Object.assign({maxBufferLength:40,maxMaxBufferLength:80,maxBufferSize:80*1000*1000,maxBufferHole:0.8,nudgeMaxRetry:8,startFragPrefetch:true}, cfg.hlsjsConfig||{}); }catch(e){} return oldSetup(cfg); }; } }catch(e){} return p; } wrap.__wuGuard=true; try{ Object.keys(orig).forEach(function(k){ try{ wrap[k]=orig[k]; }catch(e){} }); }catch(e){} window.jwplayer=wrap; clearInterval(iv); } } catch(e){} if(tries>40) clearInterval(iv); }, 50); })();
-    var tries=0; var iv=setInterval(function(){ tries++; try { if(window.abyssConfig) window.abyssConfig.popups=[]; var overlay=document.getElementById("overlay"); if(overlay && tries===6 && !window.__wuUserPaused){ try{overlay.click();}catch(e){} } if(!window.__wuUserPaused){ try{ window.__wuPlay(); }catch(e){} } if(__wuIsPlaying()){ clearInterval(iv); return; } if(!overlay && typeof window.jwplayer==="function"){ if(!window.__wuUserPaused){ try{window.jwplayer().play();}catch(e){} } if(tries>12) clearInterval(iv); } } catch(e){} if(tries>40) clearInterval(iv); }, 250);
+    (function guardJwRemove(){ var tries=0; var iv=setInterval(function(){ tries++; try { if(typeof window.jwplayer==="function" && !window.jwplayer.__wuGuard){ var orig=window.jwplayer; function wrap(){ var p=orig.apply(this, arguments); try{ if(p&&typeof p.remove==="function") p.remove=function(){return p;}; }catch(e){} try{ if(p&&typeof p.setup==="function"&&!p.__wuSetupTuned){ p.__wuSetupTuned=true; var oldSetup=p.setup.bind(p); p.setup=function(cfg){ cfg=cfg||{}; try{ var mse=false; try{ mse=typeof window.MediaSource==="function"; }catch(e){} cfg.bufferLength=24; cfg.preload="auto"; if(mse){ cfg.hlshtml=true; cfg.androidhls=false; cfg.hlsjsConfig=Object.assign({maxBufferLength:45,maxMaxBufferLength:90,backBufferLength:20,maxBufferSize:60*1000*1000,maxBufferHole:0.5,nudgeMaxRetry:12,startFragPrefetch:true,maxLoadingDelay:4}, cfg.hlsjsConfig||{}); } else { cfg.hlshtml=false; cfg.androidhls=true; } }catch(e){} return oldSetup(cfg); }; } }catch(e){} return p; } wrap.__wuGuard=true; try{ Object.keys(orig).forEach(function(k){ try{ wrap[k]=orig[k]; }catch(e){} }); }catch(e){} window.jwplayer=wrap; clearInterval(iv); } } catch(e){} if(tries>40) clearInterval(iv); }, 50); })();
+    var tries=0; var iv=setInterval(function(){ tries++; try { if(window.abyssConfig) window.abyssConfig.popups=[]; var overlay=document.getElementById("overlay"); if(overlay && tries===6 && !window.__wuUserPaused){ try{overlay.click();}catch(e){} } var st=""; try{ if(typeof window.jwplayer==="function") st=window.jwplayer().getState()||""; }catch(e){} var filling=st==="playing"||st==="buffering"; if(!filling && !window.__wuUserPaused && tries%4===1){ try{ window.__wuPlay(); }catch(e){} } if(st==="playing"||__wuIsPlaying()){ clearInterval(iv); return; } if(st==="buffering"&&tries>6){ clearInterval(iv); return; } } catch(e){} if(tries>40) clearInterval(iv); }, 250);
   }
 
   if (IS_CAST) {
