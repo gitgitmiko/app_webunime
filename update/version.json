@@ -1,6 +1,6 @@
 {
-  "versionCode": 293,
-  "versionName": "1.11.73",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.73/WEBUNIME-TV-v1.11.73.apk",
-  "changelog": "Baris Film Gdrives di atas Film Terbaru, berisi film dari folder Google Drive."
+  "versionCode": 294,
+  "versionName": "1.11.74",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.74/WEBUNIME-TV-v1.11.74.apk",
+  "changelog": "Pemutar ExoPlayer bisa ganti subtitle: tekan Bawah, pilih trek atau Mati."
 }

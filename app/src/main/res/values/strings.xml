@@ -39,6 +39,13 @@
     <string name="hero_badge_new">NEW</string>
     <string name="resume_play">▶  Lanjutkan</string>
     <string name="failover_server">Server bermasalah · coba %1$s</string>
+    <string name="subtitle_title">Pilih subtitle</string>
+    <string name="subtitle_off">Mati</string>
+    <string name="subtitle_none">Tidak ada subtitle di file ini</string>
+    <string name="subtitle_hint">Tekan Bawah untuk ganti subtitle</string>
+    <string name="subtitle_selected">Subtitle: %1$s</string>
+    <string name="subtitle_track">Trek %1$d</string>
+    <string name="subtitle_forced">paksa</string>
     <string name="episodes">Episode</string>
     <string name="episode_jump_continue">Lanjutkan</string>
     <string name="episode_jump_latest">Terbaru</string>

@@ -22,9 +22,13 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.common.Tracks
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -42,6 +46,7 @@ import com.webunime.tv.data.WatchSessionStore
 import com.webunime.tv.data.WebPlayerProxy
 import com.webunime.tv.data.api.ApiConfig
 import kotlinx.coroutines.launch
+import java.util.Locale
 import org.json.JSONObject
 
 class PlayerActivity : AppCompatActivity() {
@@ -106,6 +111,8 @@ class PlayerActivity : AppCompatActivity() {
 
     private var lastQualityDialogAt = 0L
     private var qualityDialog: AlertDialog? = null
+    private var subtitleDialog: AlertDialog? = null
+    private var subtitleHintShown = false
 
     private val hideHandler = Handler(Looper.getMainLooper())
     private val hideTitleRunnable = Runnable { titleBar.visibility = View.GONE }
@@ -696,6 +703,11 @@ class PlayerActivity : AppCompatActivity() {
             .setLoadControl(loadControl)
             .build()
             .also { exoPlayer = it }
+        player.trackSelectionParameters = player.trackSelectionParameters
+            .buildUpon()
+            .setPreferredTextLanguages("id", "ind", "en", "eng")
+            .build()
+        subtitleHintShown = false
 
         // Jangan setWakeMode: butuh WAKE_LOCK (belum di manifest) → SecurityException
         // force-close. FLAG_KEEP_SCREEN_ON di Activity sudah cukup.
@@ -734,6 +746,7 @@ class PlayerActivity : AppCompatActivity() {
                         }
                     }
                     Player.STATE_READY -> {
+                        maybeHintSubtitles()
                         if (!p.playWhenReady) {
                             updateExoBufferHud(server)
                             return
@@ -1437,6 +1450,12 @@ class PlayerActivity : AppCompatActivity() {
             }
             return true
         }
+        if (playerView.visibility == View.VISIBLE && isSubtitleKey(event.keyCode)) {
+            if (SystemClock.uptimeMillis() < ignoreRemoteUntil) return true
+            if (subtitleDialog?.isShowing == true || qualityDialog?.isShowing == true) return true
+            if (event.action == KeyEvent.ACTION_UP) showSubtitleDialog()
+            return true
+        }
         if (webView.visibility == View.VISIBLE &&
             event.action == KeyEvent.ACTION_UP &&
             isQualityKey(event.keyCode) &&
@@ -1448,7 +1467,8 @@ class PlayerActivity : AppCompatActivity() {
         // Seek seragam: semua server WebView (Hydrax/Turbo/Cast/anime embed) + ExoPlayer.
         if ((webView.visibility == View.VISIBLE || playerView.visibility == View.VISIBLE) &&
             isSeekKey(event.keyCode) &&
-            qualityDialog?.isShowing != true
+            qualityDialog?.isShowing != true &&
+            subtitleDialog?.isShowing != true
         ) {
             if (SystemClock.uptimeMillis() < ignoreRemoteUntil) return true
             return handleSeekKey(event)
@@ -1519,6 +1539,10 @@ class PlayerActivity : AppCompatActivity() {
             keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER ||
             keyCode == KeyEvent.KEYCODE_BUTTON_A ||
             keyCode == KeyEvent.KEYCODE_BUTTON_SELECT
+
+    private fun isSubtitleKey(keyCode: Int): Boolean =
+        keyCode == KeyEvent.KEYCODE_DPAD_DOWN ||
+            keyCode == KeyEvent.KEYCODE_CAPTIONS
 
     private fun isQualityKey(keyCode: Int): Boolean =
         keyCode == KeyEvent.KEYCODE_DPAD_UP ||
@@ -1927,6 +1951,136 @@ class PlayerActivity : AppCompatActivity() {
         webView.evaluateJavascript(js, null)
     }
 
+    private data class SubtitleChoice(
+        val label: String,
+        val group: Tracks.Group?,
+        val trackIndex: Int,
+    )
+
+    private fun textTracks(player: Player): List<Tracks.Group> =
+        player.currentTracks.groups.filter { group ->
+            group.type == C.TRACK_TYPE_TEXT &&
+                (0 until group.length).any { group.isTrackSupported(it) }
+        }
+
+    private fun maybeHintSubtitles() {
+        if (subtitleHintShown) return
+        val player = exoPlayer ?: return
+        if (playerView.visibility != View.VISIBLE) return
+        if (textTracks(player).isEmpty()) return
+        subtitleHintShown = true
+        Toast.makeText(this, R.string.subtitle_hint, Toast.LENGTH_LONG).show()
+    }
+
+    private fun showSubtitleDialog() {
+        val player = exoPlayer
+        if (player == null || playerView.visibility != View.VISIBLE) return
+        if (subtitleDialog?.isShowing == true) return
+        val groups = textTracks(player)
+        if (groups.isEmpty()) {
+            Toast.makeText(this, R.string.subtitle_none, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val textOff = player.trackSelectionParameters.disabledTrackTypes.contains(C.TRACK_TYPE_TEXT)
+        val choices = mutableListOf(SubtitleChoice(getString(R.string.subtitle_off), null, -1))
+        val seen = mutableMapOf<String, Int>()
+        for (group in groups) {
+            for (i in 0 until group.length) {
+                if (!group.isTrackSupported(i)) continue
+                val raw = subtitleTrackLabel(group.getTrackFormat(i), choices.size)
+                val n = (seen[raw] ?: 0) + 1
+                seen[raw] = n
+                val label = if (n == 1) raw else "$raw $n"
+                choices.add(SubtitleChoice(label, group, i))
+            }
+        }
+        val labels = choices.mapIndexed { index, choice ->
+            val active = if (index == 0) {
+                textOff || groups.none { g ->
+                    (0 until g.length).any { g.isTrackSelected(it) }
+                }
+            } else {
+                !textOff && choice.group?.isTrackSelected(choice.trackIndex) == true
+            }
+            if (active) "● ${choice.label}" else choice.label
+        }.toTypedArray()
+        subtitleDialog?.dismiss()
+        subtitleDialog = AlertDialog.Builder(this)
+            .setTitle(R.string.subtitle_title)
+            .setItems(labels) { _, which ->
+                applySubtitle(choices[which])
+                Toast.makeText(
+                    this,
+                    getString(R.string.subtitle_selected, choices[which].label),
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .setOnDismissListener { subtitleDialog = null }
+            .show()
+    }
+
+    private fun applySubtitle(choice: SubtitleChoice) {
+        val player = exoPlayer ?: return
+        val builder = player.trackSelectionParameters
+            .buildUpon()
+            .clearOverridesOfType(C.TRACK_TYPE_TEXT)
+        if (choice.group == null) {
+            builder.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+        } else {
+            builder
+                .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                .setOverrideForType(
+                    TrackSelectionOverride(choice.group.mediaTrackGroup, choice.trackIndex),
+                )
+        }
+        player.trackSelectionParameters = builder.build()
+    }
+
+    private fun subtitleTrackLabel(format: Format, fallbackIndex: Int): String {
+        val name = format.label?.trim().orEmpty()
+        val lang = subtitleLanguageName(format.language)
+        val base = when {
+            lang != null && name.isNotBlank() && !name.contains(lang, ignoreCase = true) ->
+                "$lang · $name"
+            name.isNotBlank() -> name
+            lang != null -> lang
+            else -> getString(R.string.subtitle_track, fallbackIndex)
+        }
+        return if (format.selectionFlags and C.SELECTION_FLAG_FORCED != 0) {
+            "$base · ${getString(R.string.subtitle_forced)}"
+        } else {
+            base
+        }
+    }
+
+    private fun subtitleLanguageName(code: String?): String? {
+        val raw = code?.trim()?.lowercase(Locale.US).orEmpty()
+        if (raw.isBlank() || raw == "und" || raw == "undetermined") return null
+        val c = raw.substringBefore('-').substringBefore('_')
+        return when (c) {
+            "id", "ind", "in" -> "Indonesia"
+            "en", "eng" -> "Inggris"
+            "ja", "jpn" -> "Jepang"
+            "ko", "kor" -> "Korea"
+            "zh", "chi", "zho", "cmn" -> "Tionghoa"
+            "ms", "may", "msa" -> "Melayu"
+            "th", "tha" -> "Thailand"
+            "vi", "vie" -> "Vietnam"
+            "ar", "ara" -> "Arab"
+            "es", "spa" -> "Spanyol"
+            "fr", "fra", "fre" -> "Prancis"
+            "de", "deu", "ger" -> "Jerman"
+            "pt", "por" -> "Portugis"
+            "ru", "rus" -> "Rusia"
+            else -> {
+                val display = Locale.forLanguageTag(c).displayLanguage
+                display.replaceFirstChar { it.titlecase(Locale("id")) }
+                    .takeIf { it.isNotBlank() && !it.equals(c, ignoreCase = true) }
+            }
+        }
+    }
+
     override fun onPause() {
         persistProgress()
         persistWebClock()
@@ -1955,6 +2109,8 @@ class PlayerActivity : AppCompatActivity() {
         hideHandler.removeCallbacks(exoBufferHudRunnable)
         qualityDialog?.dismiss()
         qualityDialog = null
+        subtitleDialog?.dismiss()
+        subtitleDialog = null
         if (this::webView.isInitialized) {
             webView.loadUrl("about:blank")
             webView.destroy()
