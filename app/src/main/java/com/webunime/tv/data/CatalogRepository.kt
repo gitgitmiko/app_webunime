@@ -219,6 +219,17 @@ class CatalogRepository(
         genre: String = "",
         sort: String = "",
     ): CatalogPage {
+        if (collection.equals(GDriveCatalog.COLLECTION, ignoreCase = true)) {
+            val all = GDriveCatalog.listFilms().map { remember(it, GDriveCatalog.COLLECTION) }
+            val pageNum = page.coerceAtLeast(1)
+            return CatalogPage(
+                collection = GDriveCatalog.COLLECTION,
+                page = pageNum,
+                limit = all.size.coerceAtLeast(1),
+                total = all.size,
+                items = if (pageNum == 1) all else emptyList(),
+            )
+        }
         val section = sectionFor(collection) ?: return CatalogPage(collection = collection)
         // Feed episode butuh katalog induk agar poster parent tersedia sebelum bind kartu.
         when (section) {
@@ -325,6 +336,13 @@ class CatalogRepository(
     ): CatalogItem? {
         if (slug.isBlank()) return null
         val key = slug.trim()
+        if (collectionHint.equals(GDriveCatalog.COLLECTION, ignoreCase = true) ||
+            key.startsWith("gdrive-", ignoreCase = true)
+        ) {
+            return GDriveCatalog.listFilms()
+                .firstOrNull { it.slug.equals(key, ignoreCase = true) }
+                ?.let { remember(it, GDriveCatalog.COLLECTION) }
+        }
         val hint = collectionHint?.takeIf { it.isNotBlank() }
         val floorHint = minEpisodesHint.coerceAtLeast(0)
         if (hint != null) {

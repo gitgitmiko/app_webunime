@@ -150,6 +150,11 @@ object PlayerRouter {
         ) {
             return false
         }
+        if (u.contains("drive.usercontent.google.com/download") ||
+            u.contains("drive.google.com/uc?")
+        ) {
+            return true
+        }
         return u.contains(".mp4") || u.contains(".m3u8") || u.contains(".webm") ||
             u.contains("wibufile.com/video") ||
             u.contains("pixeldrain.com/api/file/") ||
@@ -169,6 +174,7 @@ object PlayerRouter {
         val host = runCatching { java.net.URI(url).host?.lowercase() }.getOrNull() ?: return null
         return when {
             host.contains("r2.cloudflarestorage") -> null
+            host.contains("drive.usercontent.google.com") || host == "drive.google.com" -> null
             host.contains("pixeldrain") -> "https://pixeldrain.com/"
             host.contains("wibufile") -> "https://api.wibufile.com/"
             host.contains("filedon") -> "https://filedon.co/"

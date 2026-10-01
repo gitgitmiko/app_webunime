@@ -139,6 +139,7 @@ data class CatalogItem(
 
     fun detailCollection(): String {
         val cat = catalog?.trim()?.lowercase().orEmpty()
+        if (cat == "gdrive") return "gdrive"
         if (cat == "anime-latest" || !anime_slug.isNullOrBlank() || type == "anime") return "anime"
         if (cat == "series-latest" || !series_slug.isNullOrBlank() || type == "series") return "series"
         if (type == "anime-movie" || cat == "anime-movies") return "anime-movies"

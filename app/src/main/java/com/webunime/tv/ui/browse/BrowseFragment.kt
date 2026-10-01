@@ -26,6 +26,7 @@ import androidx.lifecycle.lifecycleScope
 import com.webunime.tv.R
 import com.webunime.tv.WebunimeApp
 import com.webunime.tv.data.CatalogItem
+import com.webunime.tv.data.GDriveCatalog
 import com.webunime.tv.data.api.CatalogPage
 import com.webunime.tv.ui.search.SearchActivity
 import com.webunime.tv.ui.settings.SettingsActivity
@@ -495,8 +496,9 @@ class BrowseFragment : BrowseSupportFragment() {
         addLocalCardRow(getString(R.string.row_continue), buildContinueItems(), isContinue = true)
         addLocalCardRow(getString(R.string.row_favorites), buildFavoriteItems(), isFavorites = true)
 
-        // Urutan katalog: film → top film → horror → top horror → series → anime.
+        // Urutan katalog: Film Gdrives dulu, lalu film → top film → horror → series → anime.
         deferredRowSpecs = listOf(
+            DeferredRowSpec(getString(R.string.row_gdrive), GDriveCatalog.COLLECTION),
             DeferredRowSpec(getString(R.string.row_movies), "movies"),
             DeferredRowSpec(getString(R.string.row_movies_top), "movies", sort = "top_random"),
             DeferredRowSpec(getString(R.string.row_horror), "horror"),
@@ -1011,8 +1013,8 @@ class BrowseFragment : BrowseSupportFragment() {
         private const val PREFETCH_THRESHOLD = 3
         /** Fokus dalam N baris dari bawah → muat baris deferred berikutnya. */
         private const val DEFERRED_FOCUS_THRESHOLD = 2
-        /** Prefetch awal setelah hero (Film + Top Film). */
-        private const val INITIAL_DEFERRED_PREFETCH = 2
+        /** Prefetch awal: Film Gdrives + Film Terbaru + Top Film. */
+        private const val INITIAL_DEFERRED_PREFETCH = 3
         private const val CONTINUE_ROW_LIMIT = 10
         const val TYPE_CONTINUE = "continue"
         const val TYPE_FAVORITE = "favorite"
