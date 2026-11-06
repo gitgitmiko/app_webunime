@@ -61,19 +61,22 @@ class MainActivity : FragmentActivity() {
 
             loading.visibility = View.VISIBLE
             app.bgm.setBrowseReady(false)
-            val needRemote = repo.needsGithubRefreshToday()
-            if (needRemote) {
-                loadingText.setText(R.string.updating)
-                runCatching { repo.refreshFromGithubOnce() }
-            } else {
-                loadingText.setText(R.string.loading_catalog)
-            }
+            loadingText.setText(R.string.loading_catalog)
+            // API server: hero saja, baris dimuat per halaman. Gagal → JSON GitHub/assets.
+            val apiOk = runCatching { repo.loadHomeFromApi() }.getOrDefault(false)
+            if (!apiOk) {
+                val needRemote = repo.needsGithubRefreshToday()
+                if (needRemote) {
+                    loadingText.setText(R.string.updating)
+                    runCatching { repo.refreshFromGithubOnce() }
+                }
 
-            if (!repo.isSnapshotReady()) {
-                if (needRemote) loadingText.setText(R.string.loading_local_fallback)
-                runCatching { repo.loadStartupShell() }
-            } else if (repo.heroItems.isEmpty()) {
-                runCatching { repo.loadStartupShell() }
+                if (!repo.isSnapshotReady()) {
+                    if (needRemote) loadingText.setText(R.string.loading_local_fallback)
+                    runCatching { repo.loadStartupShell() }
+                } else if (repo.heroItems.isEmpty()) {
+                    runCatching { repo.loadStartupShell() }
+                }
             }
 
             runCatching { library.refresh() }
@@ -85,9 +88,11 @@ class MainActivity : FragmentActivity() {
                 app.bgm.setBrowseReady(true)
             }
 
-            // Prefetch anime.json/series.json di latar — tidak blokir home.
-            launch(Dispatchers.IO) {
-                runCatching { repo.prefetchHeavyCatalogInBackground() }
+            // Mode cadangan JSON: prefetch anime.json/series.json di latar — tidak blokir home.
+            if (!apiOk) {
+                launch(Dispatchers.IO) {
+                    runCatching { repo.prefetchHeavyCatalogInBackground() }
+                }
             }
 
             val info = updateDeferred.await()

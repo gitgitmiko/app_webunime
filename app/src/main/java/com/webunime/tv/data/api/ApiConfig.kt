@@ -1,7 +1,11 @@
 package com.webunime.tv.data.api
 
-/** Helper koleksi katalog (bukan endpoint akun). */
+/** Server WEBUNIME + helper koleksi katalog. */
 object ApiConfig {
+    const val BASE_URL = "https://gitgitmiko.my.id"
+    const val API_PREFIX = "/api/v1"
+    const val USER_AGENT = "WEBUNIME-TV"
+
     fun normalizeItemCollection(raw: String?): String {
         val c = raw?.trim()?.lowercase().orEmpty()
         return when {

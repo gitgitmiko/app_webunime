@@ -4,9 +4,12 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
+import android.os.SystemClock
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.webunime.tv.data.api.ApiConfig
+import com.webunime.tv.data.api.CatalogApi
 import com.webunime.tv.data.api.CatalogPage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -23,9 +26,11 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Katalog dari JSON publik repo WEBUNIME (GitHub raw / jsDelivr),
- * dengan baseline di assets APK + cache lokal `filesDir/catalog`.
+ * Katalog utama dari REST API WEBUNIME ([CatalogApi], MySQL server):
+ * browse per halaman, detail per judul, search & hero langsung dari server.
  *
+ * Cadangan bila API tidak terjangkau: JSON publik repo WEBUNIME (GitHub raw /
+ * jsDelivr) dengan baseline di assets APK + cache lokal `filesDir/catalog`.
  * Browse: film/dll file ringan di cold start; anime.json / series.json
  * di-parse shell (tanpa episodes) saat remote scroll ke baris tersebut.
  * Detail: hydrate satu judul penuh dari file berat (episodes + players).
@@ -37,6 +42,16 @@ class CatalogRepository(
     private val moshi: Moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
         .build()
+
+    private val api = CatalogApi(moshi)
+
+    /** Waktu (elapsedRealtime) detail judul terakhir diambil dari API, per kunci cache. */
+    private val apiItemFetchedAt = ConcurrentHashMap<String, Long>()
+
+    /** True setelah panggilan API terakhir sukses; false → jalur JSON cadangan. */
+    @Volatile
+    var apiOnline: Boolean = false
+        private set
 
     private val listType = Types.newParameterizedType(List::class.java, CatalogItem::class.java)
     private val listAdapter = moshi.adapter<List<CatalogItem>>(listType)
@@ -108,6 +123,30 @@ class CatalogRepository(
     fun needsGithubRefreshToday(): Boolean {
         if (!hasDownloadedCache()) return true
         return prefs.getString(KEY_LAST_SYNC_DAY, null) != todayKey()
+    }
+
+    /**
+     * Cold start via API: cukup ambil hero; baris browse dimuat per halaman saat tampil.
+     * @return false bila server tidak terjangkau → pemanggil pakai jalur JSON.
+     */
+    suspend fun loadHomeFromApi(): Boolean {
+        val items = apiCall { api.hero(HERO_LIMIT) } ?: return false
+        heroItems = items.map { item ->
+            remember(normalizeCatalogUrls(item), item.catalog ?: item.detailCollection())
+        }
+        homeLoaded = true
+        return true
+    }
+
+    /**
+     * Jalankan panggilan API di IO; null bila gagal (jaringan / HTTP 5xx).
+     * Status [apiOnline] mengikuti hasil panggilan terakhir.
+     */
+    private suspend fun <T> apiCall(block: () -> T): T? = withContext(Dispatchers.IO) {
+        runCatching(block)
+            .onSuccess { apiOnline = true }
+            .onFailure { apiOnline = false }
+            .getOrNull()
     }
 
     /**
@@ -209,7 +248,7 @@ class CatalogRepository(
         ensureSections(CatalogSection.ALL)
 
     /**
-     * Halaman koleksi dari JSON lokal (kompatibel dengan browse API-style).
+     * Halaman koleksi dari API; cadangan JSON lokal bila server tidak terjangkau.
      */
     suspend fun listCollectionPage(
         collection: String,
@@ -231,6 +270,21 @@ class CatalogRepository(
             )
         }
         val section = sectionFor(collection) ?: return CatalogPage(collection = collection)
+        val fromApi = apiCall {
+            api.listCollection(
+                collection = section.apiName,
+                page = page.coerceAtLeast(1),
+                limit = limit.coerceIn(1, 80),
+                q = q.trim(),
+                genre = genre,
+                sort = sort.trim(),
+            )
+        }
+        if (fromApi != null) {
+            return fromApi.copy(
+                items = fromApi.items.map { remember(normalizeCatalogUrls(it), section.apiName) },
+            )
+        }
         // Feed episode butuh katalog induk agar poster parent tersedia sebelum bind kartu.
         when (section) {
             CatalogSection.ANIME_LATEST -> ensureSection(CatalogSection.ANIME)
@@ -292,12 +346,25 @@ class CatalogRepository(
     }
 
     suspend fun fetchHero(limit: Int = HERO_LIMIT): List<CatalogItem> {
+        apiCall { api.hero(limit.coerceIn(1, HERO_LIMIT)) }?.let { items ->
+            heroItems = items.map {
+                remember(normalizeCatalogUrls(it), it.catalog ?: it.detailCollection())
+            }
+            return heroItems
+        }
         ensureSections(CatalogSection.STARTUP)
         rebuildHero(limit)
         return heroItems
     }
 
     suspend fun search(query: String, limit: Int = 40): List<CatalogItem> {
+        val q = query.trim()
+        if (q.isEmpty()) return emptyList()
+        apiCall { api.search(q, limit.coerceIn(1, 80)) }?.let { items ->
+            return items.map {
+                remember(normalizeCatalogUrls(it), it.catalog ?: it.detailCollection())
+            }
+        }
         ensureAllSections()
         return snapshot.search(query, limit).map {
             remember(it, it.catalog ?: it.detailCollection())
@@ -308,6 +375,11 @@ class CatalogRepository(
         val col = collection.trim()
         val s = slug.trim()
         if (col.isBlank() || s.isBlank()) return null
+        when (val r = itemFromApi(s, col)) {
+            is ApiLookup.Found -> return r.item
+            ApiLookup.NotFound -> return cachedItem(col, s)
+            ApiLookup.Offline -> Unit
+        }
         val cached = itemCache["$col:${s.lowercase()}"]
         sectionFor(col)?.let { ensureSection(it) }
         val found = snapshot.findBySlug(s)?.let { remember(it, col) }
@@ -342,6 +414,11 @@ class CatalogRepository(
             return GDriveCatalog.listFilms()
                 .firstOrNull { it.slug.equals(key, ignoreCase = true) }
                 ?.let { remember(it, GDriveCatalog.COLLECTION) }
+        }
+        when (val r = itemFromApi(key, collectionHint)) {
+            is ApiLookup.Found -> return r.item
+            ApiLookup.NotFound -> return cachedItem(collectionHint ?: "movies", key)
+            ApiLookup.Offline -> Unit
         }
         val hint = collectionHint?.takeIf { it.isNotBlank() }
         val floorHint = minEpisodesHint.coerceAtLeast(0)
@@ -408,6 +485,55 @@ class CatalogRepository(
             hint ?: "anime",
             floorHint,
         )
+    }
+
+    private sealed class ApiLookup {
+        data class Found(val item: CatalogItem) : ApiLookup()
+        object NotFound : ApiLookup()
+        object Offline : ApiLookup()
+    }
+
+    /** Koleksi yang dicoba untuk detail: hint dulu, lalu urutan umum. */
+    private fun apiCollectionsFor(hint: String?): List<String> {
+        val primary = when (val h = hint?.trim()?.lowercase().orEmpty()) {
+            "anime-latest" -> "anime"
+            "series-latest" -> "series"
+            "anime-movie" -> "anime-movies"
+            else -> h.takeIf { it in ApiConfig.ITEM_COLLECTIONS }
+        }
+        return (listOfNotNull(primary) + DETAIL_LOOKUP_ORDER).distinct()
+    }
+
+    /**
+     * Detail lengkap (episodes + players) dari API. Hasil di-cache [API_ITEM_TTL_MS]
+     * supaya pindah episode / buka player tidak unduh ulang.
+     */
+    private suspend fun itemFromApi(slug: String, collectionHint: String?): ApiLookup {
+        val key = slug.trim().lowercase()
+        if (key.isBlank()) return ApiLookup.NotFound
+        val collections = apiCollectionsFor(collectionHint)
+        val now = SystemClock.elapsedRealtime()
+        for (col in collections) {
+            val at = apiItemFetchedAt["$col:$key"] ?: continue
+            val cached = itemCache["$col:$key"] ?: continue
+            if (now - at < API_ITEM_TTL_MS) return ApiLookup.Found(cached)
+        }
+        for (col in collections) {
+            val result = withContext(Dispatchers.IO) { runCatching { api.item(col, key) } }
+            val item = result.getOrElse {
+                apiOnline = false
+                return ApiLookup.Offline
+            }
+            apiOnline = true
+            if (item == null) continue
+            val normalized = normalizeCatalogUrls(item).let { it.copy(catalog = it.catalog ?: col) }
+            // Data API paling baru: timpa entri lama walau skor hydrate-nya lebih tinggi.
+            itemCache["$col:$key"] = normalized
+            remember(normalized, col)
+            apiItemFetchedAt["$col:$key"] = SystemClock.elapsedRealtime()
+            return ApiLookup.Found(normalized)
+        }
+        return ApiLookup.NotFound
     }
 
     private suspend fun hydrateIfNeeded(
@@ -727,6 +853,13 @@ class CatalogRepository(
     }
 
     suspend fun forceRefreshFromGithub(): Int = refreshMutex.withLock {
+        // Mode API: data server selalu terbaru — cukup buang cache sesi & muat ulang hero.
+        itemCache.clear()
+        apiItemFetchedAt.clear()
+        if (loadHomeFromApi()) {
+            prefs.edit().putBoolean(KEY_RELOAD_BROWSE, true).apply()
+            return@withLock 1
+        }
         val ok = withContext(Dispatchers.IO) {
             // File ringan (movies, anime-latest, …) + file berat (anime.json / series.json).
             // Tanpa HEAVY_FILES, tombol Settings tidak pernah update episode/server anime.
@@ -791,8 +924,9 @@ class CatalogRepository(
         return snapshot.findBySlug(slug)
     }
 
-    /** Baca sync-status.json publik (tanpa token), dengan cache-bust. */
+    /** Status sync dari API; cadangan sync-status.json publik (tanpa token), dengan cache-bust. */
     suspend fun fetchSyncStatus(): CatalogSyncStatus? = withContext(Dispatchers.IO) {
+        apiCall { api.syncStatus() }?.let { return@withContext it }
         val bust = System.currentTimeMillis()
         val urls = listOf(
             "$GITHUB_RAW_BASE$SYNC_STATUS_FILE?t=$bust",
@@ -1210,6 +1344,19 @@ class CatalogRepository(
         private const val FEATURED_MIN_RATING = 7.0
         private const val TOP_RANDOM_MIN_RATING = 8.0
         private const val TOP_RANDOM_LIMIT = 10
+
+        /** Detail API dianggap segar selama ini (server sync tiap 30 menit). */
+        private const val API_ITEM_TTL_MS = 10 * 60_000L
+
+        private val DETAIL_LOOKUP_ORDER = listOf(
+            "movies",
+            "series",
+            "anime",
+            "anime-movies",
+            "indonesia",
+            "horror",
+            "marvel",
+        )
 
         private val CATALOG_FILES = listOf(
             "movies.json",

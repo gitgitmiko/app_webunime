@@ -122,7 +122,7 @@
     <string name="settings_scrape_failed">Gagal memulai scrape: %1$s</string>
     <string name="settings_catalog_checking">Memeriksa status data…</string>
     <string name="settings_catalog_processing">Data terbaru sedang diproses. Tunggu scrape selesai.</string>
-    <string name="settings_catalog_updating">Mengambil katalog dari GitHub…</string>
+    <string name="settings_catalog_updating">Mengambil katalog dari server…</string>
     <string name="settings_catalog_updated">Data katalog diperbarui. Kembali ke beranda.</string>
     <string name="settings_catalog_failed">Gagal mengunduh data katalog.</string>
     <string name="settings_catalog_status_unknown">Status scrape tidak terbaca; mencoba unduh data…</string>
