@@ -1,6 +1,6 @@
 {
-  "versionCode": 295,
-  "versionName": "1.11.75",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.75/WEBUNIME-TV-v1.11.75.apk",
-  "changelog": "Katalog langsung dari server WEBUNIME: beranda lebih cepat, tanpa unduh JSON besar. PENTING: kunci tanda tangan baru — jika update gagal, uninstall app lama lalu install APK ini."
+  "versionCode": 296,
+  "versionName": "1.11.76",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.76/WEBUNIME-TV-v1.11.76.apk",
+  "changelog": "Login akun opsional (Pengaturan > Akun): favorit & riwayat tersinkron dengan web. Baris Film Gdrives dihapus. APK lebih ringan. Dari versi lama (≤1.11.74): uninstall dulu lalu install APK ini."
 }
