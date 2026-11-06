@@ -258,17 +258,6 @@ class CatalogRepository(
         genre: String = "",
         sort: String = "",
     ): CatalogPage {
-        if (collection.equals(GDriveCatalog.COLLECTION, ignoreCase = true)) {
-            val all = GDriveCatalog.listFilms().map { remember(it, GDriveCatalog.COLLECTION) }
-            val pageNum = page.coerceAtLeast(1)
-            return CatalogPage(
-                collection = GDriveCatalog.COLLECTION,
-                page = pageNum,
-                limit = all.size.coerceAtLeast(1),
-                total = all.size,
-                items = if (pageNum == 1) all else emptyList(),
-            )
-        }
         val section = sectionFor(collection) ?: return CatalogPage(collection = collection)
         val fromApi = apiCall {
             api.listCollection(
@@ -408,13 +397,6 @@ class CatalogRepository(
     ): CatalogItem? {
         if (slug.isBlank()) return null
         val key = slug.trim()
-        if (collectionHint.equals(GDriveCatalog.COLLECTION, ignoreCase = true) ||
-            key.startsWith("gdrive-", ignoreCase = true)
-        ) {
-            return GDriveCatalog.listFilms()
-                .firstOrNull { it.slug.equals(key, ignoreCase = true) }
-                ?.let { remember(it, GDriveCatalog.COLLECTION) }
-        }
         when (val r = itemFromApi(key, collectionHint)) {
             is ApiLookup.Found -> return r.item
             ApiLookup.NotFound -> return cachedItem(collectionHint ?: "movies", key)

@@ -65,7 +65,7 @@ class LibraryRepository(
         if (!auth.isLoggedIn()) return@withContext
         // Riwayat yang masih antre dikirim dulu supaya tidak tertimpa data server lama.
         withTimeoutOrNull(2_500) { pendingHistory.values.toList().forEach { it.join() } }
-        // Entri device-only (Film Gdrives) tidak ada di server — pertahankan.
+        // Entri koleksi yang tidak dikenal server tetap disimpan di device.
         runCatching { parseItems(JSONObject(api.get("/api/v1/me/favorites"))) }
             .onSuccess { remote ->
                 favorites = remote + favorites.filterNot { isSyncable(it.collection, it.slug) }
@@ -304,11 +304,11 @@ class LibraryRepository(
         job.invokeOnCompletion { pendingHistory.remove(key, job) }
     }
 
-    /** Hanya koleksi API yang dikenal server; Film Gdrives tetap lokal. */
+    /** Hanya koleksi API yang dikenal server yang dikirim ke akun. */
     private fun isSyncable(collection: String, slug: String): Boolean =
         auth.isLoggedIn() &&
             collection.trim().lowercase() in ApiConfig.ITEM_COLLECTIONS &&
-            !slug.startsWith("gdrive-", ignoreCase = true)
+            slug.isNotBlank()
 
     private fun remote(label: String, block: () -> Unit) {
         scope.launch {
