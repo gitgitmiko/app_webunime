@@ -5,6 +5,7 @@ import com.webunime.tv.data.AuthRepository
 import com.webunime.tv.data.BgmController
 import com.webunime.tv.data.CatalogRepository
 import com.webunime.tv.data.LibraryRepository
+import com.webunime.tv.data.WatchPartyRepository
 import com.webunime.tv.data.WatchSessionStore
 import com.webunime.tv.data.api.ApiClient
 import com.webunime.tv.data.api.PrefsCookieJar
@@ -24,6 +25,8 @@ class WebunimeApp : Application() {
         private set
     lateinit var bgm: BgmController
         private set
+    lateinit var watchParty: WatchPartyRepository
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -32,6 +35,7 @@ class WebunimeApp : Application() {
         apiClient = ApiClient(session, PrefsCookieJar(this))
         authRepository = AuthRepository(apiClient, session)
         libraryRepository = LibraryRepository(this, apiClient, authRepository)
+        watchParty = WatchPartyRepository(apiClient)
         catalogRepository = CatalogRepository(this)
         watchSessions = WatchSessionStore(this)
         bgm = BgmController(this).also { it.start() }

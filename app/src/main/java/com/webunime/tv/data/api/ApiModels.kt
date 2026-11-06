@@ -86,3 +86,42 @@ data class WatchedEpisode(
             LibraryEntry.parseEpisodeNum(this.episodeNum, this.episodeSlug) == n
     }
 }
+
+/** Media ruang nonton bareng (server tervalidasi dari katalog). */
+data class RoomMedia(
+    val collection: String,
+    val slug: String,
+    val episodeSlug: String? = null,
+    val serverUrl: String,
+    val title: String? = null,
+    val episodeLabel: String? = null,
+)
+
+/** Posisi host saat [receivedAt] (elapsedRealtime); maju sendiri bila sedang main. */
+data class RoomPlayback(
+    val playing: Boolean = false,
+    val time: Double = 0.0,
+    val receivedAt: Long = android.os.SystemClock.elapsedRealtime(),
+) {
+    fun positionNow(): Double =
+        if (playing) time + (android.os.SystemClock.elapsedRealtime() - receivedAt) / 1000.0 else time
+}
+
+data class WatchRoom(
+    val code: String,
+    val hostId: Int,
+    val hostName: String? = null,
+    val hostOnline: Boolean = true,
+    val media: RoomMedia,
+    val playback: RoomPlayback = RoomPlayback(),
+    val viewers: List<String> = emptyList(),
+)
+
+/** Event SSE `/api/v1/rooms/:code/events`. */
+sealed class RoomEvent {
+    data class State(val room: WatchRoom) : RoomEvent()
+    data class Presence(val viewers: List<String>, val hostOnline: Boolean) : RoomEvent()
+    data class Playback(val playback: RoomPlayback) : RoomEvent()
+    data class Media(val media: RoomMedia, val playback: RoomPlayback) : RoomEvent()
+    data class Closed(val reason: String?) : RoomEvent()
+}

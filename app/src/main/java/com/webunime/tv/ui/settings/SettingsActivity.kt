@@ -19,7 +19,9 @@ import com.webunime.tv.data.AppUpdateChecker
 import com.webunime.tv.data.AppUpdateInfo
 import com.webunime.tv.data.PlaybackPrefs
 import com.webunime.tv.data.ScrapeTriggerClient
+import com.webunime.tv.data.api.ApiException
 import com.webunime.tv.ui.auth.LoginActivity
+import com.webunime.tv.ui.player.WatchPartyLauncher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -70,6 +72,7 @@ class SettingsActivity : AppCompatActivity() {
         accountBtn = findViewById(R.id.settingsAccount)
         accountStatusView = findViewById(R.id.settingsAccountStatus)
         accountBtn.setOnClickListener { onAccountClick() }
+        findViewById<MaterialButton>(R.id.settingsPartyJoin).setOnClickListener { pickPartyRoom() }
         bindAccount()
 
         val filmServersBtn = findViewById<MaterialButton>(R.id.settingsToggleFilmServers)
@@ -174,6 +177,50 @@ class SettingsActivity : AppCompatActivity() {
             .setNegativeButton(android.R.string.cancel, null)
             .setCancelable(true)
             .show()
+    }
+
+    /** Daftar ruang aktif (tanpa ketik kode pakai remote). */
+    private fun pickPartyRoom() {
+        if (!auth.isLoggedIn()) {
+            Toast.makeText(this, R.string.party_login_required, Toast.LENGTH_LONG).show()
+            startActivity(Intent(this, LoginActivity::class.java))
+            return
+        }
+        val app = application as WebunimeApp
+        Toast.makeText(this, R.string.settings_party_loading, Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            val result = runCatching { app.watchParty.listRooms() }
+            if (isFinishing) return@launch
+            val ownId = auth.currentUser()?.id
+            val rooms = result.getOrElse { err ->
+                val msg = (err as? ApiException)?.message ?: err.message ?: "jaringan"
+                Toast.makeText(this@SettingsActivity, getString(R.string.settings_party_failed, msg), Toast.LENGTH_LONG).show()
+                return@launch
+            }.filter { it.hostId != ownId }
+            if (rooms.isEmpty()) {
+                Toast.makeText(this@SettingsActivity, R.string.settings_party_empty, Toast.LENGTH_LONG).show()
+                return@launch
+            }
+            val labels = rooms.map { room ->
+                val title = buildString {
+                    append(room.media.title ?: room.media.slug)
+                    room.media.episodeLabel?.let { append(" · Ep ").append(it) }
+                }
+                getString(R.string.settings_party_item, title, room.hostName ?: "?", room.viewers.size)
+            }.toTypedArray()
+            AlertDialog.Builder(ContextThemeWrapper(this@SettingsActivity, R.style.Theme_WebunimeTv_Detail))
+                .setTitle(R.string.settings_party_pick)
+                .setItems(labels) { _, which ->
+                    lifecycleScope.launch {
+                        val ok = WatchPartyLauncher.openAsViewer(this@SettingsActivity, rooms[which])
+                        if (!ok) {
+                            Toast.makeText(this@SettingsActivity, R.string.party_open_failed, Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        }
     }
 
     private fun logout() {

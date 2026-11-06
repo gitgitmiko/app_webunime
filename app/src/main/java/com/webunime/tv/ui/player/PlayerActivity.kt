@@ -45,6 +45,9 @@ import com.webunime.tv.data.WatchSession
 import com.webunime.tv.data.WatchSessionStore
 import com.webunime.tv.data.WebPlayerProxy
 import com.webunime.tv.data.api.ApiConfig
+import com.webunime.tv.data.api.RoomMedia
+import com.webunime.tv.data.api.RoomPlayback
+import com.webunime.tv.data.api.WatchRoom
 import kotlinx.coroutines.launch
 import java.util.Locale
 import org.json.JSONObject
@@ -92,6 +95,16 @@ class PlayerActivity : AppCompatActivity() {
     private var lastKnownDurSec = 0.0
     private var lastWebProgressSaveAt = 0L
     private var playbackOpenedAt = 0L
+
+    /** Nonton bareng: host (dari Detail) atau penonton (kode ruang). */
+    private var party: WatchPartyController? = null
+    private var partyHostRequested = false
+    private var partyViewerCode: String? = null
+    private val isPartyViewer: Boolean get() = partyViewerCode != null
+
+    /** Status play WebView dari bridge (onPlay/onPause) — dipakai sinkron nobar. */
+    @Volatile
+    private var webPlaying = false
 
     /** True setelah video benar-benar play — cegah failover saat sudah nonton. */
     @Volatile
@@ -241,6 +254,8 @@ class PlayerActivity : AppCompatActivity() {
         contentCollection = intent.getStringExtra(EXTRA_COLLECTION)
         contentEpisodeSlug = intent.getStringExtra(EXTRA_EPISODE_SLUG)
         resumePositionMs = intent.getLongExtra(EXTRA_RESUME_MS, 0L).coerceAtLeast(0L)
+        partyHostRequested = intent.getBooleanExtra(EXTRA_PARTY_HOST, false)
+        partyViewerCode = intent.getStringExtra(EXTRA_PARTY_CODE)?.takeIf { it.isNotBlank() }
 
         serverUrls = intent.getStringArrayExtra(EXTRA_SERVER_URLS)?.toList().orEmpty()
             .filter { it.isNotBlank() }
@@ -291,6 +306,110 @@ class PlayerActivity : AppCompatActivity() {
         prepareAnimeSkipTimes()
         playbackOpenedAt = SystemClock.elapsedRealtime()
         playCurrentServer()
+        partyViewerCode?.let { joinPartyAsViewer(it) }
+    }
+
+    // --- Nonton bareng -------------------------------------------------------
+
+    private val partyHost = object : WatchPartyController.Host {
+        override fun partyPositionSec(): Double? = when {
+            playerView.visibility == View.VISIBLE -> exoPlayer
+                ?.takeIf { it.playbackState == Player.STATE_READY || it.playbackState == Player.STATE_BUFFERING }
+                ?.let { it.currentPosition / 1000.0 }
+            webView.visibility == View.VISIBLE && webVideoActive -> lastKnownPosSec
+            else -> null
+        }
+
+        override fun partyIsPlaying(): Boolean = when {
+            playerView.visibility == View.VISIBLE -> exoPlayer?.playWhenReady == true
+            else -> webPlaying
+        }
+
+        override fun partySeekTo(sec: Double) = seekToAbsoluteSec(sec)
+
+        override fun partySetPlaying(playing: Boolean) {
+            if (playerView.visibility == View.VISIBLE) {
+                exoPlayer?.playWhenReady = playing
+            } else if (webPlaying != playing) {
+                togglePlayback()
+            }
+        }
+
+        override fun partyStatusChanged(text: String) {
+            modeView.text = "$serverLabel · $text"
+            showTitleThenAutoHide()
+        }
+
+        override fun partyMediaChanged(media: RoomMedia, playback: RoomPlayback) {
+            val code = partyViewerCode ?: return
+            // Muat ulang player dengan episode/server baru dari host.
+            lifecycleScope.launch {
+                val room = WatchRoom(code = code, hostId = 0, media = media, playback = playback)
+                if (WatchPartyLauncher.openAsViewer(this@PlayerActivity, room)) finish()
+            }
+        }
+
+        override fun partyEnded(message: String) {
+            if (isFinishing) return
+            Toast.makeText(this@PlayerActivity, message, Toast.LENGTH_LONG).show()
+            if (isPartyViewer) finish()
+        }
+    }
+
+    private fun joinPartyAsViewer(code: String) {
+        val app = application as WebunimeApp
+        lifecycleScope.launch {
+            val room = runCatching { app.watchParty.getRoom(code) }.getOrNull()
+            if (isFinishing) return@launch
+            if (room == null) {
+                partyHost.partyEnded(WatchPartyController.ENDED_MESSAGE)
+                return@launch
+            }
+            party = WatchPartyController(lifecycleScope, app.watchParty, partyHost, isHost = false)
+                .also { it.startAsViewer(room) }
+        }
+    }
+
+    /** Media yang sedang diputar, dalam bentuk yang divalidasi server ruang. */
+    private fun currentPartyMedia(): RoomMedia? {
+        if (contentSlug.isBlank() || sourceUrl.isBlank()) return null
+        return RoomMedia(
+            collection = ApiConfig.normalizeItemCollection(
+                contentCollection ?: catalogItem?.detailCollection(),
+            ),
+            slug = contentSlug.lowercase(),
+            episodeSlug = contentEpisodeSlug ?: episodeList.getOrNull(episodeIndex)?.slug,
+            serverUrl = sourceUrl,
+        )
+    }
+
+    /** Host: ruang dibuat saat server pertama diputar; berikutnya kirim ganti media. */
+    private fun syncPartyMedia() {
+        if (!partyHostRequested) return
+        val media = currentPartyMedia() ?: return
+        val current = party
+        if (current != null) {
+            current.onHostMediaChanged(media)
+            return
+        }
+        val app = application as WebunimeApp
+        party = WatchPartyController(lifecycleScope, app.watchParty, partyHost, isHost = true).also {
+            it.startAsHost(
+                media,
+                onCreated = { room ->
+                    Toast.makeText(
+                        this,
+                        getString(R.string.party_created, room.code),
+                        Toast.LENGTH_LONG,
+                    ).show()
+                },
+                onError = { msg ->
+                    party = null
+                    partyHostRequested = false
+                    Toast.makeText(this, getString(R.string.party_create_failed, msg), Toast.LENGTH_LONG).show()
+                },
+            )
+        }
     }
 
     private fun loadEpisodeContext() {
@@ -587,6 +706,7 @@ class PlayerActivity : AppCompatActivity() {
         sourceUrl = serverUrls[serverIndex]
         serverLabel = serverLabels.getOrElse(serverIndex) { "Server" }
         modeView.text = serverLabel
+        syncPartyMedia()
 
         val generation = ++playJobGeneration
         lifecycleScope.launch {
@@ -735,6 +855,7 @@ class PlayerActivity : AppCompatActivity() {
                     hideHandler.removeCallbacks(progressTicker)
                     hideHandler.post(progressTicker)
                 }
+                party?.onHostPlaybackEvent()
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
@@ -851,11 +972,17 @@ class PlayerActivity : AppCompatActivity() {
     private inner class PlaybackBridge {
         @android.webkit.JavascriptInterface
         fun onPlay() {
-            runOnUiThread { markWebPlaybackActive() }
+            webPlaying = true
+            runOnUiThread {
+                markWebPlaybackActive()
+                party?.onHostPlaybackEvent()
+            }
         }
 
         @android.webkit.JavascriptInterface
         fun onPause() {
+            webPlaying = false
+            runOnUiThread { party?.onHostPlaybackEvent() }
             // Jangan langsung tampilkan judul: pause singkat (buffer/seek) sering diikuti play.
             hideHandler.removeCallbacks(showPauseHudRunnable)
             hideHandler.postDelayed(showPauseHudRunnable, PAUSE_HUD_DEBOUNCE_MS)
@@ -863,6 +990,7 @@ class PlayerActivity : AppCompatActivity() {
 
         @android.webkit.JavascriptInterface
         fun onEnded() {
+            webPlaying = false
             if (contentSlug.isBlank()) return
             persistWatch(positionMs = 1L, durationMs = 1L, finished = true, flush = true)
             setTitleBarVisible(true)
@@ -1319,6 +1447,8 @@ class PlayerActivity : AppCompatActivity() {
     private fun hasEpisodeNav(): Boolean = episodeList.size > 1 && episodeIndex >= 0
 
     private fun scheduleAutoNextEpisode(delayMs: Long = AUTO_NEXT_EPISODE_MS) {
+        // Penonton nobar: episode berikutnya ditentukan host.
+        if (isPartyViewer) return
         if (!hasEpisodeNav() || episodeIndex >= episodeList.lastIndex) return
         hideHandler.removeCallbacks(autoNextEpisodeRunnable)
         hideHandler.postDelayed(autoNextEpisodeRunnable, delayMs)
@@ -1434,6 +1564,13 @@ class PlayerActivity : AppCompatActivity() {
             finish()
             return true
         }
+        // Penonton nobar: play/pause/seek/episode dikendalikan host.
+        if (isPartyViewer && isPartyLockedKey(event.keyCode)) {
+            if (event.action == KeyEvent.ACTION_UP) {
+                Toast.makeText(this, R.string.party_viewer_locked, Toast.LENGTH_SHORT).show()
+            }
+            return true
+        }
         // Skip Opening / Next Episode: OK mengaktifkan popup
         if (skipPromptKind != SkipPromptKind.NONE && isOkKey(event.keyCode)) {
             if (SystemClock.uptimeMillis() < ignoreRemoteUntil) return true
@@ -1529,6 +1666,14 @@ class PlayerActivity : AppCompatActivity() {
         // Jangan teruskan D-pad ke PlayerView: controller bawaan bisa pause video.
         return super.dispatchKeyEvent(event)
     }
+
+    /** OK tetap boleh sebelum video jalan: beberapa embed butuh klik play. */
+    private fun isPartyLockedKey(keyCode: Int): Boolean =
+        (isOkKey(keyCode) && (webVideoActive || playerView.visibility == View.VISIBLE)) ||
+            isSeekKey(keyCode) || isEpisodeNavKey(keyCode) ||
+            keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE ||
+            keyCode == KeyEvent.KEYCODE_MEDIA_PLAY ||
+            keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE
 
     private fun isBackLike(keyCode: Int): Boolean =
         keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_ESCAPE
@@ -2094,6 +2239,8 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        party?.stop()
+        party = null
         hideHandler.removeCallbacks(hideTitleRunnable)
         hideHandler.removeCallbacks(qualityTimeoutRunnable)
         hideHandler.removeCallbacks(webFailTimeoutRunnable)
@@ -2132,6 +2279,10 @@ class PlayerActivity : AppCompatActivity() {
         const val EXTRA_RESUME_MS = "resume_ms"
         const val EXTRA_COLLECTION = "collection"
         const val EXTRA_EPISODE_SLUG = "episode_slug"
+        /** Buat ruang nonton bareng sebagai host saat video mulai. */
+        const val EXTRA_PARTY_HOST = "party_host"
+        /** Gabung ruang nonton bareng sebagai penonton. */
+        const val EXTRA_PARTY_CODE = "party_code"
 
         private const val TITLE_AUTO_HIDE_MS = 4_000L
         private const val WEB_FAIL_TIMEOUT_MS = 32_000L

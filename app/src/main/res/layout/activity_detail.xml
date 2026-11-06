@@ -150,12 +150,30 @@
             android:focusable="true"
             android:minWidth="168dp"
             android:nextFocusLeft="@id/playButton"
+            android:nextFocusRight="@id/partyButton"
             android:nextFocusDown="@id/episodeSection"
             android:text="@string/favorite_add"
             android:textSize="16sp"
             app:cornerRadius="@dimen/button_corner_radius"
             app:layout_constraintBottom_toBottomOf="@id/playButton"
             app:layout_constraintStart_toEndOf="@id/playButton"
+            app:layout_constraintTop_toTopOf="@id/playButton" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/partyButton"
+            style="@style/Wu.Button.Outlined"
+            android:layout_width="wrap_content"
+            android:layout_height="52dp"
+            android:layout_marginStart="12dp"
+            android:focusable="true"
+            android:minWidth="168dp"
+            android:nextFocusLeft="@id/favoriteButton"
+            android:nextFocusDown="@id/episodeSection"
+            android:text="@string/party_start"
+            android:textSize="16sp"
+            app:cornerRadius="@dimen/button_corner_radius"
+            app:layout_constraintBottom_toBottomOf="@id/playButton"
+            app:layout_constraintStart_toEndOf="@id/favoriteButton"
             app:layout_constraintTop_toTopOf="@id/playButton" />
 
         <ProgressBar

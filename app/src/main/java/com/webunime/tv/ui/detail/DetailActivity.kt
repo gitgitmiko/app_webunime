@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.google.android.material.button.MaterialButton
+import com.webunime.tv.ui.auth.LoginActivity
 import com.webunime.tv.R
 import com.webunime.tv.WebunimeApp
 import com.webunime.tv.data.CatalogItem
@@ -164,6 +165,7 @@ class DetailActivity : AppCompatActivity() {
         updatePlayButtonLabel()
 
         playButton.setOnClickListener { startPlayback() }
+        findViewById<MaterialButton>(R.id.partyButton).setOnClickListener { startPartyAsHost() }
         playButton.requestFocus()
     }
 
@@ -582,7 +584,17 @@ class DetailActivity : AppCompatActivity() {
         findViewById<View>(R.id.serverScroll)?.visibility = vis
     }
 
-    private fun startPlayback() {
+    /** Jadi host nonton bareng: ruang dibuat player saat server mulai diputar. */
+    private fun startPartyAsHost() {
+        if (!(application as WebunimeApp).authRepository.isLoggedIn()) {
+            Toast.makeText(this, R.string.party_login_required, Toast.LENGTH_LONG).show()
+            startActivity(Intent(this, LoginActivity::class.java))
+            return
+        }
+        startPlayback(asPartyHost = true)
+    }
+
+    private fun startPlayback(asPartyHost: Boolean = false) {
         val players = PlayerRouter.preferredPlayers(item, selectedEpisode)
         val player = selectedPlayer?.takeIf { p -> players.any { it.url == p.url } }
             ?: players.firstOrNull()
@@ -620,6 +632,7 @@ class DetailActivity : AppCompatActivity() {
                 .putExtra(PlayerActivity.EXTRA_RESUME_MS, resume)
                 .putExtra(PlayerActivity.EXTRA_COLLECTION, item.detailCollection())
                 .putExtra(PlayerActivity.EXTRA_EPISODE_SLUG, selectedEpisode?.slug)
+                .putExtra(PlayerActivity.EXTRA_PARTY_HOST, asPartyHost)
         )
     }
 
