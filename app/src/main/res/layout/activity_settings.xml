@@ -39,6 +39,39 @@
             android:layout_marginTop="40dp"
             android:fontFamily="sans-serif-medium"
             android:letterSpacing="0.02"
+            android:text="@string/settings_section_account"
+            android:textColor="@color/wu_row_header"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/settingsAccount"
+            style="@style/Wu.Button.Outlined"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:focusable="true"
+            android:minWidth="300dp"
+            android:text="@string/settings_login"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            app:cornerRadius="@dimen/button_corner_radius" />
+
+        <TextView
+            android:id="@+id/settingsAccountStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/settings_account_guest"
+            android:textColor="@color/wu_text_muted"
+            android:textSize="13sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.02"
             android:text="@string/settings_section_update"
             android:textColor="@color/wu_row_header"
             android:textSize="20sp"

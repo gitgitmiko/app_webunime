@@ -1,6 +1,7 @@
 package com.webunime.tv.ui.settings
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
 import android.widget.SeekBar
@@ -18,13 +19,14 @@ import com.webunime.tv.data.AppUpdateChecker
 import com.webunime.tv.data.AppUpdateInfo
 import com.webunime.tv.data.PlaybackPrefs
 import com.webunime.tv.data.ScrapeTriggerClient
+import com.webunime.tv.ui.auth.LoginActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * Pengaturan: OTA APK, scrape manual, dan refresh katalog dari GitHub.
+ * Pengaturan: akun, OTA APK, scrape manual, dan refresh katalog.
  */
 class SettingsActivity : AppCompatActivity() {
 
@@ -32,6 +34,7 @@ class SettingsActivity : AppCompatActivity() {
     private val scrapeClient by lazy { ScrapeTriggerClient() }
     private val catalogRepo by lazy { (application as WebunimeApp).catalogRepository }
     private val bgm by lazy { (application as WebunimeApp).bgm }
+    private val auth by lazy { (application as WebunimeApp).authRepository }
     private val scrapePrefs by lazy {
         getSharedPreferences(PREFS_SCRAPE, Context.MODE_PRIVATE)
     }
@@ -46,6 +49,8 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var bgmMuteBtn: MaterialButton
     private lateinit var bgmVolumeLabel: TextView
     private lateinit var bgmVolumeSeek: SeekBar
+    private lateinit var accountBtn: MaterialButton
+    private lateinit var accountStatusView: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,6 +67,10 @@ class SettingsActivity : AppCompatActivity() {
         bgmMuteBtn = findViewById(R.id.settingsToggleBgmMute)
         bgmVolumeLabel = findViewById(R.id.settingsBgmVolumeLabel)
         bgmVolumeSeek = findViewById(R.id.settingsBgmVolume)
+        accountBtn = findViewById(R.id.settingsAccount)
+        accountStatusView = findViewById(R.id.settingsAccountStatus)
+        accountBtn.setOnClickListener { onAccountClick() }
+        bindAccount()
 
         val filmServersBtn = findViewById<MaterialButton>(R.id.settingsToggleFilmServers)
         bindFilmServersToggle(filmServersBtn)
@@ -138,6 +147,45 @@ class SettingsActivity : AppCompatActivity() {
         }
         applyScrapeButtonLocked(isScrapeLocked())
         refreshCatalogStatusLabel()
+        bindAccount()
+    }
+
+    private fun bindAccount() {
+        val user = auth.currentUser()
+        if (user == null) {
+            accountBtn.setText(R.string.settings_login)
+            accountStatusView.setText(R.string.settings_account_guest)
+        } else {
+            accountBtn.setText(R.string.settings_logout)
+            accountStatusView.text = getString(R.string.settings_account_user, user.displayLabel())
+        }
+    }
+
+    private fun onAccountClick() {
+        val user = auth.currentUser()
+        if (user == null) {
+            startActivity(Intent(this, LoginActivity::class.java))
+            return
+        }
+        AlertDialog.Builder(ContextThemeWrapper(this, R.style.Theme_WebunimeTv_Detail))
+            .setTitle(R.string.settings_logout)
+            .setMessage(getString(R.string.settings_logout_confirm, user.displayLabel()))
+            .setPositiveButton(R.string.settings_logout) { _, _ -> logout() }
+            .setNegativeButton(android.R.string.cancel, null)
+            .setCancelable(true)
+            .show()
+    }
+
+    private fun logout() {
+        val app = application as WebunimeApp
+        lifecycleScope.launch {
+            runCatching { auth.logout() }
+            app.libraryRepository.clear()
+            if (isFinishing) return@launch
+            bindAccount()
+            Toast.makeText(this@SettingsActivity, R.string.settings_logout_done, Toast.LENGTH_SHORT).show()
+            accountBtn.requestFocus()
+        }
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {

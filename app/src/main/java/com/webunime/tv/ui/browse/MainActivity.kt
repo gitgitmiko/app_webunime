@@ -58,6 +58,10 @@ class MainActivity : FragmentActivity() {
             val updateDeferred = async(Dispatchers.IO) {
                 runCatching { updateChecker.fetchAvailableUpdate() }.getOrNull()
             }
+            // Sesi akun (opsional) dicek paralel; ditolak server → logout lokal.
+            val sessionDeferred = async {
+                runCatching { app.authRepository.restoreSession() }
+            }
 
             loading.visibility = View.VISIBLE
             app.bgm.setBrowseReady(false)
@@ -79,6 +83,7 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
+            sessionDeferred.await()
             runCatching { library.refresh() }
 
             loading.visibility = View.GONE

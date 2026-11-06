@@ -1,21 +1,34 @@
 package com.webunime.tv.data
 
 import android.content.Context
+import android.util.Log
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.webunime.tv.data.api.ApiClient
+import com.webunime.tv.data.api.ApiConfig
 import com.webunime.tv.data.api.LibraryEntry
 import com.webunime.tv.data.api.WatchedEpisode
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Favorit + riwayat tonton disimpan di SharedPreferences (cache lokal device).
- * Tidak membutuhkan login / API akun.
+ * Favorit + riwayat tonton. Selalu disimpan di SharedPreferences (cache device);
+ * saat login, server (`/api/v1/me/...`) jadi sumber utama dan perubahan ikut dikirim
+ * supaya sama dengan web.
  */
 class LibraryRepository(
     context: Context,
+    private val api: ApiClient,
+    private val auth: AuthRepository,
 ) {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
@@ -25,6 +38,11 @@ class LibraryRepository(
     private val watchedAdapter = moshi.adapter<List<WatchedEpisode>>(watchedListType)
 
     private val watchedByTitle = ConcurrentHashMap<String, List<WatchedEpisode>>()
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /** Kirim riwayat ke server per judul, di-debounce agar player tidak spam. */
+    private val pendingHistory = ConcurrentHashMap<String, Job>()
 
     @Volatile
     var favorites: List<LibraryEntry> = emptyList()
@@ -44,6 +62,66 @@ class LibraryRepository(
         favorites = loadEntries(KEY_FAVORITES)
         history = loadEntries(KEY_HISTORY)
         loadAllWatchedIntoMemory()
+        if (!auth.isLoggedIn()) return@withContext
+        // Riwayat yang masih antre dikirim dulu supaya tidak tertimpa data server lama.
+        withTimeoutOrNull(2_500) { pendingHistory.values.toList().forEach { it.join() } }
+        // Entri device-only (Film Gdrives) tidak ada di server — pertahankan.
+        runCatching { parseItems(JSONObject(api.get("/api/v1/me/favorites"))) }
+            .onSuccess { remote ->
+                favorites = remote + favorites.filterNot { isSyncable(it.collection, it.slug) }
+                persistFavorites()
+            }
+            .onFailure { Log.w(TAG, "favorit server gagal: ${it.message}") }
+        runCatching { parseItems(JSONObject(api.get("/api/v1/me/history"))) }
+            .onSuccess { remote ->
+                // Server menyimpan baris per episode; Lanjutkan cukup satu per judul (terbaru).
+                history = (remote + history.filterNot { isSyncable(it.collection, it.slug) })
+                    .sortedByDescending { it.lastWatchedAt.orEmpty() }
+                    .distinctBy { "${it.collection}:${it.slug.lowercase()}" }
+                    .take(MAX_HISTORY)
+                persistHistory()
+            }
+            .onFailure { Log.w(TAG, "riwayat server gagal: ${it.message}") }
+    }
+
+    /**
+     * Setelah login: kirim favorit/riwayat device yang belum ada di akun,
+     * lalu tarik versi server.
+     */
+    suspend fun mergeLocalIntoAccount(): Unit = withContext(Dispatchers.IO) {
+        if (!auth.isLoggedIn()) return@withContext
+        val localFavorites = loadEntries(KEY_FAVORITES)
+        val localHistory = loadEntries(KEY_HISTORY)
+        val serverFavorites = runCatching {
+            parseItems(JSONObject(api.get("/api/v1/me/favorites")))
+        }.getOrNull() ?: return@withContext
+        val serverHistory = runCatching {
+            parseItems(JSONObject(api.get("/api/v1/me/history")))
+        }.getOrNull() ?: return@withContext
+        fun List<LibraryEntry>.has(e: LibraryEntry) =
+            any { it.collection == e.collection && it.slug.equals(e.slug, true) }
+        // Terlama dulu → urutan "terbaru" di server tetap sama dengan device.
+        localFavorites.filter { isSyncable(it.collection, it.slug) && !serverFavorites.has(it) }
+            .take(MERGE_LIMIT).asReversed()
+            .forEach { e ->
+                runCatching {
+                    api.post("/api/v1/me/favorites", libraryBody(e.collection, e.slug, e.title, e.thumbnail))
+                }
+            }
+        localHistory.filter { isSyncable(it.collection, it.slug) && !serverHistory.has(it) }
+            .take(MERGE_LIMIT).asReversed()
+            .forEach { e ->
+                runCatching {
+                    api.post(
+                        "/api/v1/me/history",
+                        libraryBody(
+                            e.collection, e.slug, e.title, e.thumbnail,
+                            e.episodeSlug, e.episodeNum, e.progressSeconds,
+                        ),
+                    )
+                }
+            }
+        refresh()
     }
 
     suspend fun fetchFavorites(): List<LibraryEntry> = withContext(Dispatchers.IO) {
@@ -60,7 +138,20 @@ class LibraryRepository(
             val s = slug.trim().lowercase()
             if (col.isBlank() || s.isBlank()) return@withContext emptyList()
             val key = watchedKey(col, s)
-            val list = loadWatched(key)
+            var list = loadWatched(key)
+            if (isSyncable(col, s)) {
+                runCatching {
+                    parseWatchedEpisodes(
+                        JSONObject(api.get("/api/v1/me/history/${enc(col)}/${enc(s)}/episodes")),
+                    )
+                }.onSuccess { remote ->
+                    val extra = list.filterNot { local ->
+                        remote.any { it.matches(local.episodeSlug, local.episodeNum) }
+                    }
+                    list = remote + extra
+                    persistWatched(key, list)
+                }
+            }
             watchedByTitle[key] = list
             list
         }
@@ -99,6 +190,11 @@ class LibraryRepository(
             it.collection == collection && it.slug.equals(slug, true)
         }.take(MAX_FAVORITES - 1)
         persistFavorites()
+        if (isSyncable(collection, slug)) {
+            remote("favorit +") {
+                api.post("/api/v1/me/favorites", libraryBody(collection, slug, title, thumbnail))
+            }
+        }
     }
 
     suspend fun removeFavorite(collection: String, slug: String) = withContext(Dispatchers.IO) {
@@ -106,6 +202,9 @@ class LibraryRepository(
         val s = slug.trim().lowercase()
         favorites = favorites.filterNot { it.collection == col && it.slug.equals(s, true) }
         persistFavorites()
+        if (isSyncable(col, s)) {
+            remote("favorit -") { api.delete("/api/v1/me/favorites/${enc(col)}/${enc(s)}") }
+        }
     }
 
     suspend fun upsertHistory(
@@ -126,6 +225,7 @@ class LibraryRepository(
             episodeNum = episodeNum,
             progressSeconds = progressSeconds,
         )
+        queueHistorySync(collection, slug, title, thumbnail, episodeSlug, episodeNum, progressSeconds, true)
     }
 
     suspend fun removeHistory(collection: String, slug: String) = withContext(Dispatchers.IO) {
@@ -136,9 +236,16 @@ class LibraryRepository(
         val key = watchedKey(col, s)
         watchedByTitle.remove(key)
         prefs.edit().remove(watchedPrefsKey(key)).apply()
+        pendingHistory.remove(key)?.cancel()
+        if (isSyncable(col, s)) {
+            remote("riwayat -") { api.delete("/api/v1/me/history/${enc(col)}/${enc(s)}") }
+        }
     }
 
+    /** Logout: buang salinan library akun dari device. */
     fun clear() {
+        pendingHistory.values.forEach { it.cancel() }
+        pendingHistory.clear()
         favorites = emptyList()
         history = emptyList()
         watchedByTitle.clear()
@@ -146,7 +253,8 @@ class LibraryRepository(
     }
 
     /**
-     * Tulis riwayat lokal (sinkron cepat untuk UI; persist ke disk).
+     * Tulis riwayat lokal (sinkron cepat untuk UI; persist ke disk),
+     * lalu kirim ke akun bila login.
      */
     fun scheduleHistoryUpsert(
         collection: String?,
@@ -169,10 +277,118 @@ class LibraryRepository(
             episodeNum = episodeNum,
             progressSeconds = progressSeconds,
         )
-        // flushNow dibiarkan untuk kompatibilitas pemanggil lama
-        @Suppress("UNUSED_EXPRESSION")
-        flushNow
+        queueHistorySync(col, slug, title, thumbnail, episodeSlug, episodeNum, progressSeconds, flushNow)
     }
+
+    private fun queueHistorySync(
+        collection: String,
+        slug: String,
+        title: String?,
+        thumbnail: String?,
+        episodeSlug: String?,
+        episodeNum: Int?,
+        progressSeconds: Long,
+        flushNow: Boolean,
+    ) {
+        if (!isSyncable(collection, slug)) return
+        val key = watchedKey(collection, slug)
+        val epNum = LibraryEntry.parseEpisodeNum(episodeNum, episodeSlug)
+        val body = libraryBody(collection, slug, title, thumbnail, episodeSlug, epNum, progressSeconds)
+        pendingHistory.remove(key)?.cancel()
+        val job = scope.launch {
+            if (!flushNow) delay(HISTORY_DEBOUNCE_MS)
+            runCatching { api.post("/api/v1/me/history", body) }
+                .onFailure { Log.w(TAG, "riwayat + gagal: ${it.message}") }
+        }
+        pendingHistory[key] = job
+        job.invokeOnCompletion { pendingHistory.remove(key, job) }
+    }
+
+    /** Hanya koleksi API yang dikenal server; Film Gdrives tetap lokal. */
+    private fun isSyncable(collection: String, slug: String): Boolean =
+        auth.isLoggedIn() &&
+            collection.trim().lowercase() in ApiConfig.ITEM_COLLECTIONS &&
+            !slug.startsWith("gdrive-", ignoreCase = true)
+
+    private fun remote(label: String, block: () -> Unit) {
+        scope.launch {
+            runCatching(block).onFailure { Log.w(TAG, "$label gagal: ${it.message}") }
+        }
+    }
+
+    private fun libraryBody(
+        collection: String,
+        slug: String,
+        title: String?,
+        thumbnail: String?,
+        episodeSlug: String? = null,
+        episodeNum: Int? = null,
+        progressSeconds: Long? = null,
+    ): JSONObject {
+        val json = JSONObject()
+            .put("collection", collection.trim().lowercase())
+            .put("slug", slug.lowercase())
+        if (!title.isNullOrBlank()) json.put("title", title)
+        if (!thumbnail.isNullOrBlank()) json.put("thumbnail", thumbnail)
+        if (!episodeSlug.isNullOrBlank()) json.put("episodeSlug", episodeSlug)
+        if (episodeNum != null && episodeNum > 0) json.put("episodeNum", episodeNum)
+        if (progressSeconds != null) json.put("progressSeconds", progressSeconds.coerceAtLeast(0L))
+        return json
+    }
+
+    private fun parseItems(root: JSONObject): List<LibraryEntry> {
+        val arr = root.optJSONArray("items") ?: return emptyList()
+        return buildList {
+            for (i in 0 until arr.length()) {
+                val o = arr.optJSONObject(i) ?: continue
+                val collection = o.optString("collection")
+                val slug = o.optString("slug")
+                if (collection.isBlank() || slug.isBlank()) continue
+                val episodeSlug = o.optString("episodeSlug").takeIf { it.isNotBlank() }
+                add(
+                    LibraryEntry(
+                        collection = collection,
+                        slug = slug,
+                        title = o.optString("title").takeIf { it.isNotBlank() },
+                        thumbnail = o.optString("thumbnail").takeIf { it.isNotBlank() },
+                        episodeSlug = episodeSlug,
+                        episodeNum = LibraryEntry.parseEpisodeNum(optPositiveInt(o, "episodeNum"), episodeSlug),
+                        progressSeconds = o.optLong("progressSeconds"),
+                        lastWatchedAt = o.optString("lastWatchedAt").takeIf { it.isNotBlank() },
+                        createdAt = o.optString("createdAt").takeIf { it.isNotBlank() },
+                    ),
+                )
+            }
+        }
+    }
+
+    private fun parseWatchedEpisodes(root: JSONObject): List<WatchedEpisode> {
+        val arr = root.optJSONArray("items") ?: return emptyList()
+        return buildList {
+            for (i in 0 until arr.length()) {
+                val o = arr.optJSONObject(i) ?: continue
+                val episodeSlug = o.optString("episodeSlug").takeIf { it.isNotBlank() }
+                val episodeNum = LibraryEntry.parseEpisodeNum(optPositiveInt(o, "episodeNum"), episodeSlug)
+                if (episodeSlug.isNullOrBlank() && episodeNum == null) continue
+                add(
+                    WatchedEpisode(
+                        episodeSlug = episodeSlug,
+                        episodeNum = episodeNum,
+                        watchedAt = o.optString("watchedAt").takeIf { it.isNotBlank() },
+                    ),
+                )
+            }
+        }
+    }
+
+    private fun optPositiveInt(o: JSONObject, key: String): Int? {
+        if (!o.has(key) || o.isNull(key)) return null
+        val n = o.optInt(key, 0)
+        if (n > 0) return n
+        return o.optString(key).toIntOrNull()?.takeIf { it > 0 }
+    }
+
+    private fun enc(value: String): String = java.net.URLEncoder.encode(value, "UTF-8")
 
     private fun applyHistoryLocal(
         collection: String,
@@ -273,6 +489,10 @@ class LibraryRepository(
             .format(java.util.Date())
 
     companion object {
+        private const val TAG = "Library"
+        private const val HISTORY_DEBOUNCE_MS = 1_500L
+        /** Batas entri device yang diunggah saat pertama login. */
+        private const val MERGE_LIMIT = 50
         private const val PREFS = "library_local"
         private const val KEY_FAVORITES = "favorites_v1"
         private const val KEY_HISTORY = "history_v1"

@@ -50,6 +50,13 @@
             android:theme="@style/Theme.WebunimeTv.Search" />
 
         <activity
+            android:name=".ui.auth.LoginActivity"
+            android:exported="false"
+            android:screenOrientation="landscape"
+            android:theme="@style/Theme.WebunimeTv.Detail"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".ui.settings.SettingsActivity"
             android:exported="false"
             android:screenOrientation="landscape"
