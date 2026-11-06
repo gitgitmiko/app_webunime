@@ -1,6 +1,6 @@
 {
-  "versionCode": 294,
-  "versionName": "1.11.74",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.74/WEBUNIME-TV-v1.11.74.apk",
-  "changelog": "Pemutar ExoPlayer bisa ganti subtitle: tekan Bawah, pilih trek atau Mati."
+  "versionCode": 295,
+  "versionName": "1.11.75",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.75/WEBUNIME-TV-v1.11.75.apk",
+  "changelog": "Katalog langsung dari server WEBUNIME: beranda lebih cepat, tanpa unduh JSON besar. PENTING: kunci tanda tangan baru — jika update gagal, uninstall app lama lalu install APK ini."
 }

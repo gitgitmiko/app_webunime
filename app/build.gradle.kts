@@ -1,6 +1,15 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+}
+
+// Keystore rilis OTA (di luar repo). keystore.properties di root: storeFile, storePassword,
+// keyAlias, keyPassword. Tanpa file ini build release jatuh ke debug signing.
+val releaseKeystore = Properties().apply {
+    val f = rootProject.file("keystore.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
 }
 
 android {
@@ -23,8 +32,20 @@ android {
         buildConfigField("String", "SCRAPE_APP_KEY", "\"wu-tv-scrape-k7m2p9x4\"")
     }
 
+    signingConfigs {
+        if (releaseKeystore.getProperty("storeFile") != null) {
+            create("release") {
+                storeFile = file(releaseKeystore.getProperty("storeFile"))
+                storePassword = releaseKeystore.getProperty("storePassword")
+                keyAlias = releaseKeystore.getProperty("keyAlias")
+                keyPassword = releaseKeystore.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

@@ -23,3 +23,8 @@ ui.xml
 dist/_*
 dist/emulator-*.png
 
+
+# Kredensial keystore rilis (file asli di ~/keys/webunime-tv)
+keystore.properties
+*.jks
+*.keystore
