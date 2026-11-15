@@ -14,6 +14,7 @@ import android.view.WindowManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
+import android.webkit.WebStorage
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
@@ -2262,12 +2263,31 @@ class PlayerActivity : AppCompatActivity() {
             webView.loadUrl("about:blank")
             webView.destroy()
         }
+        clearHydraxStorage()
         exoPlayer?.release()
         exoPlayer = null
         super.onDestroy()
     }
 
+    /**
+     * Service Worker Hydrax menyimpan tiap potongan video ke Cache Storage (±1 GB per
+     * episode 1080p) dan tak pernah dibersihkan → flash TV penuh, tulis-baca lambat,
+     * buffering. Hapus saat keluar player (bukan saat mulai: bisa menghapus SW yang sedang jalan).
+     */
+    private fun clearHydraxStorage() {
+        runCatching {
+            val storage = WebStorage.getInstance()
+            storage.getOrigins { origins ->
+                origins?.keys?.forEach { key ->
+                    val origin = key?.toString() ?: return@forEach
+                    if (HYDRAX_ORIGIN.containsMatchIn(origin)) storage.deleteOrigin(origin)
+                }
+            }
+        }
+    }
+
     companion object {
+        private val HYDRAX_ORIGIN = Regex("(abyss|short\\.icu|iamcdn|sssrr)", RegexOption.IGNORE_CASE)
         const val EXTRA_URL = "url"
         const val EXTRA_TITLE = "title"
         const val EXTRA_SERVER = "server"
@@ -2598,6 +2618,9 @@ class PlayerActivity : AppCompatActivity() {
                   p.__wuHooked=true;
                   p.on('play', function(){ notifyPlay(); pickBestQuality(p); });
                   p.on('levels', function(){ pickBestQuality(p); });
+                  p.on('buffer', function(){ onStall(p); });
+                  p.on('seek', function(){ lastSeekAt=Date.now(); });
+                  p.on('levelsChanged', function(){ lastSeekAt=Date.now(); });
                   p.on('visualQuality', function(){});
                   p.on('pause', notifyPause);
                   p.on('complete', notifyEnded);
@@ -2626,14 +2649,44 @@ class PlayerActivity : AppCompatActivity() {
                 if(/low|rendah/.test(label)) return 200;
                 return 1;
               }
+              // Stall berulang di kualitas tinggi → turun satu level (mirip ABR).
+              var stalls=[], lastSeekAt=0;
+              function onStall(p){
+                try{
+                  if(window.__wuUserQuality) return;
+                  var now=Date.now();
+                  // Buffer karena seek / ganti kualitas bukan stall jaringan.
+                  if(now-lastSeekAt<4000) return;
+                  stalls.push(now);
+                  while(stalls.length&&now-stalls[0]>60000) stalls.shift();
+                  if(stalls.length<3) return;
+                  stalls=[];
+                  if(typeof p.getQualityLevels!=="function"||typeof p.setCurrentQuality!=="function") return;
+                  var levels=p.getQualityLevels()||[];
+                  var cur=typeof p.getCurrentQuality==="function"?p.getCurrentQuality():-1;
+                  var curScore=scoreLevel(levels[cur]);
+                  if(curScore<=480) return;
+                  var next=-1, nextScore=-1;
+                  for(var i=0;i<levels.length;i++){
+                    var sc=scoreLevel(levels[i]);
+                    if(sc>=400&&sc<curScore&&sc>nextScore){ nextScore=sc; next=i; }
+                  }
+                  if(next<0) return;
+                  window.__wuQualityCap=nextScore;
+                  p.setCurrentQuality(next);
+                }catch(e){}
+              }
               function pickBestQuality(p){
                 try{
+                  // User pilih manual (tombol Atas) → jangan ditimpa lagi saat play/levels.
+                  if(window.__wuUserQuality) return;
                   if(!p||typeof p.getQualityLevels!=="function"||typeof p.setCurrentQuality!=="function") return;
                   var levels=p.getQualityLevels()||[];
                   if(!levels.length) return;
                   var best=-1, bestScore=-1;
                   for(var i=0;i<levels.length;i++){
                     var s=scoreLevel(levels[i]);
+                    if(window.__wuQualityCap&&s>window.__wuQualityCap) continue;
                     if(s>bestScore){ bestScore=s; best=i; }
                   }
                   if(best<0) return;

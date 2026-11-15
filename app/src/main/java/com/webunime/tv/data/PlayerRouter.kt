@@ -80,7 +80,8 @@ object PlayerRouter {
     }
 
     /**
-     * Anime: Mega 1080 → 720 → 480 → Wibufile 1080 → 720 → 480 → Blogspot → lainnya.
+     * Anime: Wibufile 1080 → 720 → 480 → Mega 1080 → 720 → 480 → Blogspot → lainnya.
+     * Mega didekripsi JS di WebView (berat di CPU TV + kuota transfer) → sering buffering di 1080p.
      */
     private fun rankAnime(raw: List<PlayerServer>): List<PlayerServer> {
         fun score(p: PlayerServer): Int {
@@ -96,7 +97,8 @@ object PlayerRouter {
                 l.contains("blogspot") || l.contains("blogger") || l.contains("anoboy")
 
             return when {
-                isMega -> 10 + res
+                // Cek Mega dulu (label "premium" bisa ikut cocok isWibu), skor di bawah Wibufile.
+                isMega -> 60 + res
                 isWibu && (u.contains("wibufile.com/video") || u.contains(".mp4")) -> 40 + res
                 isWibu -> 50 + res
                 // Utamakan Anoboy/Blogspot resolusi lebih tinggi (720 sebelum 360)

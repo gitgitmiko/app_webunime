@@ -50,8 +50,9 @@ class PauseAwareLoadControl private constructor(
             minBufferMs = 15_000,
             playingMaxBufferMs = 40_000,
             pausedMaxBufferMs = 90_000,
-            bufferForPlaybackMs = 1_500,
-            bufferForPlaybackAfterRebufferMs = 3_500,
+            bufferForPlaybackMs = 2_500,
+            // Setelah stall, isi 10 dtk dulu: 3,5 dtk bikin 1080p stall berulang tiap beberapa detik.
+            bufferForPlaybackAfterRebufferMs = 10_000,
             playingTargetBytes = 16 * 1024 * 1024,
             pausedTargetBytes = 24 * 1024 * 1024,
         )
@@ -61,8 +62,8 @@ class PauseAwareLoadControl private constructor(
             minBufferMs = 12_000,
             playingMaxBufferMs = 35_000,
             pausedMaxBufferMs = 75_000,
-            bufferForPlaybackMs = 1_500,
-            bufferForPlaybackAfterRebufferMs = 3_000,
+            bufferForPlaybackMs = 2_500,
+            bufferForPlaybackAfterRebufferMs = 8_000,
             playingTargetBytes = 14 * 1024 * 1024,
             pausedTargetBytes = 20 * 1024 * 1024,
         )

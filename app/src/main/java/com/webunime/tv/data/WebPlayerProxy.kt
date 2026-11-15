@@ -786,6 +786,7 @@ ${wrapperIframeBridgeJs()}
       if(!jp||typeof jp.setCurrentQuality!=="function") return;
       idx=Number(idx);
       if(!isFinite(idx)||idx<0) return;
+      window.__wuUserQuality=true;
       window.__wuHoldPlay=true;
       try{ if(typeof jp.pause==="function") jp.pause(); }catch(e){}
       try{ jp.setCurrentQuality(idx); }catch(e){}
@@ -824,6 +825,50 @@ ${wrapperIframeBridgeJs()}
       }, 250);
     }catch(e){}
   };
+  // Hydrax 1080p/720p: setelah stall, browser lanjut play begitu ada beberapa frame →
+  // stall lagi tiap beberapa detik. Tahan dulu sampai buffer cukup (mirip ExoPlayer).
+  if(IS_ABYSS){ (function(){
+    var lastSeekAt=0, holding=false;
+    function need(v){ var h=v.videoHeight||0; return h>=1000?15:(h>=700?10:0); }
+    function ahead(v){
+      try{
+        var t=v.currentTime||0, b=v.buffered;
+        for(var i=0;b&&i<b.length;i++){ if(b.start(i)<=t+0.5&&b.end(i)>=t) return b.end(i)-t; }
+      }catch(e){}
+      return 0;
+    }
+    function hook(v){
+      if(v.__wuRebuf) return;
+      v.__wuRebuf=true;
+      v.addEventListener("seeking",function(){ lastSeekAt=Date.now(); });
+      v.addEventListener("waiting",function(){
+        if(holding||window.__wuHoldPlay||window.__wuUserPaused) return;
+        if(Date.now()-lastSeekAt<4000||(v.currentTime||0)<5) return;
+        var n=need(v);
+        if(!n) return;
+        holding=true;
+        window.__wuBufferHold=true;
+        window.__wuHoldPlay=true;
+        var jp=__wuJw();
+        try{ if(jp) jp.pause(); else v.pause(); }catch(e){}
+        var k=0;
+        var iv=setInterval(function(){
+          k++;
+          if(!window.__wuUserPaused&&ahead(v)<n&&k<=120) return;
+          clearInterval(iv);
+          holding=false;
+          window.__wuHoldPlay=false;
+          if(!window.__wuUserPaused){
+            try{ if(jp) jp.play(); }catch(e){}
+            try{ v.play(); }catch(e){}
+          }
+          setTimeout(function(){ window.__wuBufferHold=false; }, 600);
+        }, 250);
+      });
+    }
+    var c=0;
+    var sv=setInterval(function(){ var v=__wuVideo(); if(v) hook(v); if(++c>240) clearInterval(sv); }, 500);
+  })(); }
   // Deteksi <video> → beri tahu app (agar tombol OK beralih ke mode toggle),
   // dan sinkronkan bar judul (hilang saat play, muncul saat pause).
   // Selain event, status paused juga di-POLL agar terlaporkan walau video sudah
@@ -832,10 +877,10 @@ ${wrapperIframeBridgeJs()}
     if(v && !v.__wuTB){ v.__wuTB=true; try{
       v.addEventListener("play",function(){try{ if(window.parent&&window.parent!==window) window.parent.postMessage({type:"__wuPlayState",playing:true},"*"); else WebunimePlayback.onPlay(); }catch(e){}});
       v.addEventListener("playing",function(){try{ if(window.parent&&window.parent!==window) window.parent.postMessage({type:"__wuPlayState",playing:true},"*"); else WebunimePlayback.onPlay(); }catch(e){}});
-      v.addEventListener("pause",function(){try{ if(window.parent&&window.parent!==window) window.parent.postMessage({type:"__wuPlayState",playing:false},"*"); else WebunimePlayback.onPause(); }catch(e){}});
+      v.addEventListener("pause",function(){try{ if(window.__wuBufferHold) return; if(window.parent&&window.parent!==window) window.parent.postMessage({type:"__wuPlayState",playing:false},"*"); else WebunimePlayback.onPause(); }catch(e){}});
       v.addEventListener("ended",function(){ try{ __wuNotifyEnded(); }catch(e){} });
     }catch(e){} }
-    if(v){ var p=v.paused; if(last!==p){ last=p; try{ if(p){ if(window.parent&&window.parent!==window) window.parent.postMessage({type:"__wuPlayState",playing:false},"*"); else WebunimePlayback.onPause(); } else { if(window.parent&&window.parent!==window) window.parent.postMessage({type:"__wuPlayState",playing:true},"*"); else WebunimePlayback.onPlay(); } }catch(e){} } }
+    if(v && !window.__wuBufferHold){ var p=v.paused; if(last!==p){ last=p; try{ if(p){ if(window.parent&&window.parent!==window) window.parent.postMessage({type:"__wuPlayState",playing:false},"*"); else WebunimePlayback.onPause(); } else { if(window.parent&&window.parent!==window) window.parent.postMessage({type:"__wuPlayState",playing:true},"*"); else WebunimePlayback.onPlay(); } }catch(e){} } }
     // JWPlayer complete → auto-next episode
     if(!jwHooked){
       try{
