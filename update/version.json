@@ -1,6 +1,6 @@
 {
-  "versionCode": 296,
-  "versionName": "1.11.76",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.76/WEBUNIME-TV-v1.11.76.apk",
-  "changelog": "Login akun opsional (Pengaturan > Akun): favorit & riwayat tersinkron dengan web. Baris Film Gdrives dihapus. APK lebih ringan. Dari versi lama (≤1.11.74): uninstall dulu lalu install APK ini."
+  "versionCode": 298,
+  "versionName": "1.11.78",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.78/WEBUNIME-TV-v1.11.78.apk",
+  "changelog": "Nonton 1080p lebih lancar: buffering berkurang (Hydrax, Wibufile, P2P). Baru: nonton bareng (host dari Detail, gabung dari Pengaturan). Dari versi lama (≤1.11.74): uninstall dulu lalu install APK ini."
 }
