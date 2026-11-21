@@ -1,6 +1,6 @@
 {
-  "versionCode": 298,
-  "versionName": "1.11.78",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.78/WEBUNIME-TV-v1.11.78.apk",
-  "changelog": "Nonton 1080p lebih lancar: buffering berkurang (Hydrax, Wibufile, P2P). Baru: nonton bareng (host dari Detail, gabung dari Pengaturan). Dari versi lama (≤1.11.74): uninstall dulu lalu install APK ini."
+  "versionCode": 299,
+  "versionName": "1.11.79",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.79/WEBUNIME-TV-v1.11.79.apk",
+  "changelog": "Tampilan baru yang lebih modern: karousel dengan poster tajam & background blur (tidak burem lagi), geser otomatis, kartu dan tombol baru dengan fokus remote yang lebih jelas. Halaman Detail, Pengaturan, Login, dan Player juga dirapikan."
 }
