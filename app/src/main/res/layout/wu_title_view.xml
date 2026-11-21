@@ -44,10 +44,10 @@
             android:fontFamily="sans-serif-medium"
             android:maxWidth="220dp"
             android:maxLines="1"
-            android:paddingStart="12dp"
-            android:paddingTop="4dp"
-            android:paddingEnd="12dp"
-            android:paddingBottom="4dp"
+            android:paddingStart="16dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="6dp"
             android:textColor="@color/wu_text"
             android:textSize="16sp" />
 

@@ -17,6 +17,8 @@
             android:layout_marginTop="32dp"
             android:layout_marginBottom="32dp"
             android:background="@drawable/bg_panel"
+            android:clipChildren="false"
+            android:clipToPadding="false"
             android:elevation="8dp"
             android:gravity="center_horizontal"
             android:orientation="vertical"

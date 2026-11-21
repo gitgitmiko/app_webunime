@@ -78,10 +78,17 @@ class BrowseFragment : BrowseSupportFragment() {
         savedInstanceState: Bundle?,
     ): View = inflater.inflate(R.layout.wu_browse_title, parent, false)
 
+    /** Label akun yang login di kiri wordmark; kosong (disembunyikan) bila belum login. */
     private fun bindUserTitle() {
         if (!isAdded) return
-        title = getString(R.string.app_name)
-        (titleView as? WebunimeTitleView)?.setUserBadgeColor(null)
+        val label = (requireActivity().application as WebunimeApp).authRepository
+            .currentUser()
+            ?.displayLabel()
+            .orEmpty()
+        title = label
+        (titleView as? WebunimeTitleView)?.setUserBadgeColor(
+            if (label.isBlank()) null else USER_BADGE_COLOR,
+        )
     }
 
     private fun bindSettingsOrb() {
@@ -1012,6 +1019,8 @@ class BrowseFragment : BrowseSupportFragment() {
     private enum class LibraryRowKind { CONTINUE, FAVORITES }
 
     companion object {
+        /** Pill kaca tipis, senada dengan tombol & chip lain. */
+        private const val USER_BADGE_COLOR = 0x33FFFFFF
         private const val PREFETCH_THRESHOLD = 3
         /** Fokus dalam N baris dari bawah → muat baris deferred berikutnya. */
         private const val DEFERRED_FOCUS_THRESHOLD = 2

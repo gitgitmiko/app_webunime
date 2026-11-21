@@ -103,7 +103,8 @@ class SettingsActivity : AppCompatActivity() {
 
         val checkBtn = findViewById<MaterialButton>(R.id.settingsCheckUpdate)
         checkBtn.setOnClickListener { checkForUpdate() }
-        checkBtn.requestFocus()
+        // Fokus awal di seksi paling atas (Akun).
+        accountBtn.requestFocus()
 
         startScrapeBtn.setOnClickListener { startScrape() }
         refreshCatalogBtn.setOnClickListener { refreshCatalog() }

@@ -140,7 +140,7 @@ class WebunimeTitleView @JvmOverloads constructor(
         val bg = (textView.background?.mutate() as? GradientDrawable)
             ?: GradientDrawable().also { textView.background = it }
         bg.setColor(color)
-        bg.cornerRadius = 6f * resources.displayMetrics.density
+        bg.cornerRadius = 16f * resources.displayMetrics.density
     }
 
     fun getBadgeDrawable(): Drawable? = badgeView.drawable
