@@ -1,6 +1,6 @@
 {
-  "versionCode": 299,
-  "versionName": "1.11.79",
-  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.79/WEBUNIME-TV-v1.11.79.apk",
-  "changelog": "Tampilan baru yang lebih modern: karousel dengan poster tajam & background blur (tidak burem lagi), geser otomatis, kartu dan tombol baru dengan fokus remote yang lebih jelas. Halaman Detail, Pengaturan, Login, dan Player juga dirapikan."
+  "versionCode": 300,
+  "versionName": "1.11.80",
+  "apkUrl": "https://github.com/gitgitmiko/app_webunime/releases/download/v1.11.80/WEBUNIME-TV-v1.11.80.apk",
+  "changelog": "Tampilan baru yang lebih modern: karousel dengan poster tajam & background blur, kartu dan tombol baru dengan fokus remote yang lebih jelas. Perbaikan: kotak abu transparan di kartu yang dipilih hilang, posisi judul baris lebih pas."
 }
