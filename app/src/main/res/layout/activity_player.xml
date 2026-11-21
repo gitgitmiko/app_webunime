@@ -25,24 +25,32 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="top"
-        android:background="#99000000"
+        android:background="@drawable/bg_player_top_scrim"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingStart="48dp"
+        android:paddingTop="28dp"
+        android:paddingEnd="48dp"
+        android:paddingBottom="48dp">
 
         <TextView
             android:id="@+id/playerTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:shadowColor="#99000000"
+            android:shadowDy="1"
+            android:shadowRadius="4"
             android:textColor="@color/wu_text"
-            android:textSize="18sp"
+            android:textSize="22sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/playerMode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
             android:textColor="@color/wu_text_dim"
-            android:textSize="12sp" />
+            android:textSize="13sp" />
     </LinearLayout>
 
     <Button
@@ -50,9 +58,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_marginEnd="28dp"
-        android:layout_marginBottom="36dp"
-        android:background="@color/wu_accent"
+        android:layout_marginEnd="48dp"
+        android:layout_marginBottom="48dp"
+        android:background="@drawable/bg_skip_button"
+        android:elevation="6dp"
         android:focusable="false"
         android:minWidth="200dp"
         android:paddingLeft="22dp"
@@ -60,7 +69,7 @@
         android:paddingTop="12dp"
         android:paddingBottom="12dp"
         android:textAllCaps="false"
-        android:textColor="@color/wu_text"
+        android:textColor="@color/wu_bg"
         android:textSize="16sp"
         android:textStyle="bold"
         android:visibility="gone" />

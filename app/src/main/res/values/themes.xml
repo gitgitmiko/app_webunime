@@ -24,11 +24,28 @@
 
     <style name="Wu.RowHeader" parent="Widget.Leanback.Row.Header">
         <item name="android:textColor">@color/wu_row_header</item>
-        <item name="android:textSize">20sp</item>
-        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">21sp</item>
         <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:letterSpacing">0.02</item>
-        <item name="android:paddingBottom">6dp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.01</item>
+        <item name="android:paddingBottom">8dp</item>
+    </style>
+
+    <!-- Chip kecil di hero (FILM, HD, negara, NEW). -->
+    <style name="Wu.HeroChip" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:focusable">false</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:letterSpacing">0.06</item>
+        <item name="android:paddingLeft">10dp</item>
+        <item name="android:paddingTop">5dp</item>
+        <item name="android:paddingRight">10dp</item>
+        <item name="android:paddingBottom">5dp</item>
+        <item name="android:textColor">@color/wu_text</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textStyle">bold</item>
     </style>
 
     <style name="Theme.WebunimeTv.Detail" parent="Theme.MaterialComponents.NoActionBar">
@@ -68,23 +85,43 @@
         <item name="android:textSize">16sp</item>
     </style>
 
+    <!-- Tombol sekunder (juga dipakai tombol episode/server dari kode lewat
+         materialButtonOutlinedStyle): kaca tipis → putih saat fokus, merah saat activated. -->
     <style name="Wu.Button.Outlined" parent="Widget.MaterialComponents.Button.OutlinedButton">
-        <item name="strokeColor">@color/wu_surface</item>
-        <item name="strokeWidth">1.5dp</item>
-        <item name="android:textColor">@color/wu_text</item>
-        <item name="rippleColor">@color/wu_accent_soft</item>
+        <item name="backgroundTint">@color/tv_btn_bg</item>
+        <item name="strokeWidth">0dp</item>
+        <item name="android:textColor">@color/tv_btn_text</item>
+        <item name="rippleColor">@android:color/transparent</item>
         <item name="cornerRadius">@dimen/button_corner_radius</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0.01</item>
         <item name="android:minHeight">48dp</item>
+        <item name="android:paddingStart">22dp</item>
+        <item name="android:paddingEnd">22dp</item>
+        <item name="android:stateListAnimator">@animator/tv_button_focus</item>
     </style>
 
     <style name="Wu.Button.Primary" parent="Widget.MaterialComponents.Button">
-        <item name="backgroundTint">@color/wu_accent</item>
-        <item name="android:textColor">@color/wu_text</item>
-        <item name="rippleColor">@color/wu_accent_soft</item>
+        <item name="backgroundTint">@color/tv_btn_primary_bg</item>
+        <item name="android:textColor">@color/tv_btn_primary_text</item>
+        <item name="iconTint">@color/tv_btn_primary_text</item>
+        <item name="rippleColor">@android:color/transparent</item>
         <item name="cornerRadius">@dimen/button_corner_radius</item>
         <item name="android:textAllCaps">false</item>
         <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.01</item>
         <item name="android:minHeight">48dp</item>
+        <item name="android:stateListAnimator">@animator/tv_button_focus</item>
+    </style>
+
+    <!-- Judul seksi (Episode, Server, Pemeran, seksi Pengaturan). -->
+    <style name="Wu.SectionTitle" parent="">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/wu_row_header</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.01</item>
     </style>
 
     <style name="Theme.WebunimeTv.Player" parent="Theme.AppCompat.NoActionBar">

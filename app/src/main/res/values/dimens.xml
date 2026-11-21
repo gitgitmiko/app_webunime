@@ -2,10 +2,17 @@
 <resources>
     <!-- Cadangan title/search; hero ikut sebagai baris pertama -->
     <dimen name="browse_rows_margin_top">120dp</dimen>
-    <dimen name="browse_hero_panel_width">560dp</dimen>
+    <dimen name="browse_hero_panel_width">620dp</dimen>
     <dimen name="browse_hero_row_height">400dp</dimen>
-    <dimen name="card_corner_radius">10dp</dimen>
+    <dimen name="browse_edge_pad">48dp</dimen>
+    <dimen name="browse_hero_end_pad">64dp</dimen>
+    <dimen name="hero_poster_w">212dp</dimen>
+    <dimen name="hero_poster_h">318dp</dimen>
+    <dimen name="hero_poster_land_w">416dp</dimen>
+    <dimen name="hero_poster_land_h">234dp</dimen>
+    <dimen name="hero_poster_corner">14dp</dimen>
+    <dimen name="card_corner_radius">12dp</dimen>
     <dimen name="card_focus_stroke">3dp</dimen>
-    <dimen name="button_corner_radius">10dp</dimen>
+    <dimen name="button_corner_radius">24dp</dimen>
     <dimen name="chip_corner_radius">6dp</dimen>
 </resources>

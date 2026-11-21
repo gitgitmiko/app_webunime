@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
+<!-- Gradasi kiri → kanan di atas backdrop Detail. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <gradient
         android:angle="0"
-        android:centerColor="#CC0B0B0D"
-        android:endColor="#0B0B0D"
-        android:startColor="#000B0B0D"
+        android:startColor="#D90E0F13"
+        android:centerColor="#8C0E0F13"
+        android:endColor="#400E0F13"
         android:type="linear" />
 </shape>

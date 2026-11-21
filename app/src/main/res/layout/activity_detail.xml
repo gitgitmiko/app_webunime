@@ -5,6 +5,34 @@
     android:layout_height="match_parent"
     android:background="@color/wu_bg">
 
+    <!-- Backdrop ambient full-screen (poster di-blur), tetap diam saat konten di-scroll. -->
+    <ImageView
+        android:id="@+id/detailBackdrop"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:alpha="0.85"
+        android:contentDescription="@null"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#66000000"
+        android:importantForAccessibility="no" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_detail_scrim"
+        android:importantForAccessibility="no" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_detail_bottom_scrim"
+        android:importantForAccessibility="no" />
+
 <ScrollView
     android:id="@+id/detailScroll"
     android:layout_width="match_parent"
@@ -18,45 +46,17 @@
         android:layout_height="wrap_content"
         android:paddingBottom="40dp">
 
-        <!-- Backdrop cinematic strip -->
-        <ImageView
-            android:id="@+id/detailBackdrop"
-            android:layout_width="0dp"
-            android:layout_height="420dp"
-            android:contentDescription="@null"
-            android:scaleType="centerCrop"
-            android:alpha="0.45"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <View
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:background="@drawable/bg_detail_scrim"
-            app:layout_constraintBottom_toBottomOf="@id/detailBackdrop"
-            app:layout_constraintEnd_toEndOf="@id/detailBackdrop"
-            app:layout_constraintStart_toStartOf="@id/detailBackdrop"
-            app:layout_constraintTop_toTopOf="@id/detailBackdrop" />
-
-        <View
-            android:layout_width="0dp"
-            android:layout_height="140dp"
-            android:background="@drawable/bg_detail_bottom_scrim"
-            app:layout_constraintBottom_toBottomOf="@id/detailBackdrop"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
-
         <ImageView
             android:id="@+id/detailPoster"
-            android:layout_width="176dp"
-            android:layout_height="264dp"
-            android:layout_marginStart="40dp"
-            android:layout_marginTop="52dp"
-            android:background="@drawable/bg_card"
+            android:layout_width="200dp"
+            android:layout_height="300dp"
+            android:layout_marginStart="48dp"
+            android:layout_marginTop="48dp"
+            android:background="@drawable/bg_hero_poster"
             android:clipToOutline="true"
             android:contentDescription="@string/app_name"
-            android:elevation="12dp"
+            android:elevation="16dp"
+            android:outlineProvider="background"
             android:scaleType="centerCrop"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -65,12 +65,14 @@
             android:id="@+id/brand"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
+            android:layout_marginStart="32dp"
             android:layout_marginEnd="40dp"
-            android:letterSpacing="0.14"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.2"
             android:text="@string/app_name"
+            android:textAllCaps="true"
             android:textColor="@color/wu_accent_soft"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/detailPoster"
@@ -80,15 +82,18 @@
             android:id="@+id/detailTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
+            android:layout_marginStart="32dp"
             android:layout_marginTop="10dp"
             android:layout_marginEnd="40dp"
             android:ellipsize="end"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="sans-serif-black"
+            android:letterSpacing="-0.01"
             android:maxLines="2"
+            android:shadowColor="#99000000"
+            android:shadowDy="2"
+            android:shadowRadius="8"
             android:textColor="@color/wu_text"
-            android:textSize="34sp"
-            android:textStyle="bold"
+            android:textSize="36sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/detailPoster"
             app:layout_constraintTop_toBottomOf="@id/brand" />
@@ -97,10 +102,11 @@
             android:id="@+id/detailMeta"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
+            android:layout_marginStart="32dp"
             android:layout_marginTop="10dp"
             android:layout_marginEnd="40dp"
-            android:textColor="@color/wu_text_dim"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="@color/wu_text"
             android:textSize="15sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/detailPoster"
@@ -110,11 +116,11 @@
             android:id="@+id/detailSynopsis"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="28dp"
+            android:layout_marginStart="32dp"
             android:layout_marginTop="14dp"
             android:layout_marginEnd="40dp"
             android:ellipsize="end"
-            android:lineSpacingExtra="3dp"
+            android:lineSpacingExtra="4dp"
             android:maxLines="4"
             android:textColor="@color/wu_text_dim"
             android:textSize="15sp"
@@ -127,7 +133,7 @@
             style="@style/Wu.Button.Primary"
             android:layout_width="wrap_content"
             android:layout_height="52dp"
-            android:layout_marginStart="28dp"
+            android:layout_marginStart="32dp"
             android:layout_marginTop="20dp"
             android:focusable="true"
             android:minWidth="168dp"
@@ -198,14 +204,10 @@
             android:id="@+id/detailCreditsLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="40dp"
+            android:layout_marginStart="48dp"
             android:layout_marginTop="28dp"
-            android:fontFamily="sans-serif-medium"
-            android:letterSpacing="0.02"
+            style="@style/Wu.SectionTitle"
             android:text="@string/detail_credits"
-            android:textColor="@color/wu_row_header"
-            android:textSize="20sp"
-            android:textStyle="bold"
             android:visibility="gone"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/detailHeaderBarrier" />
@@ -214,7 +216,7 @@
             android:id="@+id/detailCredits"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="40dp"
+            android:layout_marginStart="48dp"
             android:layout_marginTop="10dp"
             android:layout_marginEnd="40dp"
             android:lineSpacingExtra="4dp"
@@ -236,14 +238,10 @@
             android:id="@+id/episodeLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="40dp"
+            android:layout_marginStart="48dp"
             android:layout_marginTop="32dp"
-            android:fontFamily="sans-serif-medium"
-            android:letterSpacing="0.02"
+            style="@style/Wu.SectionTitle"
             android:text="@string/episodes"
-            android:textColor="@color/wu_row_header"
-            android:textSize="20sp"
-            android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/detailCreditsBarrier" />
 
@@ -263,13 +261,17 @@
                 android:layout_height="wrap_content"
                 android:clipToPadding="false"
                 android:fadeScrollbars="true"
-                android:paddingStart="40dp"
-                android:paddingEnd="40dp"
+                android:paddingStart="48dp"
+                android:paddingEnd="48dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
                 android:scrollbars="none"
                 android:visibility="gone">
 
                 <LinearLayout
                     android:id="@+id/episodeJumpContainer"
+                    android:divider="@drawable/space_h10"
+                    android:showDividers="middle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal" />
@@ -282,13 +284,17 @@
                 android:layout_marginTop="8dp"
                 android:clipToPadding="false"
                 android:fadeScrollbars="true"
-                android:paddingStart="40dp"
-                android:paddingEnd="40dp"
+                android:paddingStart="48dp"
+                android:paddingEnd="48dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
                 android:scrollbars="none"
                 android:visibility="gone">
 
                 <LinearLayout
                     android:id="@+id/episodeRangeContainer"
+                    android:divider="@drawable/space_h10"
+                    android:showDividers="middle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal" />
@@ -301,12 +307,16 @@
                 android:layout_marginTop="8dp"
                 android:clipToPadding="false"
                 android:fadeScrollbars="true"
-                android:paddingStart="40dp"
-                android:paddingEnd="40dp"
+                android:paddingStart="48dp"
+                android:paddingEnd="48dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
                 android:scrollbars="none">
 
                 <LinearLayout
                     android:id="@+id/episodeContainer"
+                    android:divider="@drawable/space_h10"
+                    android:showDividers="middle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal" />
@@ -317,14 +327,10 @@
             android:id="@+id/serverLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="40dp"
+            android:layout_marginStart="48dp"
             android:layout_marginTop="24dp"
-            android:fontFamily="sans-serif-medium"
-            android:letterSpacing="0.02"
+            style="@style/Wu.SectionTitle"
             android:text="@string/servers"
-            android:textColor="@color/wu_row_header"
-            android:textSize="20sp"
-            android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/episodeSection" />
 
@@ -335,7 +341,7 @@
             android:layout_marginTop="12dp"
             android:clipToPadding="false"
             android:fadeScrollbars="true"
-            android:paddingStart="40dp"
+            android:paddingStart="48dp"
             android:paddingEnd="40dp"
             android:scrollbars="none"
             app:layout_constraintEnd_toEndOf="parent"
@@ -344,6 +350,8 @@
 
             <LinearLayout
                 android:id="@+id/serverContainer"
+                android:divider="@drawable/space_h10"
+                android:showDividers="middle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal" />

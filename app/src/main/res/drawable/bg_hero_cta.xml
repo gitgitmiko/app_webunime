@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tombol "Tonton" di hero: putih solid saat hero fokus (duplicateParentState). -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/wu_text" />
+            <corners android:radius="24dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#33FFFFFF" />
+            <corners android:radius="24dp" />
+        </shape>
+    </item>
+</selector>

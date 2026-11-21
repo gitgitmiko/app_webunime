@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Cinematic soft-red palette -->
-    <color name="wu_bg">#0B0B0D</color>
-    <color name="wu_bg_elevated">#121214</color>
-    <color name="wu_surface">#2A2A2E</color>
-    <color name="wu_surface_soft">#1A1A1C</color>
-    <color name="wu_accent">#FF2D3A</color>
-    <color name="wu_accent_dark">#C41E28</color>
-    <color name="wu_accent_soft">#E85A64</color>
-    <color name="wu_text">#F5F5F7</color>
-    <color name="wu_text_dim">#B8B8BE</color>
-    <color name="wu_text_muted">#7A7A82</color>
+    <!-- Modern cinematic palette: hitam kebiruan + aksen merah Webunime -->
+    <color name="wu_bg">#0E0F13</color>
+    <color name="wu_bg_elevated">#16181D</color>
+    <color name="wu_surface">#262931</color>
+    <color name="wu_surface_soft">#1B1D23</color>
+    <color name="wu_accent">#FF3B47</color>
+    <color name="wu_accent_dark">#C8202C</color>
+    <color name="wu_accent_soft">#FF6B74</color>
+    <color name="wu_text">#F7F7F9</color>
+    <color name="wu_text_dim">#C2C4CC</color>
+    <color name="wu_text_muted">#8A8D97</color>
     <color name="wu_focus">#FFFFFF</color>
-    <color name="wu_row_header">#EDEDF0</color>
+    <color name="wu_row_header">#F7F7F9</color>
     <color name="wu_overlay">#CC000000</color>
     <color name="wu_scrim">#99000000</color>
     <color name="wu_card_info">#D9000000</color>

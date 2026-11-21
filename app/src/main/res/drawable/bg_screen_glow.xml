@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Latar layar statis (Login/Pengaturan): cahaya merah lembut di pojok kiri atas. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/wu_bg" />
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:centerX="0.1"
+                android:centerY="0.0"
+                android:gradientRadius="900"
+                android:startColor="#33FF3B47"
+                android:endColor="#000E0F13"
+                android:type="radial" />
+        </shape>
+    </item>
+</layer-list>

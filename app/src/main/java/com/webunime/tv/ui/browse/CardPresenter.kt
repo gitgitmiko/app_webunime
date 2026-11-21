@@ -6,7 +6,6 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.KeyEvent
@@ -47,10 +46,6 @@ class CardPresenter(
                 isFocusable = true
                 isFocusableInTouchMode = true
                 isClickable = true
-                clipToOutline = true
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    foreground = ContextCompat.getDrawable(context, R.drawable.bg_card_focus_ring)
-                }
                 applyCardSize(this)
                 setupFocusBehavior()
             }
@@ -110,6 +105,7 @@ class CardPresenter(
         card.setOnKeyListener(null)
         card.animate().cancel()
         card.scaleX = 1f
+        card.translationZ = 0f
         card.scaleY = 1f
         card.badgeView()?.visibility = View.GONE
         card.metaView()?.visibility = View.GONE
@@ -192,8 +188,7 @@ class CardPresenter(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 m.infoH,
             )
-            card.clipToOutline = true
-            card.invalidateOutline()
+            card.posterWrap()?.invalidateOutline()
         }
 
         private fun View.posterWrap(): FrameLayout? = findViewById(R.id.catalog_poster_wrap)
@@ -384,30 +379,25 @@ class CardPresenter(
         private val mainHandler = Handler(Looper.getMainLooper())
 
         private fun View.setupFocusBehavior() {
-            val accent = ContextCompat.getColor(context, R.color.wu_accent_soft)
-            val titleNormal = ContextCompat.getColor(context, R.color.wu_text)
+            val titleFocused = ContextCompat.getColor(context, R.color.wu_text)
+            val titleNormal = ContextCompat.getColor(context, R.color.wu_text_dim)
+            val density = resources.displayMetrics.density
             setOnFocusChangeListener { v, hasFocus ->
                 applyCardSize(this)
                 v.pivotX = v.width / 2f
-                v.pivotY = v.height / 2f
+                // Pivot di tengah poster agar judul di bawah tidak "lompat" jauh.
+                v.pivotY = (posterWrap()?.height ?: v.height) / 2f
                 v.animate()
                     .scaleX(if (hasFocus) FOCUS_SCALE else 1f)
                     .scaleY(if (hasFocus) FOCUS_SCALE else 1f)
+                    .translationZ(if (hasFocus) 12f * density else 0f)
                     .setDuration(FOCUS_ANIM_MS)
                     .start()
-                titleView()?.setTextColor(if (hasFocus) accent else titleNormal)
-                // Meta di dalam poster: tetap putih agar kontras di atas gambar.
-                infoView()?.setBackgroundColor(
-                    if (hasFocus) {
-                        ContextCompat.getColor(context, R.color.wu_card_info_focus)
-                    } else {
-                        Color.TRANSPARENT
-                    },
-                )
+                titleView()?.setTextColor(if (hasFocus) titleFocused else titleNormal)
             }
         }
 
-        private const val FOCUS_SCALE = 1.05f
-        private const val FOCUS_ANIM_MS = 160L
+        private const val FOCUS_SCALE = 1.08f
+        private const val FOCUS_ANIM_MS = 180L
     }
 }

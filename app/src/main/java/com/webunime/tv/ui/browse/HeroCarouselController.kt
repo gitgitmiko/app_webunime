@@ -4,7 +4,10 @@ import android.app.Activity
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
+import android.os.Handler
+import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
 import android.widget.ImageView
@@ -12,13 +15,20 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
+import com.bumptech.glide.request.transition.DrawableCrossFadeFactory
 import com.webunime.tv.R
 import com.webunime.tv.data.CatalogItem
+import com.webunime.tv.ui.AmbientBlur
 import com.webunime.tv.ui.PosterGlide
 
 /**
- * Hero carousel: backdrop landscape + teks di baris Leanback.
- * Geser manual ←/→; OK buka detail. Tanpa trailer video.
+ * Hero carousel: backdrop blur ambient + poster tajam di kanan + teks di kiri.
+ * Geser ←/→ (auto-geser tiap [AUTO_ADVANCE_MS] selama hero fokus); OK buka detail.
  * Backdrop hanya di-update saat mode hero — tidak mengikuti fokus kartu katalog.
  */
 class HeroCarouselController(
@@ -33,6 +43,20 @@ class HeroCarouselController(
     private var featuredMode = true
 
     private var panel: View? = null
+    private var textColumn: View? = null
+    private var posterWrap: View? = null
+    private var poster: ImageView? = null
+    private var lastPosterUrl: String? = null
+    private val handler = Handler(Looper.getMainLooper())
+    private val autoAdvance = Runnable {
+        if (panel?.hasFocus() == true && featuredMode) {
+            showNext(animate = true)
+        }
+        scheduleAutoAdvance()
+    }
+    private val crossFade = DrawableTransitionOptions.with(
+        DrawableCrossFadeFactory.Builder(CROSSFADE_MS).setCrossFadeEnabled(true).build(),
+    )
     private var badge: TextView? = null
     private var quality: TextView? = null
     private var country: TextView? = null
@@ -48,10 +72,12 @@ class HeroCarouselController(
         when (keyCode) {
             KeyEvent.KEYCODE_DPAD_LEFT -> {
                 showPrev()
+                scheduleAutoAdvance()
                 true
             }
             KeyEvent.KEYCODE_DPAD_RIGHT -> {
                 showNext()
+                scheduleAutoAdvance()
                 true
             }
             else -> false
@@ -74,6 +100,10 @@ class HeroCarouselController(
         genres = view.findViewById(R.id.browseHeroGenres)
         synopsis = view.findViewById(R.id.browseHeroSynopsis)
         dots = view.findViewById(R.id.browseHeroDots)
+        textColumn = view.findViewById(R.id.browseHeroText)
+        posterWrap = view.findViewById(R.id.browseHeroPosterWrap)
+        poster = view.findViewById(R.id.browseHeroPoster)
+        lastPosterUrl = null
 
         view.setOnKeyListener(keyListener)
         view.setOnClickListener {
@@ -83,6 +113,9 @@ class HeroCarouselController(
         view.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
                 showFeaturedMode()
+                scheduleAutoAdvance()
+            } else {
+                handler.removeCallbacks(autoAdvance)
             }
         }
 
@@ -95,6 +128,12 @@ class HeroCarouselController(
         view.setOnKeyListener(null)
         view.setOnClickListener(null)
         view.onFocusChangeListener = null
+        handler.removeCallbacks(autoAdvance)
+        poster?.let { iv -> runCatching { Glide.with(iv).clear(iv) } }
+        textColumn = null
+        posterWrap = null
+        poster = null
+        lastPosterUrl = null
         panel = null
         badge = null
         quality = null
@@ -144,16 +183,17 @@ class HeroCarouselController(
 
     fun pauseRotate() {
         featuredMode = false
+        handler.removeCallbacks(autoAdvance)
         updateChrome()
     }
 
     fun resumeRotate() = showFeaturedMode()
 
-    fun showNext() {
+    fun showNext(animate: Boolean = true) {
         if (featured.size <= 1) return
         featuredMode = true
         index = (index + 1) % featured.size
-        showItem(featured[index], updateDots = true)
+        showItem(featured[index], updateDots = true, animate = animate)
         updateChrome()
     }
 
@@ -161,8 +201,15 @@ class HeroCarouselController(
         if (featured.size <= 1) return
         featuredMode = true
         index = if (index <= 0) featured.lastIndex else index - 1
-        showItem(featured[index], updateDots = true)
+        showItem(featured[index], updateDots = true, animate = true)
         updateChrome()
+    }
+
+    private fun scheduleAutoAdvance() {
+        handler.removeCallbacks(autoAdvance)
+        if (featured.size > 1 && panel?.hasFocus() == true) {
+            handler.postDelayed(autoAdvance, AUTO_ADVANCE_MS)
+        }
     }
 
     fun openCurrent() {
@@ -171,6 +218,7 @@ class HeroCarouselController(
     }
 
     fun release() {
+        handler.removeCallbacks(autoAdvance)
         unbindHeroView(panel)
         runCatching { Glide.with(backdrop).clear(backdrop) }
         current = null
@@ -189,8 +237,17 @@ class HeroCarouselController(
         updateChrome()
     }
 
-    private fun showItem(item: CatalogItem, updateDots: Boolean) {
+    private fun showItem(item: CatalogItem, updateDots: Boolean, animate: Boolean = false) {
+        val changed = current?.slug != item.slug || current?.displayTitle() != item.displayTitle()
         current = item
+        if (animate && changed) {
+            textColumn?.let { col ->
+                col.animate().cancel()
+                col.alpha = 0f
+                col.translationX = 24f * context.resources.displayMetrics.density
+                col.animate().alpha(1f).translationX(0f).setDuration(TEXT_ANIM_MS).start()
+            }
+        }
         badge?.text = badgeLabel(item)
         bindQuality(item)
         bindCountry(item)
@@ -202,9 +259,12 @@ class HeroCarouselController(
         synopsis?.text = syn
         synopsis?.visibility = if (syn.isBlank()) View.GONE else View.VISIBLE
 
-        val url = item.thumbnail_landscape?.takeIf { it.isNotBlank() }
-            ?: item.thumbnail?.takeIf { it.isNotBlank() }
-        loadBackdrop(url)
+        val portrait = item.thumbnail?.takeIf { it.isNotBlank() }
+        val landscape = item.thumbnail_landscape?.takeIf { it.isNotBlank() }
+        val alt = item.thumbnailAlt?.takeIf { it.isNotBlank() }
+        // Backdrop di-blur → sumber apa pun aman; poster depan pakai gambar asli.
+        loadBackdrop(landscape ?: portrait ?: alt)
+        loadPoster(portrait ?: alt ?: landscape, fallback = alt?.takeIf { it != portrait })
 
         if (updateDots) updateDots()
     }
@@ -260,7 +320,7 @@ class HeroCarouselController(
                 importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
                 isFocusable = false
                 background = GradientDrawable().apply {
-                    cornerRadius = 6f * density
+                    cornerRadius = 14f * density
                     setColor(HeroBadgeStyles.genreColor(genre))
                 }
                 layoutParams = LinearLayout.LayoutParams(
@@ -305,10 +365,69 @@ class HeroCarouselController(
         lastBackdropUrl = url
         Glide.with(backdrop)
             .load(PosterGlide.model(url))
-            .centerCrop()
-            .placeholder(ColorDrawable(ContextCompat.getColor(context, R.color.wu_bg)))
+            .transform(AmbientBlur())
+            .transition(crossFade)
             .error(ColorDrawable(ContextCompat.getColor(context, R.color.wu_bg)))
             .into(backdrop)
+    }
+
+    /**
+     * Poster tajam di kanan hero. Ukuran kartu menyesuaikan rasio gambar:
+     * portrait → 2:3, landscape (screenshot episode anime, dll.) → 16:9.
+     */
+    private fun loadPoster(url: String?, fallback: String?) {
+        val iv = poster ?: return
+        val wrap = posterWrap ?: return
+        if (url.isNullOrBlank()) {
+            lastPosterUrl = null
+            runCatching { Glide.with(iv).clear(iv) }
+            wrap.visibility = View.INVISIBLE
+            return
+        }
+        if (url == lastPosterUrl) return
+        lastPosterUrl = url
+        wrap.visibility = View.VISIBLE
+        val listener = object : RequestListener<Drawable> {
+            override fun onLoadFailed(
+                e: GlideException?,
+                model: Any?,
+                target: Target<Drawable>,
+                isFirstResource: Boolean,
+            ): Boolean = false
+
+            override fun onResourceReady(
+                resource: Drawable,
+                model: Any,
+                target: Target<Drawable>?,
+                dataSource: DataSource,
+                isFirstResource: Boolean,
+            ): Boolean {
+                applyPosterShape(resource.intrinsicWidth > resource.intrinsicHeight * 11 / 10)
+                return false
+            }
+        }
+        var req = Glide.with(iv)
+            .load(PosterGlide.model(url))
+            .transition(crossFade)
+            .listener(listener)
+        if (!fallback.isNullOrBlank()) {
+            req = req.error(
+                Glide.with(iv).load(PosterGlide.model(fallback)).listener(listener),
+            )
+        }
+        req.into(iv)
+    }
+
+    private fun applyPosterShape(landscape: Boolean) {
+        val wrap = posterWrap ?: return
+        val res = context.resources
+        val w = res.getDimensionPixelSize(if (landscape) R.dimen.hero_poster_land_w else R.dimen.hero_poster_w)
+        val h = res.getDimensionPixelSize(if (landscape) R.dimen.hero_poster_land_h else R.dimen.hero_poster_h)
+        val lp = wrap.layoutParams ?: return
+        if (lp.width == w && lp.height == h) return
+        lp.width = w
+        lp.height = h
+        wrap.layoutParams = lp
     }
 
     private fun rebuildDots() {
@@ -320,16 +439,16 @@ class HeroCarouselController(
         }
         dotsView.visibility = View.VISIBLE
         val density = context.resources.displayMetrics.density
-        val size = (7 * density).toInt()
-        val gap = (8 * density).toInt()
+        val size = (6 * density).toInt()
+        val gap = (6 * density).toInt()
         for (i in featured.indices) {
             val dot = View(context).apply {
                 layoutParams = LinearLayout.LayoutParams(size, size).also {
                     if (i > 0) it.marginStart = gap
                 }
                 background = GradientDrawable().apply {
-                    shape = GradientDrawable.OVAL
-                    setColor(0x55FFFFFF)
+                    cornerRadius = 3 * density
+                    setColor(0x4DFFFFFF)
                 }
                 importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
             }
@@ -345,19 +464,16 @@ class HeroCarouselController(
             val bg = dot.background as? GradientDrawable ?: continue
             val density = context.resources.displayMetrics.density
             val lp = dot.layoutParams as LinearLayout.LayoutParams
+            lp.height = (6 * density).toInt()
+            bg.cornerRadius = 3 * density
             if (i == index) {
-                bg.setColor(ContextCompat.getColor(context, R.color.wu_accent_soft))
-                lp.width = (24 * density).toInt()
-                lp.height = (7 * density).toInt()
-                dot.layoutParams = lp
-                bg.cornerRadius = 4 * density
+                bg.setColor(ContextCompat.getColor(context, R.color.wu_text))
+                lp.width = (28 * density).toInt()
             } else {
-                bg.setColor(0x55FFFFFF)
-                lp.width = (7 * density).toInt()
-                lp.height = (7 * density).toInt()
-                dot.layoutParams = lp
-                bg.shape = GradientDrawable.OVAL
+                bg.setColor(0x4DFFFFFF)
+                lp.width = (6 * density).toInt()
             }
+            dot.layoutParams = lp
         }
     }
 
@@ -382,11 +498,14 @@ class HeroCarouselController(
         item.rating?.takeIf { it.isNotBlank() }?.let { parts += "★ $it" }
         item.tahun?.takeIf { it.isNotBlank() }?.let { parts += it }
         item.durasi?.takeIf { it.isNotBlank() }?.let { parts += it }
-        return parts.joinToString("  ·  ")
+        return parts.joinToString("   •   ")
     }
 
     companion object {
         private const val MAX_GENRE_BADGES = 4
+        private const val AUTO_ADVANCE_MS = 8_000L
+        private const val CROSSFADE_MS = 350
+        private const val TEXT_ANIM_MS = 260L
 
         fun attach(
             activity: Activity,

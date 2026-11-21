@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Gradasi bawah: backdrop melebur ke latar baris katalog. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:angle="90"
+        android:startColor="@color/wu_bg"
+        android:centerColor="#CC0E0F13"
+        android:endColor="#000E0F13"
+        android:type="linear" />
+</shape>

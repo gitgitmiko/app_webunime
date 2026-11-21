@@ -4,6 +4,7 @@
     android:layout_height="match_parent"
     android:background="@color/wu_bg">
 
+    <!-- Backdrop ambient: poster hero di-blur (lihat AmbientBlur), bukan gambar di-stretch. -->
     <ImageView
         android:id="@+id/browseBackdrop"
         android:layout_width="match_parent"
@@ -16,7 +17,7 @@
         android:id="@+id/browseBackdropDim"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#7A000000"
+        android:background="#59000000"
         android:importantForAccessibility="no" />
 
     <View
@@ -24,6 +25,20 @@
         android:layout_height="match_parent"
         android:layout_gravity="start"
         android:background="@drawable/bg_hero_scrim"
+        android:importantForAccessibility="no" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="140dp"
+        android:layout_gravity="top"
+        android:background="@drawable/bg_browse_top_scrim"
+        android:importantForAccessibility="no" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="260dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_browse_bottom_scrim"
         android:importantForAccessibility="no" />
 
     <FrameLayout

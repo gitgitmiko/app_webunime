@@ -6,8 +6,13 @@
     android:layout_gravity="bottom|end"
     android:layout_marginEnd="28dp"
     android:layout_marginBottom="20dp"
+    android:background="@drawable/bg_bgm_pill"
     android:gravity="center_vertical|end"
     android:orientation="horizontal"
+    android:paddingStart="14dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="8dp"
     android:visibility="gone">
 
     <com.webunime.tv.ui.BgmEqualizerView

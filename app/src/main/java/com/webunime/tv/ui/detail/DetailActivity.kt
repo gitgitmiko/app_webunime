@@ -129,9 +129,10 @@ class DetailActivity : AppCompatActivity() {
             .load(thumb?.let { PosterGlide.model(it) })
             .apply(posterOpts)
         val backdropUrl = landscape?.takeIf { it.isNotBlank() } ?: thumb
+        // Poster kecil di-stretch full-width tampak pecah → blur ambient (lihat AmbientBlur).
         val backdropReq = Glide.with(this)
             .load(backdropUrl?.let { PosterGlide.model(it) })
-            .centerCrop()
+            .transform(com.webunime.tv.ui.AmbientBlur())
         if (!thumbAlt.isNullOrBlank() && thumbAlt != thumb) {
             posterReq.error(
                 Glide.with(this)
@@ -139,7 +140,10 @@ class DetailActivity : AppCompatActivity() {
                     .apply(posterOpts),
             )
             if (landscape.isNullOrBlank()) {
-                backdropReq.error(Glide.with(this).load(PosterGlide.model(thumbAlt)).centerCrop())
+                backdropReq.error(
+                    Glide.with(this).load(PosterGlide.model(thumbAlt))
+                        .transform(com.webunime.tv.ui.AmbientBlur()),
+                )
             }
         }
         posterReq.into(poster)
@@ -456,7 +460,7 @@ class DetailActivity : AppCompatActivity() {
             isAllCaps = false
             cornerRadius = resources.getDimensionPixelSize(R.dimen.button_corner_radius)
             if (watched) {
-                setTextColor(getColor(R.color.wu_text_dim))
+                setTextColor(getColorStateList(R.color.tv_btn_text_watched))
             }
             setOnClickListener {
                 selectedEpisode = ep
@@ -464,10 +468,7 @@ class DetailActivity : AppCompatActivity() {
                 bindServers()
                 updatePlayButtonLabel()
             }
-            if (selectedEpisode?.slug == ep.slug && selectedEpisode?.episode == ep.episode) {
-                setBackgroundColor(getColor(R.color.wu_accent))
-                setTextColor(getColor(R.color.wu_text))
-            }
+            isActivated = selectedEpisode?.slug == ep.slug && selectedEpisode?.episode == ep.episode
         }
     }
 
@@ -497,10 +498,7 @@ class DetailActivity : AppCompatActivity() {
             isAllCaps = false
             cornerRadius = resources.getDimensionPixelSize(R.dimen.button_corner_radius)
             setOnClickListener { onClick() }
-            if (selected) {
-                setBackgroundColor(getColor(R.color.wu_accent))
-                setTextColor(getColor(R.color.wu_text))
-            }
+            isActivated = selected
         }
 
     private fun focusFirstEpisodeButton() {
@@ -570,9 +568,7 @@ class DetailActivity : AppCompatActivity() {
                         }
                     }
                 }
-                if (selectedPlayer?.url == server.url) {
-                    setBackgroundColor(getColor(R.color.wu_accent))
-                }
+                isActivated = selectedPlayer?.url == server.url
             }
             serverContainer.addView(btn)
         }
