@@ -228,8 +228,8 @@ class BrowseFragment : BrowseSupportFragment() {
         density: Float,
     ): Int {
         val metrics = CardPresenter.metricsPx(requireContext())
-        // Ruang di bawah kartu untuk judul yang sedang terpotong dan cincin fokus (scale 1.05).
-        val focusPad = (72f * density).toInt()
+        // Ruang di bawah kartu untuk zoom fokus (scale 1.08 ≈ +13dp per sisi poster).
+        val focusPad = (32f * density).toInt()
         val header = headerH.coerceAtLeast((40f * density).toInt())
         if (content is HorizontalGridView) {
             content.clipChildren = false
@@ -294,11 +294,15 @@ class BrowseFragment : BrowseSupportFragment() {
         }.apply {
             shadowEnabled = false
             selectEffectEnabled = false
+            // Outline membulat bawaan Leanback menutupi seluruh kartu (judul ikut), jadi
+            // tampak kotak abu transparan saat fokus. Sudut poster sudah dibulatkan sendiri.
+            enableChildRoundedCorners(false)
             headerPresenter = hideBlankHeaderPresenter()
         }
         val heroRowPresenter = ListRowPresenter(FocusHighlight.ZOOM_FACTOR_NONE).apply {
             shadowEnabled = false
             selectEffectEnabled = false
+            enableChildRoundedCorners(false)
             headerPresenter = hideBlankHeaderPresenter()
         }
         val rowSelector = ClassPresenterSelector().apply {

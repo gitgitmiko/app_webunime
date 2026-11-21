@@ -5,6 +5,7 @@ import androidx.leanback.app.SearchSupportFragment
 import androidx.leanback.widget.ArrayObjectAdapter
 import androidx.leanback.widget.HeaderItem
 import androidx.leanback.widget.ListRow
+import androidx.leanback.widget.FocusHighlight
 import androidx.leanback.widget.ListRowPresenter
 import androidx.leanback.widget.ObjectAdapter
 import androidx.leanback.widget.OnItemViewClickedListener
@@ -26,12 +27,18 @@ class SearchFragment : SearchSupportFragment(), SearchSupportFragment.SearchResu
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        rowsAdapter = ArrayObjectAdapter(object : ListRowPresenter() {
+        // Sama dengan Browse: zoom/ring ditangani CardPresenter; tanpa bayangan, dim, atau
+        // outline membulat Leanback (latar kartu transparan → tampak kotak abu).
+        rowsAdapter = ArrayObjectAdapter(object : ListRowPresenter(FocusHighlight.ZOOM_FACTOR_NONE) {
             override fun initializeRowViewHolder(vh: androidx.leanback.widget.RowPresenter.ViewHolder) {
                 super.initializeRowViewHolder(vh)
                 val listVh = vh as? ListRowPresenter.ViewHolder ?: return
                 CardPresenter.styleCatalogRow(listVh.gridView)
             }
+        }.apply {
+            shadowEnabled = false
+            selectEffectEnabled = false
+            enableChildRoundedCorners(false)
         })
         setSearchResultProvider(this)
         setOnItemViewClickedListener(OnItemViewClickedListener { _, item, _, _ ->

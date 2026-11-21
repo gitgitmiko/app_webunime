@@ -105,7 +105,6 @@ class CardPresenter(
         card.setOnKeyListener(null)
         card.animate().cancel()
         card.scaleX = 1f
-        card.translationZ = 0f
         card.scaleY = 1f
         card.badgeView()?.visibility = View.GONE
         card.metaView()?.visibility = View.GONE
@@ -158,7 +157,8 @@ class CardPresenter(
             // Lebar kartu = lebar poster (judul di bawah, full width).
             val posterW = (usable / VISIBLE_PER_ROW).coerceAtLeast((120f * dm.density).toInt())
             val posterH = posterW * 3 / 2
-            val infoH = (96f * dm.density).toInt().coerceAtLeast(88)
+            // Judul maks. 2 baris (14sp) + padding.
+            val infoH = (64f * dm.density).toInt().coerceAtLeast(56)
             val cardW = posterW
             val cardH = posterH + infoH
             return Metrics(posterW, posterH, cardW, cardH, infoH)
@@ -381,7 +381,6 @@ class CardPresenter(
         private fun View.setupFocusBehavior() {
             val titleFocused = ContextCompat.getColor(context, R.color.wu_text)
             val titleNormal = ContextCompat.getColor(context, R.color.wu_text_dim)
-            val density = resources.displayMetrics.density
             setOnFocusChangeListener { v, hasFocus ->
                 applyCardSize(this)
                 v.pivotX = v.width / 2f
@@ -390,7 +389,6 @@ class CardPresenter(
                 v.animate()
                     .scaleX(if (hasFocus) FOCUS_SCALE else 1f)
                     .scaleY(if (hasFocus) FOCUS_SCALE else 1f)
-                    .translationZ(if (hasFocus) 12f * density else 0f)
                     .setDuration(FOCUS_ANIM_MS)
                     .start()
                 titleView()?.setTextColor(if (hasFocus) titleFocused else titleNormal)
